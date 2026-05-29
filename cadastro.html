@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cadastro Geral — Central Bravi</title>
+<link rel="stylesheet" href="bravi-ds.css">
+<style>
+.row-actions{display:flex;gap:4px;opacity:0;transition:opacity .1s}
+tbody tr:hover .row-actions{opacity:1}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-row">
+      <div class="s-mark">B</div>
+      <div><div class="s-name">Central <em>Bravi</em></div><div class="s-page">Cadastro Geral</div></div>
+    </div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-group">Registros</div>
+    <button class="nav-item active" onclick="showSection('profissionais',this)"><i class="ti ti-users"></i> Profissionais <span class="nav-cnt" id="cnt-prof">0</span></button>
+    <button class="nav-item" onclick="showSection('clientes',this)"><i class="ti ti-building"></i> Clientes <span class="nav-cnt" id="cnt-cli">0</span></button>
+    <button class="nav-item" onclick="showSection('projetos',this)"><i class="ti ti-folder"></i> Projetos <span class="nav-cnt" id="cnt-proj">0</span></button>
+    <div class="nav-group">Estrutura</div>
+    <button class="nav-item" onclick="showSection('setores',this)"><i class="ti ti-sitemap"></i> Setores <span class="nav-cnt" id="cnt-set">0</span></button>
+    <button class="nav-item" onclick="showSection('funcoes',this)"><i class="ti ti-briefcase"></i> Funções <span class="nav-cnt" id="cnt-func">0</span></button>
+    <div class="nav-group">Vínculos</div>
+    <button class="nav-item" onclick="showSection('vinculos',this)"><i class="ti ti-link"></i> Prof. ↔ Projetos <span class="nav-cnt" id="cnt-vinc">0</span></button>
+    <div class="nav-group">Ferramentas</div>
+    <button class="nav-item" onclick="showSection('importar',this)"><i class="ti ti-upload"></i> Importar dados</button>
+  </div>
+  <div class="sidebar-footer">
+    <a href="index.html" class="back-link"><i class="ti ti-arrow-left"></i> Voltar ao Hub</a>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-title" id="topbar-title">Profissionais</span>
+    </div>
+    <div class="topbar-right">
+      <div class="search-box">
+        <i class="ti ti-search"></i>
+        <input type="text" id="search-input" placeholder="Buscar..." oninput="filtrarTabela()">
+      </div>
+      <button class="btn btn-primary btn-sm" id="btn-novo" onclick="abrirModal()"><i class="ti ti-plus"></i> Novo</button>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- PROFISSIONAIS -->
+    <div class="section-panel active" id="panel-profissionais">
+      <div class="stats-row" style="grid-template-columns:repeat(4,1fr)">
+        <div class="stat-card"><div class="stat-card-value" id="s-total">0</div><div class="stat-card-label">Total</div></div>
+        <div class="stat-card"><div class="stat-card-value" id="s-ativos">0</div><div class="stat-card-label">Ativos</div></div>
+        <div class="stat-card"><div class="stat-card-value" id="s-inativos">0</div><div class="stat-card-label">Inativos</div></div>
+        <div class="stat-card"><div class="stat-card-value" id="s-media">—</div><div class="stat-card-label">Tempo médio</div></div>
+      </div>
+      <div class="table-wrap">
+        <div class="table-toolbar">
+          <div class="filter-tabs">
+            <button class="filter-tab active" onclick="setFilter('profissionais','todos',this)">Todos</button>
+            <button class="filter-tab" onclick="setFilter('profissionais','ativo',this)">Ativos</button>
+            <button class="filter-tab" onclick="setFilter('profissionais','inativo',this)">Inativos</button>
+          </div>
+        </div>
+        <div id="table-profissionais"></div>
+      </div>
+    </div>
+
+    <!-- CLIENTES -->
+    <div class="section-panel" id="panel-clientes">
+      <div class="table-wrap">
+        <div class="table-toolbar">
+          <div class="filter-tabs">
+            <button class="filter-tab active" onclick="setFilter('clientes','todos',this)">Todos</button>
+            <button class="filter-tab" onclick="setFilter('clientes','ativo',this)">Ativos</button>
+            <button class="filter-tab" onclick="setFilter('clientes','inativo',this)">Inativos</button>
+          </div>
+        </div>
+        <div id="table-clientes"></div>
+      </div>
+    </div>
+
+    <!-- PROJETOS -->
+    <div class="section-panel" id="panel-projetos">
+      <div class="table-wrap">
+        <div class="table-toolbar">
+          <div class="filter-tabs">
+            <button class="filter-tab active" onclick="setFilter('projetos','todos',this)">Todos</button>
+            <button class="filter-tab" onclick="setFilter('projetos','ativo',this)">Ativos</button>
+            <button class="filter-tab" onclick="setFilter('projetos','prospect',this)">Prospects</button>
+            <button class="filter-tab" onclick="setFilter('projetos','arquivado',this)">Arquivados</button>
+          </div>
+        </div>
+        <div id="table-projetos"></div>
+      </div>
+    </div>
+
+    <!-- SETORES -->
+    <div class="section-panel" id="panel-setores">
+      <div class="table-wrap"><div id="table-setores"></div></div>
+    </div>
+
+    <!-- FUNÇÕES -->
+    <div class="section-panel" id="panel-funcoes">
+      <div class="table-wrap"><div id="table-funcoes"></div></div>
+    </div>
+
+    <!-- VÍNCULOS -->
+    <div class="section-panel" id="panel-vinculos">
+      <div class="table-wrap"><div id="table-vinculos"></div></div>
+    </div>
+
+    <!-- IMPORTAR -->
+    <div class="section-panel" id="panel-importar">
+      <div style="margin-bottom:20px">
+        <div style="font-family:var(--font-display);font-size:18px;font-weight:800;color:var(--text-primary);margin-bottom:4px">Importar dados</div>
+        <div style="font-size:13px;color:var(--text-muted)">Importe profissionais, clientes ou projetos via XLSX ou CSV</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:760px">
+        <div class="import-area" onclick="document.getElementById('imp-prof').click()">
+          <div class="import-icon">👤</div>
+          <div class="import-title">Importar Profissionais</div>
+          <div class="import-desc">CSV com nome, e-mail, cargo, setor, admissão</div>
+          <input type="file" id="imp-prof" accept=".csv" style="display:none" onchange="importarCSV(this,'profissionais')">
+        </div>
+        <div class="import-area" onclick="document.getElementById('imp-cli').click()">
+          <div class="import-icon">🏢</div>
+          <div class="import-title">Importar Clientes</div>
+          <div class="import-desc">CSV com nome, CNPJ, contato, segmento</div>
+          <input type="file" id="imp-cli" accept=".csv" style="display:none" onchange="importarCSV(this,'clientes')">
+        </div>
+        <div class="import-area" onclick="document.getElementById('imp-proj').click()">
+          <div class="import-icon">📁</div>
+          <div class="import-title">Importar Projetos</div>
+          <div class="import-desc">CSV com nome, cliente, status, tipo</div>
+          <input type="file" id="imp-proj" accept=".csv" style="display:none" onchange="importarCSV(this,'projetos')">
+        </div>
+        <div class="import-area" onclick="exportarJSON()">
+          <div class="import-icon">💾</div>
+          <div class="import-title">Exportar backup (JSON)</div>
+          <div class="import-desc">Backup completo de todos os cadastros</div>
+        </div>
+      </div>
+      <div style="margin-top:20px;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);max-width:760px">
+        <div style="font-size:10px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;font-family:var(--font-display)">Formato das colunas CSV (primeira linha = header)</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;font-size:12px;color:var(--text-muted)">
+          <div><div style="color:var(--bravi-purple);font-weight:600;font-family:var(--font-display);margin-bottom:4px;font-size:11px">PROFISSIONAIS</div>nome, email, telefone, funcao, setor, admissao, regime</div>
+          <div><div style="color:var(--success);font-weight:600;font-family:var(--font-display);margin-bottom:4px;font-size:11px">CLIENTES</div>nome, cnpj, contato, email, telefone, segmento</div>
+          <div><div style="color:var(--info);font-weight:600;font-family:var(--font-display);margin-bottom:4px;font-size:11px">PROJETOS</div>nome, cliente, status, tipo, inicio, valor</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- MODAL PROFISSIONAL -->
+<div class="modal-backdrop" id="modal-profissional">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-prof-title">Novo Profissional</span>
+      <button class="modal-close" onclick="fecharModal('profissional')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-section">
+        <div class="form-section-title">Foto</div>
+        <div class="photo-upload">
+          <div class="photo-preview" id="foto-preview">👤</div>
+          <label class="photo-btn" for="foto-input">Carregar foto</label>
+          <input type="file" id="foto-input" accept="image/*" style="display:none" onchange="previewFoto(this)">
+        </div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">Dados pessoais</div>
+        <div class="form-grid">
+          <div class="form-group full"><label class="form-label">Nome completo <span class="req">*</span></label><input type="text" class="form-input" id="prof-nome" placeholder="Ex.: João Silva"></div>
+          <div class="form-group"><label class="form-label">E-mail <span class="req">*</span></label><input type="email" class="form-input" id="prof-email" placeholder="joao@bravi.com.br"></div>
+          <div class="form-group"><label class="form-label">Telefone</label><input type="text" class="form-input" id="prof-telefone" placeholder="(11) 99999-9999"></div>
+          <div class="form-group"><label class="form-label">Data de nascimento</label><input type="date" class="form-input" id="prof-nascimento"></div>
+          <div class="form-group"><label class="form-label">Regime</label>
+            <select class="form-select" id="prof-regime"><option value="">Selecionar...</option><option value="clt">CLT</option><option value="pj">PJ</option><option value="estagio">Estágio</option><option value="freelancer">Freelancer</option></select>
+          </div>
+        </div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">Posição na Bravi</div>
+        <div class="form-grid">
+          <div class="form-group"><label class="form-label">Função <span class="req">*</span></label><select class="form-select" id="prof-funcao"><option value="">Selecionar...</option></select></div>
+          <div class="form-group"><label class="form-label">Setor</label><select class="form-select" id="prof-setor"><option value="">Selecionar...</option></select></div>
+          <div class="form-group"><label class="form-label">Projeto principal</label><select class="form-select" id="prof-projeto"><option value="">Sem projeto principal</option></select></div>
+          <div class="form-group"><label class="form-label">Data de admissão <span class="req">*</span></label><input type="date" class="form-input" id="prof-admissao"></div>
+          <div class="form-group"><label class="form-label">Data de demissão</label><input type="date" class="form-input" id="prof-demissao"></div>
+        </div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">Status</div>
+        <div class="toggle-row"><span class="toggle-label">Profissional ativo</span><label class="toggle"><input type="checkbox" id="prof-ativo" checked><span class="toggle-slider"></span></label></div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">Observações</div>
+        <div class="form-group"><textarea class="form-textarea" id="prof-obs" placeholder="Anotações livres sobre o profissional..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="fecharModal('profissional')">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="salvarProfissional()"><i class="ti ti-check"></i> Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CLIENTE -->
+<div class="modal-backdrop" id="modal-cliente">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-cli-title">Novo Cliente</span>
+      <button class="modal-close" onclick="fecharModal('cliente')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full"><label class="form-label">Nome da empresa <span class="req">*</span></label><input type="text" class="form-input" id="cli-nome" placeholder="Ex.: Empresa ABC Ltda"></div>
+        <div class="form-group"><label class="form-label">CNPJ</label><input type="text" class="form-input" id="cli-cnpj" placeholder="00.000.000/0000-00"></div>
+        <div class="form-group"><label class="form-label">Segmento</label><input type="text" class="form-input" id="cli-segmento" placeholder="Ex.: Varejo, Saúde, Fintech..."></div>
+        <div class="form-group"><label class="form-label">Nome do contato</label><input type="text" class="form-input" id="cli-contato" placeholder="Responsável"></div>
+        <div class="form-group"><label class="form-label">E-mail do contato</label><input type="email" class="form-input" id="cli-email" placeholder="contato@empresa.com"></div>
+        <div class="form-group"><label class="form-label">Telefone</label><input type="text" class="form-input" id="cli-telefone" placeholder="(11) 99999-9999"></div>
+        <div class="form-group full"><label class="form-label">Observações</label><textarea class="form-textarea" id="cli-obs" placeholder="Notas sobre o cliente..."></textarea></div>
+      </div>
+      <div class="toggle-row" style="margin-top:6px"><span class="toggle-label">Cliente ativo</span><label class="toggle"><input type="checkbox" id="cli-ativo" checked><span class="toggle-slider"></span></label></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="fecharModal('cliente')">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="salvarCliente()"><i class="ti ti-check"></i> Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PROJETO -->
+<div class="modal-backdrop" id="modal-projeto">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-proj-title">Novo Projeto</span>
+      <button class="modal-close" onclick="fecharModal('projeto')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full"><label class="form-label">Nome do projeto <span class="req">*</span></label><input type="text" class="form-input" id="proj-nome" placeholder="Ex.: Portal Cliente ABC"></div>
+        <div class="form-group"><label class="form-label">Cliente</label><select class="form-select" id="proj-cliente"><option value="">Interno (sem cliente)</option></select></div>
+        <div class="form-group"><label class="form-label">Status <span class="req">*</span></label><select class="form-select" id="proj-status"><option value="ativo">Ativo</option><option value="prospect">Prospect</option><option value="arquivado">Arquivado</option></select></div>
+        <div class="form-group"><label class="form-label">Tipo</label><select class="form-select" id="proj-tipo"><option value="alocacao">Alocação (sem data fim)</option><option value="escopo">Escopo fechado</option><option value="interno">Interno</option></select></div>
+        <div class="form-group"><label class="form-label">Data de início</label><input type="date" class="form-input" id="proj-inicio"></div>
+        <div class="form-group"><label class="form-label">Previsão de término</label><input type="date" class="form-input" id="proj-fim"></div>
+        <div class="form-group"><label class="form-label">Valor contratado (R$)</label><input type="number" class="form-input" id="proj-valor" placeholder="0,00"></div>
+        <div class="form-group"><label class="form-label">GP Responsável</label><select class="form-select" id="proj-gp"><option value="">Selecionar...</option></select></div>
+        <div class="form-group full"><label class="form-label">Descrição</label><textarea class="form-textarea" id="proj-desc" placeholder="Objetivos, tecnologias, contexto..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="fecharModal('projeto')">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="salvarProjeto()"><i class="ti ti-check"></i> Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL SIMPLES (setor / função) -->
+<div class="modal-backdrop" id="modal-simples">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-simples-title">Novo Setor</span>
+      <button class="modal-close" onclick="fecharModal('simples')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Nome <span class="req">*</span></label><input type="text" class="form-input" id="simples-nome" placeholder=""></div>
+      <div class="form-group" style="margin-top:12px"><label class="form-label">Descrição</label><textarea class="form-textarea" id="simples-desc" placeholder="Opcional..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="fecharModal('simples')">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="salvarSimples()"><i class="ti ti-check"></i> Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL VÍNCULO -->
+<div class="modal-backdrop" id="modal-vinculo">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Novo Vínculo</span>
+      <button class="modal-close" onclick="fecharModal('vinculo')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">Profissional <span class="req">*</span></label><select class="form-select" id="vinc-prof"><option value="">Selecionar...</option></select></div>
+        <div class="form-group"><label class="form-label">Projeto <span class="req">*</span></label><select class="form-select" id="vinc-proj"><option value="">Selecionar...</option></select></div>
+        <div class="form-group"><label class="form-label">Função no projeto</label><select class="form-select" id="vinc-func"><option value="">Selecionar...</option></select></div>
+        <div class="form-group"><label class="form-label">Início no projeto</label><input type="date" class="form-input" id="vinc-inicio"></div>
+        <div class="form-group"><label class="form-label">Saída do projeto</label><input type="date" class="form-input" id="vinc-fim"></div>
+      </div>
+      <div class="toggle-row" style="margin-top:8px"><span class="toggle-label">Vínculo ativo</span><label class="toggle"><input type="checkbox" id="vinc-ativo" checked><span class="toggle-slider"></span></label></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="fecharModal('vinculo')">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="salvarVinculo()"><i class="ti ti-check"></i> Salvar</button>
+    </div>
+  </div>
+</div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<script>
+const DB={profissionais:[],clientes:[],projetos:[],setores:[],funcoes:[],vinculos:[]};
+let secao='profissionais',filtros={profissionais:'todos',clientes:'todos',projetos:'todos'},editId=null,simplCtx='',fotoB64='';
+
+function init(){
+  ['profissionais','clientes','projetos','setores','funcoes','vinculos'].forEach(k=>{
+    try{DB[k]=JSON.parse(localStorage.getItem('bravi_'+k)||'[]')}catch(e){}
+  });
+  renderTudo();atualizarContadores();
+}
+
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function salvarDB(k){localStorage.setItem('bravi_'+k,JSON.stringify(DB[k]))}
+
+function showSection(sec,el){
+  secao=sec;
+  document.querySelectorAll('.section-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+sec)?.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el?.classList.add('active');
+  const t={profissionais:'Profissionais',clientes:'Clientes',projetos:'Projetos',setores:'Setores',funcoes:'Funções',vinculos:'Vínculos Prof. ↔ Projetos',importar:'Importar dados'};
+  document.getElementById('topbar-title').textContent=t[sec]||sec;
+  document.getElementById('btn-novo').style.display=sec==='importar'?'none':'';
+  renderSecao(sec);
+  document.getElementById('search-input').value='';
+}
+
+function renderTudo(){['profissionais','clientes','projetos','setores','funcoes','vinculos'].forEach(renderSecao)}
+function renderSecao(s){
+  if(s==='profissionais')renderProfissionais();
+  if(s==='clientes')renderClientes();
+  if(s==='projetos')renderProjetos();
+  if(s==='setores')renderSetores();
+  if(s==='funcoes')renderFuncoes();
+  if(s==='vinculos')renderVinculos();
+}
+
+function atualizarContadores(){
+  document.getElementById('cnt-prof').textContent=DB.profissionais.length;
+  document.getElementById('cnt-cli').textContent=DB.clientes.length;
+  document.getElementById('cnt-proj').textContent=DB.projetos.length;
+  document.getElementById('cnt-set').textContent=DB.setores.length;
+  document.getElementById('cnt-func').textContent=DB.funcoes.length;
+  document.getElementById('cnt-vinc').textContent=DB.vinculos.length;
+  const ativos=DB.profissionais.filter(p=>p.ativo!==false).length;
+  const inativos=DB.profissionais.filter(p=>p.ativo===false).length;
+  document.getElementById('s-total').textContent=DB.profissionais.length;
+  document.getElementById('s-ativos').textContent=ativos;
+  document.getElementById('s-inativos').textContent=inativos;
+  const adm=DB.profissionais.filter(p=>p.ativo!==false&&p.admissao).map(p=>Math.floor((Date.now()-new Date(p.admissao))/(1000*60*60*24*30.5)));
+  if(adm.length>0){const m=Math.floor(adm.reduce((a,b)=>a+b,0)/adm.length);document.getElementById('s-media').textContent=m>=12?`${Math.floor(m/12)}a ${m%12}m`:`${m}m`;}
+}
+
+function iniciais(nome){return nome?nome.split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase():'??'}
+
+function renderProfissionais(q=''){
+  const f=filtros.profissionais;
+  let d=DB.profissionais.filter(p=>{
+    if(f==='ativo'&&p.ativo===false)return false;
+    if(f==='inativo'&&p.ativo!==false)return false;
+    if(q){const qL=q.toLowerCase();return(p.nome||'').toLowerCase().includes(qL)||(p.email||'').toLowerCase().includes(qL)||(p.funcao||'').toLowerCase().includes(qL)}
+    return true;
+  });
+  const el=document.getElementById('table-profissionais');
+  if(!d.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">👤</div><div class="empty-title">Nenhum profissional encontrado</div><div class="empty-desc">Clique em "Novo" ou importe um arquivo CSV</div><button class="btn btn-primary btn-sm" onclick="abrirModal()"><i class="ti ti-plus"></i> Cadastrar</button></div>`;return}
+  el.innerHTML=`<table><thead><tr><th>Nome</th><th>Função</th><th>Setor</th><th>Projeto</th><th>Admissão</th><th>Tempo</th><th>Status</th><th></th></tr></thead><tbody>${d.map(p=>{
+    const m=p.admissao?Math.floor((Date.now()-new Date(p.admissao))/(1000*60*60*24*30.5)):0;
+    const t=m>=12?`${Math.floor(m/12)}a ${m%12}m`:`${m}m`;
+    const pct=Math.min(m/60*100,100);
+    const proj=DB.projetos.find(pr=>pr.id===p.projetoPrincipal);
+    return`<tr onclick="editarProfissional('${p.id}')">
+      <td><div class="avatar-wrap"><div class="avatar">${p.foto?`<img src="${p.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:iniciais(p.nome)}</div><div><div class="td-primary">${p.nome}</div><div class="td-muted" style="font-size:11px">${p.email||''}</div></div></div></td>
+      <td class="td-muted">${p.funcao||'—'}</td>
+      <td class="td-muted">${p.setor||'—'}</td>
+      <td class="td-muted">${proj?proj.nome:'—'}</td>
+      <td class="td-muted">${p.admissao?new Date(p.admissao+'T12:00:00').toLocaleDateString('pt-BR'):'—'}</td>
+      <td><div class="tenure-bar"><div class="tenure-track"><div class="tenure-fill" style="width:${pct}%"></div></div><span class="td-muted" style="font-size:11px">${t}</span></div></td>
+      <td><span class="badge ${p.ativo!==false?'badge-green':'badge-red'}"><span class="badge-dot"></span>${p.ativo!==false?'Ativo':'Inativo'}</span></td>
+      <td><div class="row-actions"><button class="icon-btn" onclick="event.stopPropagation();editarProfissional('${p.id}')" title="Editar"><i class="ti ti-edit"></i></button><button class="icon-btn danger" onclick="event.stopPropagation();excluir('profissionais','${p.id}')" title="Excluir"><i class="ti ti-trash"></i></button></div></td>
+    </tr>`;
+  }).join('')}</tbody></table>`;
+}
+
+function renderClientes(q=''){
+  const f=filtros.clientes;
+  let d=DB.clientes.filter(c=>{
+    if(f==='ativo'&&c.ativo===false)return false;
+    if(f==='inativo'&&c.ativo!==false)return false;
+    if(q)return(c.nome||'').toLowerCase().includes(q.toLowerCase());
+    return true;
+  });
+  const el=document.getElementById('table-clientes');
+  if(!d.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">🏢</div><div class="empty-title">Nenhum cliente encontrado</div><div class="empty-desc">Clique em "Novo" para adicionar</div><button class="btn btn-primary btn-sm" onclick="abrirModal()"><i class="ti ti-plus"></i> Cadastrar</button></div>`;return}
+  const projPorCli=(id)=>DB.projetos.filter(p=>p.clienteId===id&&p.status==='ativo').length;
+  el.innerHTML=`<table><thead><tr><th>Empresa</th><th>CNPJ</th><th>Contato</th><th>Segmento</th><th>Projetos ativos</th><th>Status</th><th></th></tr></thead><tbody>${d.map(c=>`
+    <tr onclick="editarCliente('${c.id}')">
+      <td class="td-primary">${c.nome}</td>
+      <td class="td-muted">${c.cnpj||'—'}</td>
+      <td><div class="td-primary" style="font-size:13px">${c.contato||'—'}</div><div class="td-muted" style="font-size:11px">${c.email||''}</div></td>
+      <td class="td-muted">${c.segmento||'—'}</td>
+      <td><span class="badge badge-blue"><span class="badge-dot"></span>${projPorCli(c.id)}</span></td>
+      <td><span class="badge ${c.ativo!==false?'badge-green':'badge-red'}"><span class="badge-dot"></span>${c.ativo!==false?'Ativo':'Inativo'}</span></td>
+      <td><div class="row-actions"><button class="icon-btn" onclick="event.stopPropagation();editarCliente('${c.id}')"><i class="ti ti-edit"></i></button><button class="icon-btn danger" onclick="event.stopPropagation();excluir('clientes','${c.id}')"><i class="ti ti-trash"></i></button></div></td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+function renderProjetos(q=''){
+  const f=filtros.projetos;
+  let d=DB.projetos.filter(p=>{
+    if(f!=='todos'&&p.status!==f)return false;
+    if(q)return(p.nome||'').toLowerCase().includes(q.toLowerCase());
+    return true;
+  });
+  const el=document.getElementById('table-projetos');
+  if(!d.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">📁</div><div class="empty-title">Nenhum projeto encontrado</div><div class="empty-desc">Clique em "Novo" para adicionar</div><button class="btn btn-primary btn-sm" onclick="abrirModal()"><i class="ti ti-plus"></i> Cadastrar</button></div>`;return}
+  const sBadge={ativo:'badge-green',prospect:'badge-amber',arquivado:'badge-gray'};
+  const tBadge={alocacao:'badge-purple',escopo:'badge-blue',interno:'badge-teal'};
+  const tLabel={alocacao:'Alocação',escopo:'Escopo',interno:'Interno'};
+  el.innerHTML=`<table><thead><tr><th>Projeto</th><th>Cliente</th><th>Tipo</th><th>Início</th><th>Equipe</th><th>Status</th><th></th></tr></thead><tbody>${d.map(p=>{
+    const cli=DB.clientes.find(c=>c.id===p.clienteId);
+    const equipe=DB.vinculos.filter(v=>v.projetoId===p.id&&v.ativo!==false).length;
+    return`<tr onclick="editarProjeto('${p.id}')">
+      <td><div class="td-primary">${p.nome}</div>${p.desc?`<div class="td-muted" style="font-size:11px">${p.desc.substring(0,50)}...</div>`:''}</td>
+      <td class="td-muted">${cli?cli.nome:'Interno'}</td>
+      <td><span class="badge ${tBadge[p.tipo]||'badge-gray'}">${tLabel[p.tipo]||p.tipo||'—'}</span></td>
+      <td class="td-muted">${p.inicio?new Date(p.inicio+'T12:00:00').toLocaleDateString('pt-BR'):'—'}</td>
+      <td><span class="badge badge-teal"><span class="badge-dot"></span>${equipe} pessoa${equipe!==1?'s':''}</span></td>
+      <td><span class="badge ${sBadge[p.status]||'badge-gray'}"><span class="badge-dot"></span>${p.status}</span></td>
+      <td><div class="row-actions"><button class="icon-btn" onclick="event.stopPropagation();editarProjeto('${p.id}')"><i class="ti ti-edit"></i></button><button class="icon-btn danger" onclick="event.stopPropagation();excluir('projetos','${p.id}')"><i class="ti ti-trash"></i></button></div></td>
+    </tr>`;
+  }).join('')}</tbody></table>`;
+}
+
+function renderSetores(){
+  const el=document.getElementById('table-setores');
+  if(!DB.setores.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">🏗️</div><div class="empty-title">Nenhum setor cadastrado</div><div class="empty-desc">Ex.: Tecnologia, Comercial, Design...</div><button class="btn btn-primary btn-sm" onclick="abrirModal()"><i class="ti ti-plus"></i> Cadastrar</button></div>`;return}
+  el.innerHTML=`<table><thead><tr><th>Setor</th><th>Descrição</th><th>Profissionais</th><th></th></tr></thead><tbody>${DB.setores.map(s=>`
+    <tr><td class="td-primary">${s.nome}</td><td class="td-muted">${s.desc||'—'}</td>
+    <td><span class="badge badge-blue">${DB.profissionais.filter(p=>p.setor===s.nome).length}</span></td>
+    <td><div class="row-actions"><button class="icon-btn danger" onclick="excluir('setores','${s.id}')"><i class="ti ti-trash"></i></button></div></td></tr>`).join('')}</tbody></table>`;
+}
+
+function renderFuncoes(){
+  const el=document.getElementById('table-funcoes');
+  if(!DB.funcoes.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">🎯</div><div class="empty-title">Nenhuma função cadastrada</div><div class="empty-desc">Ex.: Dev Backend, QA, Designer, GP...</div><button class="btn btn-primary btn-sm" onclick="abrirModal()"><i class="ti ti-plus"></i> Cadastrar</button></div>`;return}
+  el.innerHTML=`<table><thead><tr><th>Função</th><th>Descrição</th><th>Profissionais</th><th></th></tr></thead><tbody>${DB.funcoes.map(f=>`
+    <tr><td class="td-primary">${f.nome}</td><td class="td-muted">${f.desc||'—'}</td>
+    <td><span class="badge badge-purple">${DB.profissionais.filter(p=>p.funcao===f.nome).length}</span></td>
+    <td><div class="row-actions"><button class="icon-btn danger" onclick="excluir('funcoes','${f.id}')"><i class="ti ti-trash"></i></button></div></td></tr>`).join('')}</tbody></table>`;
+}
+
+function renderVinculos(){
+  const el=document.getElementById('table-vinculos');
+  if(!DB.vinculos.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">🔗</div><div class="empty-title">Nenhum vínculo cadastrado</div><div class="empty-desc">Vincule profissionais a projetos</div><button class="btn btn-primary btn-sm" onclick="abrirModal()"><i class="ti ti-plus"></i> Criar vínculo</button></div>`;return}
+  el.innerHTML=`<table><thead><tr><th>Profissional</th><th>Projeto</th><th>Função</th><th>Início</th><th>Saída</th><th>Status</th><th></th></tr></thead><tbody>${DB.vinculos.map(v=>{
+    const p=DB.profissionais.find(x=>x.id===v.profId);
+    const pr=DB.projetos.find(x=>x.id===v.projetoId);
+    return`<tr><td class="td-primary">${p?p.nome:v.profId}</td><td class="td-muted">${pr?pr.nome:v.projetoId}</td><td class="td-muted">${v.funcao||'—'}</td>
+    <td class="td-muted">${v.inicio?new Date(v.inicio+'T12:00:00').toLocaleDateString('pt-BR'):'—'}</td>
+    <td class="td-muted">${v.fim?new Date(v.fim+'T12:00:00').toLocaleDateString('pt-BR'):'—'}</td>
+    <td><span class="badge ${v.ativo!==false?'badge-green':'badge-gray'}"><span class="badge-dot"></span>${v.ativo!==false?'Ativo':'Encerrado'}</span></td>
+    <td><div class="row-actions"><button class="icon-btn danger" onclick="excluir('vinculos','${v.id}')"><i class="ti ti-trash"></i></button></div></td></tr>`;
+  }).join('')}</tbody></table>`;
+}
+
+function abrirModal(){
+  editId=null;fotoB64='';
+  if(secao==='profissionais'){limparProf();popSelectsProf();document.getElementById('modal-prof-title').textContent='Novo Profissional';document.getElementById('modal-profissional').classList.add('open')}
+  else if(secao==='clientes'){limparCli();document.getElementById('modal-cli-title').textContent='Novo Cliente';document.getElementById('modal-cliente').classList.add('open')}
+  else if(secao==='projetos'){limparProj();popSelectsProj();document.getElementById('modal-proj-title').textContent='Novo Projeto';document.getElementById('modal-projeto').classList.add('open')}
+  else if(secao==='setores'){simplCtx='setores';document.getElementById('modal-simples-title').textContent='Novo Setor';document.getElementById('simples-nome').value='';document.getElementById('simples-desc').value='';document.getElementById('modal-simples').classList.add('open')}
+  else if(secao==='funcoes'){simplCtx='funcoes';document.getElementById('modal-simples-title').textContent='Nova Função';document.getElementById('simples-nome').value='';document.getElementById('simples-desc').value='';document.getElementById('modal-simples').classList.add('open')}
+  else if(secao==='vinculos'){limparVinc();popSelectsVinc();document.getElementById('modal-vinculo').classList.add('open')}
+}
+
+function fecharModal(id){document.getElementById('modal-'+id).classList.remove('open');editId=null}
+
+function salvarProfissional(){
+  const nome=document.getElementById('prof-nome').value.trim();
+  if(!nome){alert('Nome é obrigatório');return}
+  const obj={id:editId||uid(),nome,email:V('prof-email'),telefone:V('prof-telefone'),nascimento:V('prof-nascimento'),regime:V('prof-regime'),funcao:V('prof-funcao'),setor:V('prof-setor'),projetoPrincipal:V('prof-projeto'),admissao:V('prof-admissao'),demissao:V('prof-demissao'),ativo:document.getElementById('prof-ativo').checked,obs:V('prof-obs'),foto:fotoB64||(editId?(DB.profissionais.find(p=>p.id===editId)||{}).foto:''),criadoEm:editId?(DB.profissionais.find(p=>p.id===editId)||{}).criadoEm:new Date().toISOString()};
+  if(editId){const i=DB.profissionais.findIndex(p=>p.id===editId);if(i>=0)DB.profissionais[i]=obj}else DB.profissionais.push(obj);
+  salvarDB('profissionais');fecharModal('profissional');renderProfissionais();atualizarContadores();
+}
+
+function salvarCliente(){
+  const nome=document.getElementById('cli-nome').value.trim();
+  if(!nome){alert('Nome é obrigatório');return}
+  const obj={id:editId||uid(),nome,cnpj:V('cli-cnpj'),segmento:V('cli-segmento'),contato:V('cli-contato'),email:V('cli-email'),telefone:V('cli-telefone'),obs:V('cli-obs'),ativo:document.getElementById('cli-ativo').checked,criadoEm:editId?(DB.clientes.find(c=>c.id===editId)||{}).criadoEm:new Date().toISOString()};
+  if(editId){const i=DB.clientes.findIndex(c=>c.id===editId);if(i>=0)DB.clientes[i]=obj}else DB.clientes.push(obj);
+  salvarDB('clientes');fecharModal('cliente');renderClientes();atualizarContadores();
+}
+
+function salvarProjeto(){
+  const nome=document.getElementById('proj-nome').value.trim();
+  if(!nome){alert('Nome é obrigatório');return}
+  const obj={id:editId||uid(),nome,clienteId:V('proj-cliente'),status:V('proj-status'),tipo:V('proj-tipo'),inicio:V('proj-inicio'),fim:V('proj-fim'),valor:parseFloat(V('proj-valor'))||0,gp:V('proj-gp'),desc:V('proj-desc'),criadoEm:editId?(DB.projetos.find(p=>p.id===editId)||{}).criadoEm:new Date().toISOString()};
+  if(editId){const i=DB.projetos.findIndex(p=>p.id===editId);if(i>=0)DB.projetos[i]=obj}else DB.projetos.push(obj);
+  salvarDB('projetos');fecharModal('projeto');renderProjetos();atualizarContadores();
+}
+
+function salvarSimples(){
+  const nome=document.getElementById('simples-nome').value.trim();
+  if(!nome){alert('Nome é obrigatório');return}
+  DB[simplCtx].push({id:uid(),nome,desc:V('simples-desc')});
+  salvarDB(simplCtx);fecharModal('simples');renderSecao(simplCtx);atualizarContadores();
+}
+
+function salvarVinculo(){
+  const pId=V('vinc-prof'),prId=V('vinc-proj');
+  if(!pId||!prId){alert('Profissional e Projeto são obrigatórios');return}
+  DB.vinculos.push({id:uid(),profId:pId,projetoId:prId,funcao:V('vinc-func'),inicio:V('vinc-inicio'),fim:V('vinc-fim'),ativo:document.getElementById('vinc-ativo').checked});
+  salvarDB('vinculos');fecharModal('vinculo');renderVinculos();atualizarContadores();
+}
+
+function editarProfissional(id){
+  const p=DB.profissionais.find(x=>x.id===id);if(!p)return;
+  editId=id;popSelectsProf();
+  document.getElementById('modal-prof-title').textContent='Editar Profissional';
+  ['nome','email','telefone','nascimento','regime','funcao','setor','admissao','demissao','obs'].forEach(f=>setV('prof-'+f,p[f]||''));
+  document.getElementById('prof-projeto').value=p.projetoPrincipal||'';
+  document.getElementById('prof-ativo').checked=p.ativo!==false;
+  const fp=document.getElementById('foto-preview');fp.innerHTML=p.foto?`<img src="${p.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` :'👤';
+  document.getElementById('modal-profissional').classList.add('open');
+}
+
+function editarCliente(id){
+  const c=DB.clientes.find(x=>x.id===id);if(!c)return;
+  editId=id;document.getElementById('modal-cli-title').textContent='Editar Cliente';
+  ['nome','cnpj','segmento','contato','email','telefone','obs'].forEach(f=>setV('cli-'+f,c[f]||''));
+  document.getElementById('cli-ativo').checked=c.ativo!==false;
+  document.getElementById('modal-cliente').classList.add('open');
+}
+
+function editarProjeto(id){
+  const p=DB.projetos.find(x=>x.id===id);if(!p)return;
+  editId=id;popSelectsProj();document.getElementById('modal-proj-title').textContent='Editar Projeto';
+  setV('proj-nome',p.nome||'');document.getElementById('proj-cliente').value=p.clienteId||'';document.getElementById('proj-status').value=p.status||'ativo';document.getElementById('proj-tipo').value=p.tipo||'alocacao';
+  setV('proj-inicio',p.inicio||'');setV('proj-fim',p.fim||'');setV('proj-valor',p.valor||'');document.getElementById('proj-gp').value=p.gp||'';setV('proj-desc',p.desc||'');
+  document.getElementById('modal-projeto').classList.add('open');
+}
+
+function excluir(k,id){if(!confirm('Confirmar exclusão?'))return;DB[k]=DB[k].filter(x=>x.id!==id);salvarDB(k);renderSecao(secao);atualizarContadores()}
+
+function setFilter(s,v,el){filtros[s]=v;el.closest('.filter-tabs').querySelectorAll('.filter-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderSecao(s)}
+
+function filtrarTabela(){const q=document.getElementById('search-input').value;if(secao==='profissionais')renderProfissionais(q);if(secao==='clientes')renderClientes(q);if(secao==='projetos')renderProjetos(q)}
+
+function popSelectsProf(){
+  document.getElementById('prof-funcao').innerHTML='<option value="">Selecionar...</option>'+DB.funcoes.map(f=>`<option value="${f.nome}">${f.nome}</option>`).join('');
+  document.getElementById('prof-setor').innerHTML='<option value="">Selecionar...</option>'+DB.setores.map(s=>`<option value="${s.nome}">${s.nome}</option>`).join('');
+  document.getElementById('prof-projeto').innerHTML='<option value="">Sem projeto principal</option>'+DB.projetos.filter(p=>p.status==='ativo').map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
+}
+function popSelectsProj(){
+  document.getElementById('proj-cliente').innerHTML='<option value="">Interno (sem cliente)</option>'+DB.clientes.filter(c=>c.ativo!==false).map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+  document.getElementById('proj-gp').innerHTML='<option value="">Selecionar...</option>'+DB.profissionais.filter(p=>p.ativo!==false).map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
+}
+function popSelectsVinc(){
+  document.getElementById('vinc-prof').innerHTML='<option value="">Selecionar...</option>'+DB.profissionais.filter(p=>p.ativo!==false).map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
+  document.getElementById('vinc-proj').innerHTML='<option value="">Selecionar...</option>'+DB.projetos.filter(p=>p.status==='ativo').map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
+  document.getElementById('vinc-func').innerHTML='<option value="">Selecionar...</option>'+DB.funcoes.map(f=>`<option value="${f.nome}">${f.nome}</option>`).join('');
+}
+
+function V(id){const e=document.getElementById(id);return e?e.value.trim():''}
+function setV(id,v){const e=document.getElementById(id);if(e)e.value=v}
+
+function limparProf(){['prof-nome','prof-email','prof-telefone','prof-nascimento','prof-regime','prof-funcao','prof-setor','prof-projeto','prof-admissao','prof-demissao','prof-obs'].forEach(id=>setV(id,''));document.getElementById('prof-ativo').checked=true;document.getElementById('foto-preview').innerHTML='👤';fotoB64=''}
+function limparCli(){['cli-nome','cli-cnpj','cli-segmento','cli-contato','cli-email','cli-telefone','cli-obs'].forEach(id=>setV(id,''));document.getElementById('cli-ativo').checked=true}
+function limparProj(){['proj-nome','proj-inicio','proj-fim','proj-valor','proj-desc'].forEach(id=>setV(id,''));document.getElementById('proj-status').value='ativo';document.getElementById('proj-tipo').value='alocacao'}
+function limparVinc(){['vinc-inicio','vinc-fim'].forEach(id=>setV(id,''));document.getElementById('vinc-ativo').checked=true}
+
+function previewFoto(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{fotoB64=e.target.result;document.getElementById('foto-preview').innerHTML=`<img src="${fotoB64}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`};r.readAsDataURL(f)}
+
+function importarCSV(input,tipo){
+  const f=input.files[0];if(!f)return;
+  const r=new FileReader();r.onload=e=>{
+    const linhas=e.target.result.split('\n').map(l=>l.trim()).filter(l=>l);
+    if(linhas.length<2){alert('Arquivo vazio');return}
+    const headers=linhas[0].split(',').map(h=>h.trim().toLowerCase().replace(/[^a-z_]/g,''));
+    let n=0;
+    for(let i=1;i<linhas.length;i++){
+      const vals=linhas[i].split(',').map(v=>v.trim().replace(/^"|"$/g,''));
+      const obj={id:uid(),ativo:true,criadoEm:new Date().toISOString()};
+      headers.forEach((h,idx)=>{if(vals[idx])obj[h]=vals[idx]});
+      if(!obj.nome)continue;
+      DB[tipo].push(obj);n++;
+    }
+    salvarDB(tipo);renderSecao(tipo);atualizarContadores();
+    alert(`✅ ${n} registros importados!`);
+  };r.readAsText(f);
+}
+
+function exportarJSON(){
+  const b=new Blob([JSON.stringify({exportadoEm:new Date().toISOString(),...DB},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`bravi-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();
+}
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal-backdrop.open').forEach(m=>m.classList.remove('open'))});
+document.querySelectorAll('.modal-backdrop').forEach(b=>b.addEventListener('click',e=>{if(e.target===b)b.classList.remove('open')}));
+
+init();
+</script>
+</body>
+</html>
