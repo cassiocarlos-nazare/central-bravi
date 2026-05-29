@@ -5,9 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cadastro Geral — Central Bravi</title>
 <link rel="stylesheet" href="bravi-ds.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
 <style>
-.row-actions{display:flex;gap:4px;opacity:0;transition:opacity .1s}
-tbody tr:hover .row-actions{opacity:1}
+/* Quick-add inline */
+.qa-wrap { display:flex; gap:6px; align-items:center; }
+.qa-wrap select { flex:1; }
+.qa-btn { width:30px; height:30px; border-radius:var(--radius-md); border:1px solid var(--bravi-purple-border); background:var(--bravi-purple-dim); color:var(--bravi-purple); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; flex-shrink:0; transition:all .15s; }
+.qa-btn:hover { background:var(--bravi-purple); color:#fff; }
+.qa-box { display:none; margin-top:6px; background:var(--surface-2); border:1px solid var(--bravi-purple-border); border-radius:var(--radius-md); padding:10px 12px; }
+.qa-box.open { display:block; animation:fadeUp .15s ease; }
+.qa-box-row { display:flex; gap:6px; align-items:center; }
+.qa-box input { flex:1; background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius-md); padding:6px 10px; font-size:12px; font-family:var(--font-body); color:var(--text-primary); outline:none; }
+.qa-box input:focus { border-color:var(--bravi-purple); }
+.qa-box input::placeholder { color:var(--text-dim); }
+.qa-hint { font-size:10px; color:var(--bravi-purple); font-family:var(--font-display); font-weight:600; margin-bottom:6px; }
 </style>
 </head>
 <body>
@@ -16,10 +27,12 @@ tbody tr:hover .row-actions{opacity:1}
 <!-- SIDEBAR -->
 <nav class="sidebar">
   <div class="sidebar-logo">
-    <div class="sidebar-logo-row">
-      <div class="s-mark">B</div>
-      <div><div class="s-name">Central <em>Bravi</em></div><div class="s-page">Cadastro Geral</div></div>
-    </div>
+    <a href="index.html" style="text-decoration:none">
+      <div class="sidebar-logo-row">
+        <div class="s-mark">B</div>
+        <div><div class="s-name">Central <em>Bravi</em></div><div class="s-page">Cadastro Geral</div></div>
+      </div>
+    </a>
   </div>
   <div class="sidebar-nav">
     <div class="nav-group">Registros</div>
@@ -41,8 +54,6 @@ tbody tr:hover .row-actions{opacity:1}
 
 <!-- MAIN -->
 <div class="main">
-
-  <!-- TOPBAR -->
   <div class="topbar">
     <div class="topbar-left">
       <span class="topbar-title" id="topbar-title">Profissionais</span>
@@ -56,7 +67,6 @@ tbody tr:hover .row-actions{opacity:1}
     </div>
   </div>
 
-  <!-- CONTENT -->
   <div class="content">
 
     <!-- PROFISSIONAIS -->
@@ -127,7 +137,7 @@ tbody tr:hover .row-actions{opacity:1}
     <div class="section-panel" id="panel-importar">
       <div style="margin-bottom:20px">
         <div style="font-family:var(--font-display);font-size:18px;font-weight:800;color:var(--text-primary);margin-bottom:4px">Importar dados</div>
-        <div style="font-size:13px;color:var(--text-muted)">Importe profissionais, clientes ou projetos via XLSX ou CSV</div>
+        <div style="font-size:13px;color:var(--text-muted)">Importe profissionais, clientes ou projetos via CSV</div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:760px">
         <div class="import-area" onclick="document.getElementById('imp-prof').click()">
@@ -164,11 +174,11 @@ tbody tr:hover .row-actions{opacity:1}
       </div>
     </div>
 
-  </div><!-- /content -->
-</div><!-- /main -->
-</div><!-- /app -->
+  </div>
+</div>
+</div>
 
-<!-- MODAL PROFISSIONAL -->
+<!-- ══ MODAL PROFISSIONAL ══ -->
 <div class="modal-backdrop" id="modal-profissional">
   <div class="modal">
     <div class="modal-header">
@@ -176,6 +186,8 @@ tbody tr:hover .row-actions{opacity:1}
       <button class="modal-close" onclick="fecharModal('profissional')"><i class="ti ti-x"></i></button>
     </div>
     <div class="modal-body">
+
+      <!-- Foto -->
       <div class="form-section">
         <div class="form-section-title">Foto</div>
         <div class="photo-upload">
@@ -184,36 +196,124 @@ tbody tr:hover .row-actions{opacity:1}
           <input type="file" id="foto-input" accept="image/*" style="display:none" onchange="previewFoto(this)">
         </div>
       </div>
+
+      <!-- Dados pessoais -->
       <div class="form-section">
         <div class="form-section-title">Dados pessoais</div>
         <div class="form-grid">
-          <div class="form-group full"><label class="form-label">Nome completo <span class="req">*</span></label><input type="text" class="form-input" id="prof-nome" placeholder="Ex.: João Silva"></div>
-          <div class="form-group"><label class="form-label">E-mail <span class="req">*</span></label><input type="email" class="form-input" id="prof-email" placeholder="joao@bravi.com.br"></div>
-          <div class="form-group"><label class="form-label">Telefone</label><input type="text" class="form-input" id="prof-telefone" placeholder="(11) 99999-9999"></div>
-          <div class="form-group"><label class="form-label">Data de nascimento</label><input type="date" class="form-input" id="prof-nascimento"></div>
-          <div class="form-group"><label class="form-label">Regime</label>
-            <select class="form-select" id="prof-regime"><option value="">Selecionar...</option><option value="clt">CLT</option><option value="pj">PJ</option><option value="estagio">Estágio</option><option value="freelancer">Freelancer</option></select>
+          <div class="form-group full">
+            <label class="form-label">Nome completo <span class="req">*</span></label>
+            <input type="text" class="form-input" id="prof-nome" placeholder="Ex.: João Silva">
+          </div>
+          <div class="form-group">
+            <label class="form-label">E-mail <span class="req">*</span></label>
+            <input type="email" class="form-input" id="prof-email" placeholder="joao@bravi.com.br">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Telefone</label>
+            <input type="text" class="form-input" id="prof-telefone" placeholder="(11) 99999-9999">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Data de nascimento</label>
+            <input type="date" class="form-input" id="prof-nascimento">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Regime</label>
+            <select class="form-select" id="prof-regime">
+              <option value="">Selecionar...</option>
+              <option value="clt">CLT</option>
+              <option value="pj">PJ</option>
+              <option value="estagio">Estágio</option>
+              <option value="freelancer">Freelancer</option>
+            </select>
           </div>
         </div>
       </div>
+
+      <!-- Posição na Bravi -->
       <div class="form-section">
         <div class="form-section-title">Posição na Bravi</div>
         <div class="form-grid">
-          <div class="form-group"><label class="form-label">Função <span class="req">*</span></label><select class="form-select" id="prof-funcao"><option value="">Selecionar...</option></select></div>
-          <div class="form-group"><label class="form-label">Setor</label><select class="form-select" id="prof-setor"><option value="">Selecionar...</option></select></div>
-          <div class="form-group"><label class="form-label">Projeto principal</label><select class="form-select" id="prof-projeto"><option value="">Sem projeto principal</option></select></div>
-          <div class="form-group"><label class="form-label">Data de admissão <span class="req">*</span></label><input type="date" class="form-input" id="prof-admissao"></div>
-          <div class="form-group"><label class="form-label">Data de demissão</label><input type="date" class="form-input" id="prof-demissao"></div>
+
+          <!-- FUNÇÃO com quick-add -->
+          <div class="form-group">
+            <label class="form-label">Função <span class="req">*</span></label>
+            <div class="qa-wrap">
+              <select class="form-select" id="prof-funcao"><option value="">Selecionar...</option></select>
+              <button type="button" class="qa-btn" onclick="toggleQA('qa-funcoes')" title="Cadastrar nova função">+</button>
+            </div>
+            <div class="qa-box" id="qa-funcoes">
+              <div class="qa-hint">Nova função</div>
+              <div class="qa-box-row">
+                <input type="text" id="qa-funcoes-input" placeholder="Ex.: Dev Backend, QA, Designer..." onkeydown="if(event.key==='Enter')salvarQA('funcoes','prof-funcao')">
+                <button class="btn btn-primary btn-sm" onclick="salvarQA('funcoes','prof-funcao')"><i class="ti ti-check"></i></button>
+                <button class="btn btn-ghost btn-sm" onclick="fecharQA('qa-funcoes')">✕</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- SETOR com quick-add -->
+          <div class="form-group">
+            <label class="form-label">Setor</label>
+            <div class="qa-wrap">
+              <select class="form-select" id="prof-setor"><option value="">Selecionar...</option></select>
+              <button type="button" class="qa-btn" onclick="toggleQA('qa-setores')" title="Cadastrar novo setor">+</button>
+            </div>
+            <div class="qa-box" id="qa-setores">
+              <div class="qa-hint">Novo setor</div>
+              <div class="qa-box-row">
+                <input type="text" id="qa-setores-input" placeholder="Ex.: Tecnologia, Comercial..." onkeydown="if(event.key==='Enter')salvarQA('setores','prof-setor')">
+                <button class="btn btn-primary btn-sm" onclick="salvarQA('setores','prof-setor')"><i class="ti ti-check"></i></button>
+                <button class="btn btn-ghost btn-sm" onclick="fecharQA('qa-setores')">✕</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- PROJETO PRINCIPAL com quick-add -->
+          <div class="form-group">
+            <label class="form-label">Projeto principal</label>
+            <div class="qa-wrap">
+              <select class="form-select" id="prof-projeto"><option value="">Sem projeto principal</option></select>
+              <button type="button" class="qa-btn" onclick="toggleQA('qa-projetos')" title="Cadastrar novo projeto">+</button>
+            </div>
+            <div class="qa-box" id="qa-projetos">
+              <div class="qa-hint">Novo projeto</div>
+              <div class="qa-box-row">
+                <input type="text" id="qa-projetos-input" placeholder="Nome do projeto..." onkeydown="if(event.key==='Enter')salvarQA('projetos','prof-projeto')">
+                <button class="btn btn-primary btn-sm" onclick="salvarQA('projetos','prof-projeto')"><i class="ti ti-check"></i></button>
+                <button class="btn btn-ghost btn-sm" onclick="fecharQA('qa-projetos')">✕</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Data de admissão <span class="req">*</span></label>
+            <input type="date" class="form-input" id="prof-admissao">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Data de demissão</label>
+            <input type="date" class="form-input" id="prof-demissao">
+          </div>
         </div>
       </div>
+
+      <!-- Status -->
       <div class="form-section">
         <div class="form-section-title">Status</div>
-        <div class="toggle-row"><span class="toggle-label">Profissional ativo</span><label class="toggle"><input type="checkbox" id="prof-ativo" checked><span class="toggle-slider"></span></label></div>
+        <div class="toggle-row">
+          <span class="toggle-label">Profissional ativo</span>
+          <label class="toggle"><input type="checkbox" id="prof-ativo" checked><span class="toggle-slider"></span></label>
+        </div>
       </div>
+
+      <!-- Observações -->
       <div class="form-section">
         <div class="form-section-title">Observações</div>
-        <div class="form-group"><textarea class="form-textarea" id="prof-obs" placeholder="Anotações livres sobre o profissional..."></textarea></div>
+        <div class="form-group">
+          <textarea class="form-textarea" id="prof-obs" placeholder="Anotações livres sobre o profissional..."></textarea>
+        </div>
       </div>
+
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost btn-sm" onclick="fecharModal('profissional')">Cancelar</button>
@@ -275,7 +375,7 @@ tbody tr:hover .row-actions{opacity:1}
   </div>
 </div>
 
-<!-- MODAL SIMPLES (setor / função) -->
+<!-- MODAL SIMPLES -->
 <div class="modal-backdrop" id="modal-simples">
   <div class="modal" style="max-width:380px">
     <div class="modal-header">
@@ -283,7 +383,7 @@ tbody tr:hover .row-actions{opacity:1}
       <button class="modal-close" onclick="fecharModal('simples')"><i class="ti ti-x"></i></button>
     </div>
     <div class="modal-body">
-      <div class="form-group"><label class="form-label">Nome <span class="req">*</span></label><input type="text" class="form-input" id="simples-nome" placeholder=""></div>
+      <div class="form-group"><label class="form-label">Nome <span class="req">*</span></label><input type="text" class="form-input" id="simples-nome"></div>
       <div class="form-group" style="margin-top:12px"><label class="form-label">Descrição</label><textarea class="form-textarea" id="simples-desc" placeholder="Opcional..."></textarea></div>
     </div>
     <div class="modal-footer">
@@ -317,7 +417,6 @@ tbody tr:hover .row-actions{opacity:1}
   </div>
 </div>
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
 <script>
 const DB={profissionais:[],clientes:[],projetos:[],setores:[],funcoes:[],vinculos:[]};
 let secao='profissionais',filtros={profissionais:'todos',clientes:'todos',projetos:'todos'},editId=null,simplCtx='',fotoB64='';
@@ -328,10 +427,53 @@ function init(){
   });
   renderTudo();atualizarContadores();
 }
-
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
 function salvarDB(k){localStorage.setItem('bravi_'+k,JSON.stringify(DB[k]))}
+function V(id){const e=document.getElementById(id);return e?e.value.trim():''}
+function setV(id,v){const e=document.getElementById(id);if(e)e.value=v}
 
+// ── QUICK-ADD ──
+function toggleQA(id){
+  const box=document.getElementById(id);
+  const isOpen=box.classList.contains('open');
+  // fecha todos
+  document.querySelectorAll('.qa-box').forEach(b=>b.classList.remove('open'));
+  if(!isOpen){box.classList.add('open');const inp=document.getElementById(id+'-input');if(inp)inp.focus();}
+}
+function fecharQA(id){document.getElementById(id)?.classList.remove('open')}
+
+function salvarQA(chave,selectId){
+  const inputId='qa-'+chave+'-input';
+  const nome=document.getElementById(inputId)?.value.trim();
+  if(!nome){alert('Informe um nome');return}
+
+  let novoId=uid();
+
+  if(chave==='projetos'){
+    // projeto simples — status ativo, tipo alocação
+    DB.projetos.push({id:novoId,nome,status:'ativo',tipo:'alocacao',criadoEm:new Date().toISOString()});
+    salvarDB('projetos');
+    // repopula select de projetos
+    const sel=document.getElementById(selectId);
+    const opt=document.createElement('option');
+    opt.value=novoId;opt.textContent=nome;
+    sel.appendChild(opt);sel.value=novoId;
+  } else {
+    DB[chave].push({id:novoId,nome});
+    salvarDB(chave);
+    // repopula select
+    const sel=document.getElementById(selectId);
+    const opt=document.createElement('option');
+    opt.value=nome;opt.textContent=nome;
+    sel.appendChild(opt);sel.value=nome;
+  }
+
+  document.getElementById(inputId).value='';
+  fecharQA('qa-'+chave);
+  atualizarContadores();
+}
+
+// ── NAVEGAÇÃO ──
 function showSection(sec,el){
   secao=sec;
   document.querySelectorAll('.section-panel').forEach(p=>p.classList.remove('active'));
@@ -362,17 +504,18 @@ function atualizarContadores(){
   document.getElementById('cnt-set').textContent=DB.setores.length;
   document.getElementById('cnt-func').textContent=DB.funcoes.length;
   document.getElementById('cnt-vinc').textContent=DB.vinculos.length;
-  const ativos=DB.profissionais.filter(p=>p.ativo!==false).length;
-  const inativos=DB.profissionais.filter(p=>p.ativo===false).length;
+  const at=DB.profissionais.filter(p=>p.ativo!==false).length;
+  const in_=DB.profissionais.filter(p=>p.ativo===false).length;
   document.getElementById('s-total').textContent=DB.profissionais.length;
-  document.getElementById('s-ativos').textContent=ativos;
-  document.getElementById('s-inativos').textContent=inativos;
+  document.getElementById('s-ativos').textContent=at;
+  document.getElementById('s-inativos').textContent=in_;
   const adm=DB.profissionais.filter(p=>p.ativo!==false&&p.admissao).map(p=>Math.floor((Date.now()-new Date(p.admissao))/(1000*60*60*24*30.5)));
   if(adm.length>0){const m=Math.floor(adm.reduce((a,b)=>a+b,0)/adm.length);document.getElementById('s-media').textContent=m>=12?`${Math.floor(m/12)}a ${m%12}m`:`${m}m`;}
 }
 
-function iniciais(nome){return nome?nome.split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase():'??'}
+function iniciais(n){return n?n.split(' ').slice(0,2).map(x=>x[0]).join('').toUpperCase():'??'}
 
+// ── RENDERS ──
 function renderProfissionais(q=''){
   const f=filtros.profissionais;
   let d=DB.profissionais.filter(p=>{
@@ -382,7 +525,7 @@ function renderProfissionais(q=''){
     return true;
   });
   const el=document.getElementById('table-profissionais');
-  if(!d.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">👤</div><div class="empty-title">Nenhum profissional encontrado</div><div class="empty-desc">Clique em "Novo" ou importe um arquivo CSV</div><button class="btn btn-primary btn-sm" onclick="abrirModal()"><i class="ti ti-plus"></i> Cadastrar</button></div>`;return}
+  if(!d.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">👤</div><div class="empty-title">Nenhum profissional encontrado</div><div class="empty-desc">Clique em "Novo" ou importe um CSV</div><button class="btn btn-primary btn-sm" onclick="abrirModal()"><i class="ti ti-plus"></i> Cadastrar</button></div>`;return}
   el.innerHTML=`<table><thead><tr><th>Nome</th><th>Função</th><th>Setor</th><th>Projeto</th><th>Admissão</th><th>Tempo</th><th>Status</th><th></th></tr></thead><tbody>${d.map(p=>{
     const m=p.admissao?Math.floor((Date.now()-new Date(p.admissao))/(1000*60*60*24*30.5)):0;
     const t=m>=12?`${Math.floor(m/12)}a ${m%12}m`:`${m}m`;
@@ -396,7 +539,7 @@ function renderProfissionais(q=''){
       <td class="td-muted">${p.admissao?new Date(p.admissao+'T12:00:00').toLocaleDateString('pt-BR'):'—'}</td>
       <td><div class="tenure-bar"><div class="tenure-track"><div class="tenure-fill" style="width:${pct}%"></div></div><span class="td-muted" style="font-size:11px">${t}</span></div></td>
       <td><span class="badge ${p.ativo!==false?'badge-green':'badge-red'}"><span class="badge-dot"></span>${p.ativo!==false?'Ativo':'Inativo'}</span></td>
-      <td><div class="row-actions"><button class="icon-btn" onclick="event.stopPropagation();editarProfissional('${p.id}')" title="Editar"><i class="ti ti-edit"></i></button><button class="icon-btn danger" onclick="event.stopPropagation();excluir('profissionais','${p.id}')" title="Excluir"><i class="ti ti-trash"></i></button></div></td>
+      <td><div class="row-actions"><button class="icon-btn" onclick="event.stopPropagation();editarProfissional('${p.id}')"><i class="ti ti-edit"></i></button><button class="icon-btn danger" onclick="event.stopPropagation();excluir('profissionais','${p.id}')"><i class="ti ti-trash"></i></button></div></td>
     </tr>`;
   }).join('')}</tbody></table>`;
 }
@@ -410,15 +553,14 @@ function renderClientes(q=''){
     return true;
   });
   const el=document.getElementById('table-clientes');
-  if(!d.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">🏢</div><div class="empty-title">Nenhum cliente encontrado</div><div class="empty-desc">Clique em "Novo" para adicionar</div><button class="btn btn-primary btn-sm" onclick="abrirModal()"><i class="ti ti-plus"></i> Cadastrar</button></div>`;return}
-  const projPorCli=(id)=>DB.projetos.filter(p=>p.clienteId===id&&p.status==='ativo').length;
+  if(!d.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">🏢</div><div class="empty-title">Nenhum cliente encontrado</div><div class="empty-desc">Clique em "Novo"</div><button class="btn btn-primary btn-sm" onclick="abrirModal()"><i class="ti ti-plus"></i> Cadastrar</button></div>`;return}
   el.innerHTML=`<table><thead><tr><th>Empresa</th><th>CNPJ</th><th>Contato</th><th>Segmento</th><th>Projetos ativos</th><th>Status</th><th></th></tr></thead><tbody>${d.map(c=>`
     <tr onclick="editarCliente('${c.id}')">
       <td class="td-primary">${c.nome}</td>
       <td class="td-muted">${c.cnpj||'—'}</td>
-      <td><div class="td-primary" style="font-size:13px">${c.contato||'—'}</div><div class="td-muted" style="font-size:11px">${c.email||''}</div></td>
+      <td><div class="td-primary">${c.contato||'—'}</div><div class="td-muted" style="font-size:11px">${c.email||''}</div></td>
       <td class="td-muted">${c.segmento||'—'}</td>
-      <td><span class="badge badge-blue"><span class="badge-dot"></span>${projPorCli(c.id)}</span></td>
+      <td><span class="badge badge-blue"><span class="badge-dot"></span>${DB.projetos.filter(p=>p.clienteId===c.id&&p.status==='ativo').length}</span></td>
       <td><span class="badge ${c.ativo!==false?'badge-green':'badge-red'}"><span class="badge-dot"></span>${c.ativo!==false?'Ativo':'Inativo'}</span></td>
       <td><div class="row-actions"><button class="icon-btn" onclick="event.stopPropagation();editarCliente('${c.id}')"><i class="ti ti-edit"></i></button><button class="icon-btn danger" onclick="event.stopPropagation();excluir('clientes','${c.id}')"><i class="ti ti-trash"></i></button></div></td>
     </tr>`).join('')}</tbody></table>`;
@@ -432,19 +574,19 @@ function renderProjetos(q=''){
     return true;
   });
   const el=document.getElementById('table-projetos');
-  if(!d.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">📁</div><div class="empty-title">Nenhum projeto encontrado</div><div class="empty-desc">Clique em "Novo" para adicionar</div><button class="btn btn-primary btn-sm" onclick="abrirModal()"><i class="ti ti-plus"></i> Cadastrar</button></div>`;return}
+  if(!d.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">📁</div><div class="empty-title">Nenhum projeto encontrado</div><div class="empty-desc">Clique em "Novo"</div><button class="btn btn-primary btn-sm" onclick="abrirModal()"><i class="ti ti-plus"></i> Cadastrar</button></div>`;return}
   const sBadge={ativo:'badge-green',prospect:'badge-amber',arquivado:'badge-gray'};
   const tBadge={alocacao:'badge-purple',escopo:'badge-blue',interno:'badge-teal'};
   const tLabel={alocacao:'Alocação',escopo:'Escopo',interno:'Interno'};
   el.innerHTML=`<table><thead><tr><th>Projeto</th><th>Cliente</th><th>Tipo</th><th>Início</th><th>Equipe</th><th>Status</th><th></th></tr></thead><tbody>${d.map(p=>{
     const cli=DB.clientes.find(c=>c.id===p.clienteId);
-    const equipe=DB.vinculos.filter(v=>v.projetoId===p.id&&v.ativo!==false).length;
+    const eq=DB.vinculos.filter(v=>v.projetoId===p.id&&v.ativo!==false).length;
     return`<tr onclick="editarProjeto('${p.id}')">
       <td><div class="td-primary">${p.nome}</div>${p.desc?`<div class="td-muted" style="font-size:11px">${p.desc.substring(0,50)}...</div>`:''}</td>
       <td class="td-muted">${cli?cli.nome:'Interno'}</td>
       <td><span class="badge ${tBadge[p.tipo]||'badge-gray'}">${tLabel[p.tipo]||p.tipo||'—'}</span></td>
       <td class="td-muted">${p.inicio?new Date(p.inicio+'T12:00:00').toLocaleDateString('pt-BR'):'—'}</td>
-      <td><span class="badge badge-teal"><span class="badge-dot"></span>${equipe} pessoa${equipe!==1?'s':''}</span></td>
+      <td><span class="badge badge-teal"><span class="badge-dot"></span>${eq} pessoa${eq!==1?'s':''}</span></td>
       <td><span class="badge ${sBadge[p.status]||'badge-gray'}"><span class="badge-dot"></span>${p.status}</span></td>
       <td><div class="row-actions"><button class="icon-btn" onclick="event.stopPropagation();editarProjeto('${p.id}')"><i class="ti ti-edit"></i></button><button class="icon-btn danger" onclick="event.stopPropagation();excluir('projetos','${p.id}')"><i class="ti ti-trash"></i></button></div></td>
     </tr>`;
@@ -483,56 +625,50 @@ function renderVinculos(){
   }).join('')}</tbody></table>`;
 }
 
+// ── MODAIS ──
 function abrirModal(){
   editId=null;fotoB64='';
+  document.querySelectorAll('.qa-box').forEach(b=>b.classList.remove('open'));
   if(secao==='profissionais'){limparProf();popSelectsProf();document.getElementById('modal-prof-title').textContent='Novo Profissional';document.getElementById('modal-profissional').classList.add('open')}
   else if(secao==='clientes'){limparCli();document.getElementById('modal-cli-title').textContent='Novo Cliente';document.getElementById('modal-cliente').classList.add('open')}
   else if(secao==='projetos'){limparProj();popSelectsProj();document.getElementById('modal-proj-title').textContent='Novo Projeto';document.getElementById('modal-projeto').classList.add('open')}
-  else if(secao==='setores'){simplCtx='setores';document.getElementById('modal-simples-title').textContent='Novo Setor';document.getElementById('simples-nome').value='';document.getElementById('simples-desc').value='';document.getElementById('modal-simples').classList.add('open')}
-  else if(secao==='funcoes'){simplCtx='funcoes';document.getElementById('modal-simples-title').textContent='Nova Função';document.getElementById('simples-nome').value='';document.getElementById('simples-desc').value='';document.getElementById('modal-simples').classList.add('open')}
+  else if(secao==='setores'){simplCtx='setores';document.getElementById('modal-simples-title').textContent='Novo Setor';setV('simples-nome','');setV('simples-desc','');document.getElementById('modal-simples').classList.add('open')}
+  else if(secao==='funcoes'){simplCtx='funcoes';document.getElementById('modal-simples-title').textContent='Nova Função';setV('simples-nome','');setV('simples-desc','');document.getElementById('modal-simples').classList.add('open')}
   else if(secao==='vinculos'){limparVinc();popSelectsVinc();document.getElementById('modal-vinculo').classList.add('open')}
 }
-
 function fecharModal(id){document.getElementById('modal-'+id).classList.remove('open');editId=null}
 
+// ── SALVAR ──
 function salvarProfissional(){
-  const nome=document.getElementById('prof-nome').value.trim();
-  if(!nome){alert('Nome é obrigatório');return}
+  const nome=V('prof-nome');if(!nome){alert('Nome é obrigatório');return}
   const obj={id:editId||uid(),nome,email:V('prof-email'),telefone:V('prof-telefone'),nascimento:V('prof-nascimento'),regime:V('prof-regime'),funcao:V('prof-funcao'),setor:V('prof-setor'),projetoPrincipal:V('prof-projeto'),admissao:V('prof-admissao'),demissao:V('prof-demissao'),ativo:document.getElementById('prof-ativo').checked,obs:V('prof-obs'),foto:fotoB64||(editId?(DB.profissionais.find(p=>p.id===editId)||{}).foto:''),criadoEm:editId?(DB.profissionais.find(p=>p.id===editId)||{}).criadoEm:new Date().toISOString()};
   if(editId){const i=DB.profissionais.findIndex(p=>p.id===editId);if(i>=0)DB.profissionais[i]=obj}else DB.profissionais.push(obj);
   salvarDB('profissionais');fecharModal('profissional');renderProfissionais();atualizarContadores();
 }
-
 function salvarCliente(){
-  const nome=document.getElementById('cli-nome').value.trim();
-  if(!nome){alert('Nome é obrigatório');return}
-  const obj={id:editId||uid(),nome,cnpj:V('cli-cnpj'),segmento:V('cli-segmento'),contato:V('cli-contato'),email:V('cli-email'),telefone:V('cli-telefone'),obs:V('cli-obs'),ativo:document.getElementById('cli-ativo').checked,criadoEm:editId?(DB.clientes.find(c=>c.id===editId)||{}).criadoEm:new Date().toISOString()};
+  const nome=V('cli-nome');if(!nome){alert('Nome é obrigatório');return}
+  const obj={id:editId||uid(),nome,cnpj:V('cli-cnpj'),segmento:V('cli-segmento'),contato:V('cli-contato'),email:V('cli-email'),telefone:V('cli-telefone'),obs:V('cli-obs'),ativo:document.getElementById('cli-ativo').checked,criadoEm:new Date().toISOString()};
   if(editId){const i=DB.clientes.findIndex(c=>c.id===editId);if(i>=0)DB.clientes[i]=obj}else DB.clientes.push(obj);
   salvarDB('clientes');fecharModal('cliente');renderClientes();atualizarContadores();
 }
-
 function salvarProjeto(){
-  const nome=document.getElementById('proj-nome').value.trim();
-  if(!nome){alert('Nome é obrigatório');return}
-  const obj={id:editId||uid(),nome,clienteId:V('proj-cliente'),status:V('proj-status'),tipo:V('proj-tipo'),inicio:V('proj-inicio'),fim:V('proj-fim'),valor:parseFloat(V('proj-valor'))||0,gp:V('proj-gp'),desc:V('proj-desc'),criadoEm:editId?(DB.projetos.find(p=>p.id===editId)||{}).criadoEm:new Date().toISOString()};
+  const nome=V('proj-nome');if(!nome){alert('Nome é obrigatório');return}
+  const obj={id:editId||uid(),nome,clienteId:V('proj-cliente'),status:V('proj-status'),tipo:V('proj-tipo'),inicio:V('proj-inicio'),fim:V('proj-fim'),valor:parseFloat(V('proj-valor'))||0,gp:V('proj-gp'),desc:V('proj-desc'),criadoEm:new Date().toISOString()};
   if(editId){const i=DB.projetos.findIndex(p=>p.id===editId);if(i>=0)DB.projetos[i]=obj}else DB.projetos.push(obj);
   salvarDB('projetos');fecharModal('projeto');renderProjetos();atualizarContadores();
 }
-
 function salvarSimples(){
-  const nome=document.getElementById('simples-nome').value.trim();
-  if(!nome){alert('Nome é obrigatório');return}
+  const nome=V('simples-nome');if(!nome){alert('Nome é obrigatório');return}
   DB[simplCtx].push({id:uid(),nome,desc:V('simples-desc')});
   salvarDB(simplCtx);fecharModal('simples');renderSecao(simplCtx);atualizarContadores();
 }
-
 function salvarVinculo(){
-  const pId=V('vinc-prof'),prId=V('vinc-proj');
-  if(!pId||!prId){alert('Profissional e Projeto são obrigatórios');return}
+  const pId=V('vinc-prof'),prId=V('vinc-proj');if(!pId||!prId){alert('Profissional e Projeto são obrigatórios');return}
   DB.vinculos.push({id:uid(),profId:pId,projetoId:prId,funcao:V('vinc-func'),inicio:V('vinc-inicio'),fim:V('vinc-fim'),ativo:document.getElementById('vinc-ativo').checked});
   salvarDB('vinculos');fecharModal('vinculo');renderVinculos();atualizarContadores();
 }
 
+// ── EDITAR ──
 function editarProfissional(id){
   const p=DB.profissionais.find(x=>x.id===id);if(!p)return;
   editId=id;popSelectsProf();
@@ -540,10 +676,9 @@ function editarProfissional(id){
   ['nome','email','telefone','nascimento','regime','funcao','setor','admissao','demissao','obs'].forEach(f=>setV('prof-'+f,p[f]||''));
   document.getElementById('prof-projeto').value=p.projetoPrincipal||'';
   document.getElementById('prof-ativo').checked=p.ativo!==false;
-  const fp=document.getElementById('foto-preview');fp.innerHTML=p.foto?`<img src="${p.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` :'👤';
+  const fp=document.getElementById('foto-preview');fp.innerHTML=p.foto?`<img src="${p.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:'👤';
   document.getElementById('modal-profissional').classList.add('open');
 }
-
 function editarCliente(id){
   const c=DB.clientes.find(x=>x.id===id);if(!c)return;
   editId=id;document.getElementById('modal-cli-title').textContent='Editar Cliente';
@@ -551,7 +686,6 @@ function editarCliente(id){
   document.getElementById('cli-ativo').checked=c.ativo!==false;
   document.getElementById('modal-cliente').classList.add('open');
 }
-
 function editarProjeto(id){
   const p=DB.projetos.find(x=>x.id===id);if(!p)return;
   editId=id;popSelectsProj();document.getElementById('modal-proj-title').textContent='Editar Projeto';
@@ -560,12 +694,14 @@ function editarProjeto(id){
   document.getElementById('modal-projeto').classList.add('open');
 }
 
+// ── EXCLUIR ──
 function excluir(k,id){if(!confirm('Confirmar exclusão?'))return;DB[k]=DB[k].filter(x=>x.id!==id);salvarDB(k);renderSecao(secao);atualizarContadores()}
 
+// ── FILTROS ──
 function setFilter(s,v,el){filtros[s]=v;el.closest('.filter-tabs').querySelectorAll('.filter-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderSecao(s)}
-
 function filtrarTabela(){const q=document.getElementById('search-input').value;if(secao==='profissionais')renderProfissionais(q);if(secao==='clientes')renderClientes(q);if(secao==='projetos')renderProjetos(q)}
 
+// ── POPULAR SELECTS ──
 function popSelectsProf(){
   document.getElementById('prof-funcao').innerHTML='<option value="">Selecionar...</option>'+DB.funcoes.map(f=>`<option value="${f.nome}">${f.nome}</option>`).join('');
   document.getElementById('prof-setor').innerHTML='<option value="">Selecionar...</option>'+DB.setores.map(s=>`<option value="${s.nome}">${s.nome}</option>`).join('');
@@ -581,16 +717,16 @@ function popSelectsVinc(){
   document.getElementById('vinc-func').innerHTML='<option value="">Selecionar...</option>'+DB.funcoes.map(f=>`<option value="${f.nome}">${f.nome}</option>`).join('');
 }
 
-function V(id){const e=document.getElementById(id);return e?e.value.trim():''}
-function setV(id,v){const e=document.getElementById(id);if(e)e.value=v}
-
+// ── LIMPAR ──
 function limparProf(){['prof-nome','prof-email','prof-telefone','prof-nascimento','prof-regime','prof-funcao','prof-setor','prof-projeto','prof-admissao','prof-demissao','prof-obs'].forEach(id=>setV(id,''));document.getElementById('prof-ativo').checked=true;document.getElementById('foto-preview').innerHTML='👤';fotoB64=''}
 function limparCli(){['cli-nome','cli-cnpj','cli-segmento','cli-contato','cli-email','cli-telefone','cli-obs'].forEach(id=>setV(id,''));document.getElementById('cli-ativo').checked=true}
 function limparProj(){['proj-nome','proj-inicio','proj-fim','proj-valor','proj-desc'].forEach(id=>setV(id,''));document.getElementById('proj-status').value='ativo';document.getElementById('proj-tipo').value='alocacao'}
 function limparVinc(){['vinc-inicio','vinc-fim'].forEach(id=>setV(id,''));document.getElementById('vinc-ativo').checked=true}
 
+// ── FOTO ──
 function previewFoto(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{fotoB64=e.target.result;document.getElementById('foto-preview').innerHTML=`<img src="${fotoB64}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`};r.readAsDataURL(f)}
 
+// ── IMPORT / EXPORT ──
 function importarCSV(input,tipo){
   const f=input.files[0];if(!f)return;
   const r=new FileReader();r.onload=e=>{
@@ -609,13 +745,13 @@ function importarCSV(input,tipo){
     alert(`✅ ${n} registros importados!`);
   };r.readAsText(f);
 }
-
 function exportarJSON(){
   const b=new Blob([JSON.stringify({exportadoEm:new Date().toISOString(),...DB},null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`bravi-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();
 }
 
-document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal-backdrop.open').forEach(m=>m.classList.remove('open'))});
+// ── FECHAR COM ESC / BACKDROP ──
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelectorAll('.modal-backdrop.open').forEach(m=>m.classList.remove('open'));document.querySelectorAll('.qa-box').forEach(b=>b.classList.remove('open'))}});
 document.querySelectorAll('.modal-backdrop').forEach(b=>b.addEventListener('click',e=>{if(e.target===b)b.classList.remove('open')}));
 
 init();
