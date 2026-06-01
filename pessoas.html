@@ -153,10 +153,10 @@
   </div>
   <div class="sidebar-nav">
     <div class="nav-group">Visão geral</div>
-    <button class="nav-item active" onclick="setFiltroStatus('todos',this)"><i class="ti ti-users"></i> Todos <span class="nav-cnt" id="cnt-todos">0</span></button>
-    <button class="nav-item" onclick="setFiltroStatus('ativos',this)"><i class="ti ti-user-check"></i> Ativos <span class="nav-cnt" id="cnt-ativos">0</span></button>
+    <button class="nav-item" onclick="setFiltroStatus('todos',this)"><i class="ti ti-users"></i> Todos <span class="nav-cnt" id="cnt-todos">0</span></button>
+    <button class="nav-item active" onclick="setFiltroStatus('ativos',this)"><i class="ti ti-user-check"></i> Ativos <span class="nav-cnt" id="cnt-ativos">0</span></button>
     <button class="nav-item" onclick="setFiltroStatus('inativos',this)"><i class="ti ti-user-off"></i> Inativos <span class="nav-cnt" id="cnt-inativos">0</span></button>
-    <div class="nav-group">Ferramentas</div>
+    <div class="nav-group">People Care</div>
     <button class="nav-item" onclick="setView('qualificacoes')"><i class="ti ti-certificate"></i> Qualificações</button>
     <button class="nav-item" onclick="setView('equipamentos')"><i class="ti ti-device-laptop"></i> Equipamentos</button>
     <button class="nav-item" id="btn-sync" onclick="sincronizarDrive()"><i class="ti ti-refresh"></i> Sincronizar Drive</button>
@@ -216,15 +216,20 @@
         <button class="btn btn-ghost btn-sm" onclick="limparFiltros()"><i class="ti ti-x"></i> Limpar</button>
       </div>
 
-      <!-- CHARTS ROW -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
-        <div class="section-card">
-          <div class="section-card-title">Por projeto <span style="font-weight:400;color:var(--text-dim)">ativos</span></div>
-          <div class="bar-chart" id="chart-projetos"></div>
+      <!-- HORAS DO MÊS -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:20px">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+          <div style="font-family:var(--font-display);font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em">Horas lançadas</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <select class="filter-select" id="dash-mes" onchange="renderDashboard()" style="font-size:11px;padding:4px 8px">
+              <option value="">Mês atual</option>
+            </select>
+            <span style="font-size:11px;color:var(--text-dim)">a</span>
+          </div>
         </div>
-        <div class="section-card">
-          <div class="section-card-title">Por função</div>
-          <div class="bar-chart" id="chart-funcoes"></div>
+        <div id="dash-horas-info" style="display:flex;align-items:baseline;gap:8px">
+          <span style="font-family:var(--font-display);font-size:32px;font-weight:800;color:var(--text-primary)" id="dash-horas-total">0h</span>
+          <span style="font-size:13px;color:var(--text-muted)" id="dash-horas-label">no mês atual</span>
         </div>
       </div>
 
@@ -256,6 +261,7 @@
         <button class="tab-btn" onclick="showTab('arquivos',this)"><i class="ti ti-files"></i> Arquivos</button>
         <button class="tab-btn" onclick="showTab('qualificacoes',this)"><i class="ti ti-certificate"></i> Qualificações</button>
         <button class="tab-btn" onclick="showTab('equipamentos',this)"><i class="ti ti-device-laptop"></i> Equipamentos</button>
+        <button class="tab-btn" onclick="showTab('recesso',this)"><i class="ti ti-beach"></i> Recesso</button>
       </div>
 
       <!-- TAB: DADOS -->
@@ -322,10 +328,22 @@
         <div id="qualificacoes-content"></div>
       </div>
 
+      <!-- TAB: RECESSO -->
+      <div class="tab-panel" id="tab-recesso">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px;text-align:center">
+          <div style="font-size:32px;margin-bottom:12px">🌴</div>
+          <div style="font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Controle de Recesso</div>
+          <div style="font-size:13px;color:var(--text-dim)">Em breve — controle de férias, folgas e ausências do profissional</div>
+        </div>
+      </div>
       <!-- TAB: EQUIPAMENTOS -->
       <div class="tab-panel" id="tab-equipamentos">
-        <div style="margin-bottom:16px">
-          <button class="btn btn-primary btn-sm" onclick="abrirModalEquip()"><i class="ti ti-plus"></i> Adicionar equipamento</button>
+        <div style="margin-bottom:14px">
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;padding:10px 14px;background:var(--bravi-purple-dim);border-radius:var(--radius-md);border:1px solid var(--bravi-purple-border)">
+            <i class="ti ti-info-circle" style="color:var(--bravi-purple);margin-right:4px"></i>
+            Para adicionar ou remover equipamentos, entre em contato com o <strong>People Care</strong>.
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="solicitarEquipamento()"><i class="ti ti-send"></i> Solicitar equipamento ao People Care</button>
         </div>
         <div id="equipamentos-list"></div>
       </div>
@@ -374,7 +392,7 @@
 <script>
 // ── STATE ──
 let DB = { profissionais:[], projetos:[], funcoes:[], setores:[], horas:[] };
-let filtroStatus = 'todos';
+let filtroStatus = 'ativos';
 let profAtual = null;
 let profExtras = {}; // dados extras por profissional (timeline, arquivos, qualifs, equips)
 let gridCols = 4;
@@ -460,19 +478,54 @@ function renderDashboard() {
 
   // Stats
   const ativos = DB.profissionais.filter(p=>p.ativo!==false).length;
-  const totalHorasMes = DB.horas.reduce((a,h)=>{
-    const d=new Date(h.data||''); const n=new Date(); 
-    if(d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear()) return a+(h.minutos||0);
-    return a;
-  },0);
-  const projetosAtivos = DB.projetos.filter(p=>p.status==='ativo').length;
   document.getElementById('st-total').textContent   = DB.profissionais.length;
   document.getElementById('st-ativos').textContent  = ativos;
-  document.getElementById('st-horas').textContent   = Math.floor(totalHorasMes/60)+'h';
-  document.getElementById('st-projetos').textContent= projetosAtivos;
+  document.getElementById('st-projetos').textContent= DB.projetos.filter(p=>p.status==='ativo').length;
+
+  // Popula seletor de mês
+  const mesEl = document.getElementById('dash-mes');
+  if (mesEl && mesEl.options.length <= 1) {
+    const hoje = new Date();
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+      const val = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+      const lbl = d.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
+      const opt = document.createElement('option');
+      opt.value = val; opt.textContent = lbl;
+      if (i === 0) opt.selected = true;
+      mesEl.appendChild(opt);
+    }
+  }
+
+  // Calcula horas do mês selecionado respeitando filtro de profissionais
+  const mesSel = mesEl ? mesEl.value : '';
+  const profsFiltradosIds = new Set(profs.map(p => p.id));
+  let totalMins = 0;
+  let mesLabel = 'no mês atual';
+  DB.horas.forEach(h => {
+    if (!profsFiltradosIds.has(h.profId)) return;
+    const d = new Date(h.data || '');
+    const hMes = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    if (mesSel && hMes !== mesSel) return;
+    if (!mesSel) { // mês atual
+      const n = new Date();
+      if (d.getMonth() !== n.getMonth() || d.getFullYear() !== n.getFullYear()) return;
+    }
+    totalMins += (h.minutos || 0);
+  });
+
+  const horas = Math.floor(totalMins/60);
+  const mins  = totalMins % 60;
+  document.getElementById('dash-horas-total').textContent = horas + 'h' + (mins > 0 ? ' ' + mins + 'min' : '');
+
+  if (mesSel && mesEl) {
+    const opt = Array.from(mesEl.options).find(o => o.value === mesSel);
+    if (opt) mesLabel = 'em ' + opt.textContent;
+  }
+  document.getElementById('dash-horas-label').textContent = mesLabel;
+  document.getElementById('st-horas').textContent = horas + 'h';
 
   atualizarContadores();
-  renderCharts();
   renderGrid(profs);
 }
 
@@ -483,25 +536,7 @@ function atualizarContadores() {
 }
 
 function renderCharts() {
-  // Por projeto
-  const porProj = {};
-  DB.profissionais.filter(p=>p.ativo!==false&&p.projetoPrincipal).forEach(p=>{
-    const pr = DB.projetos.find(x=>x.id===p.projetoPrincipal);
-    const nome = pr?.nome||p.projetoPrincipal;
-    porProj[nome] = (porProj[nome]||0)+1;
-  });
-  const maxP = Math.max(...Object.values(porProj),1);
-  document.getElementById('chart-projetos').innerHTML = Object.entries(porProj).sort((a,b)=>b[1]-a[1]).slice(0,7).map(([k,v])=>
-    `<div class="bar-item"><div class="bar-label" title="${k}">${k}</div><div class="bar-track"><div class="bar-fill" style="width:${v/maxP*100}%"></div></div><div class="bar-val">${v}</div></div>`
-  ).join('') || '<div style="font-size:12px;color:var(--text-dim);padding:8px 0">Nenhum dado</div>';
-
-  // Por função
-  const porFunc = {};
-  DB.profissionais.filter(p=>p.ativo!==false&&p.funcao).forEach(p=>{ porFunc[p.funcao]=(porFunc[p.funcao]||0)+1; });
-  const maxF = Math.max(...Object.values(porFunc),1);
-  document.getElementById('chart-funcoes').innerHTML = Object.entries(porFunc).sort((a,b)=>b[1]-a[1]).slice(0,7).map(([k,v])=>
-    `<div class="bar-item"><div class="bar-label" title="${k}">${k}</div><div class="bar-track"><div class="bar-fill" style="width:${v/maxF*100}%"></div></div><div class="bar-val">${v}</div></div>`
-  ).join('') || '<div style="font-size:12px;color:var(--text-dim);padding:8px 0">Nenhum dado</div>';
+  // Charts removidos do dashboard — exibidos em cadastro.html
 }
 
 function renderGrid(profs) {
@@ -952,9 +987,15 @@ function excluirEquipamento(id) {
   salvarExtras(); renderEquipamentos(); renderProfileHeader(profAtual);
 }
 
-// ── UTIL ──
+function solicitarEquipamento() {
+  if (!profAtual) return;
+  const msg = `Olá People Care! Gostaria de solicitar um equipamento para o profissional ${profAtual.nome} (${profAtual.email}). Por favor, entre em contato para mais detalhes.`;
+  const mailto = `mailto:peoplecare@bravi.com.br?subject=Solicitação de Equipamento - ${encodeURIComponent(profAtual.nome)}&body=${encodeURIComponent(msg)}`;
+  window.open(mailto);
+}
+
 function fecharModal(id) { document.getElementById('modal-'+id).classList.remove('open'); }
-function setView(v) { /* placeholder para futuras views */ }
+function setView(v) { /* placeholder */ }
 
 // Sobrescreve showTab para também renderizar dados
 const _showTab = showTab;
@@ -973,6 +1014,7 @@ function showTab(id, el) {
     if (id==='arquivos') renderArquivos();
     if (id==='qualificacoes') renderQualificacoes();
     if (id==='equipamentos') renderEquipamentos();
+    if (id==='recesso') {} // placeholder
   }
 }
 
