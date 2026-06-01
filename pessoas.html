@@ -156,9 +156,10 @@
     <button class="nav-item active" onclick="setFiltroStatus('todos',this)"><i class="ti ti-users"></i> Todos <span class="nav-cnt" id="cnt-todos">0</span></button>
     <button class="nav-item" onclick="setFiltroStatus('ativos',this)"><i class="ti ti-user-check"></i> Ativos <span class="nav-cnt" id="cnt-ativos">0</span></button>
     <button class="nav-item" onclick="setFiltroStatus('inativos',this)"><i class="ti ti-user-off"></i> Inativos <span class="nav-cnt" id="cnt-inativos">0</span></button>
-    <div class="nav-group">Gestão</div>
+    <div class="nav-group">Ferramentas</div>
     <button class="nav-item" onclick="setView('qualificacoes')"><i class="ti ti-certificate"></i> Qualificações</button>
     <button class="nav-item" onclick="setView('equipamentos')"><i class="ti ti-device-laptop"></i> Equipamentos</button>
+    <button class="nav-item" id="btn-sync" onclick="sincronizarDrive()"><i class="ti ti-refresh"></i> Sincronizar Drive</button>
   </div>
   <div class="sidebar-footer">
     <a href="index.html" class="back-link"><i class="ti ti-arrow-left"></i> Voltar ao Hub</a>
@@ -994,13 +995,25 @@ window.addEventListener('storage', e => {
   }
 });
 
-// ── Sincroniza com API na abertura (se configurada) ──
-if (BraviDB.temAPI()) {
-  BraviDB.sincronizar().then(ok => {
-    if (ok) { carregarDB(); renderDashboard(); atualizarContadores(); }
-  });
+// ── Sincronização manual com Drive ──
+async function sincronizarDrive() {
+  const btn = document.getElementById('btn-sync');
+  if (btn) { btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> Sincronizando...'; btn.disabled = true; }
+  BraviDB.enviarTudoParaAPI();
+  await new Promise(r => setTimeout(r, 2500));
+  const ok = await BraviDB.sincronizar();
+  if (ok) { carregarDB(); popularFiltros(); renderDashboard(); atualizarContadores(); }
+  if (btn) { btn.innerHTML = '<i class="ti ti-refresh"></i> Sincronizar Drive'; btn.disabled = false; }
+  alert(ok ? '✅ Drive sincronizado!' : '⚠️ Sync parcial — dados locais mantidos');
 }
 
+// spin animation
+const _style = document.createElement('style');
+_style.textContent = '@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}';
+document.head.appendChild(_style);
+
+// ── NÃO faz auto-sync no carregamento ──
+// localStorage é a fonte primária. Use o botão "Sincronizar Drive" na sidebar quando necessário.
 init();
 </script>
 </body>
