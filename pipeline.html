@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pipeline Comercial — Central Bravi</title>
+<link rel="stylesheet" href="bravi-ds.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<style>
+/* ── PIPELINE ── */
+.pipeline-wrap { display:flex; gap:14px; overflow-x:auto; padding-bottom:16px; min-height:calc(100vh - 180px); }
+.pipeline-col { flex-shrink:0; width:260px; display:flex; flex-direction:column; }
+.col-header { padding:10px 14px; border-radius:var(--radius-lg) var(--radius-lg) 0 0; display:flex; align-items:center; justify-content:space-between; margin-bottom:0; }
+.col-title { font-family:var(--font-display); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; }
+.col-count { font-size:11px; font-family:var(--font-display); font-weight:700; background:rgba(255,255,255,0.2); border-radius:100px; padding:1px 8px; }
+.col-value { font-size:10px; opacity:.7; margin-top:1px; }
+.col-body { background:var(--surface-2); border:1px solid var(--border); border-top:none; border-radius:0 0 var(--radius-lg) var(--radius-lg); flex:1; padding:10px; display:flex; flex-direction:column; gap:8px; min-height:200px; }
+.col-body.drag-over { background:var(--bravi-purple-dim); border-color:var(--bravi-purple-border); }
+
+/* CARD */
+.pipeline-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md); padding:12px; cursor:grab; transition:all .15s; position:relative; }
+.pipeline-card:hover { border-color:var(--bravi-purple-border); box-shadow:0 2px 8px rgba(124,58,237,0.08); transform:translateY(-1px); }
+.pipeline-card.dragging { opacity:.5; cursor:grabbing; }
+.card-company { font-family:var(--font-display); font-size:13px; font-weight:700; color:var(--text-primary); margin-bottom:3px; }
+.card-contact { font-size:11px; color:var(--text-muted); margin-bottom:8px; }
+.card-value { font-family:var(--font-display); font-size:14px; font-weight:800; color:var(--bravi-purple); margin-bottom:8px; }
+.card-footer { display:flex; align-items:center; justify-content:space-between; gap:4px; }
+.card-prob { font-size:10px; font-family:var(--font-display); font-weight:600; }
+.prob-bar { height:3px; background:var(--border); border-radius:100px; overflow:hidden; margin-top:4px; }
+.prob-fill { height:100%; border-radius:100px; background:var(--bravi-purple); }
+.card-days { font-size:10px; color:var(--text-dim); display:flex; align-items:center; gap:3px; }
+.card-menu { opacity:0; transition:opacity .1s; }
+.pipeline-card:hover .card-menu { opacity:1; }
+
+/* RESUMO TOP */
+.pipeline-stats { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:20px; }
+.pipe-stat { background:var(--surface); border:1px solid var(--border); border-top:3px solid var(--bravi-purple); border-radius:var(--radius-lg); padding:12px 14px; }
+.pipe-stat-value { font-family:var(--font-display); font-size:20px; font-weight:800; color:var(--text-primary); line-height:1; margin-bottom:2px; }
+.pipe-stat-label { font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; font-family:var(--font-display); font-weight:500; }
+
+/* COLUNAS CORES */
+.col-lead     .col-header { background:#374151; }
+.col-qualif   .col-header { background:#1D4ED8; }
+.col-proposta .col-header { background:#7C3AED; }
+.col-negoc    .col-header { background:#D97706; }
+.col-ganho    .col-header { background:#16A34A; }
+.col-perdido  .col-header { background:#9CA3AF; }
+.col-lead     .col-title, .col-lead     .col-count { color:#fff; }
+.col-qualif   .col-title, .col-qualif   .col-count { color:#fff; }
+.col-proposta .col-title, .col-proposta .col-count { color:#fff; }
+.col-negoc    .col-title, .col-negoc    .col-count { color:#fff; }
+.col-ganho    .col-title, .col-ganho    .col-count { color:#fff; }
+.col-perdido  .col-title, .col-perdido  .col-count { color:#fff; }
+
+/* DETAIL PANEL */
+.detail-backdrop { position:fixed; inset:0; background:rgba(26,26,46,0.5); backdrop-filter:blur(3px); z-index:80; opacity:0; pointer-events:none; transition:opacity .2s; display:flex; }
+.detail-backdrop.open { opacity:1; pointer-events:all; }
+.detail-panel { width:480px; background:var(--surface); border-left:1px solid var(--border); margin-left:auto; height:100%; overflow-y:auto; transform:translateX(30px); transition:transform .25s; box-shadow:-8px 0 32px rgba(26,26,46,0.1); }
+.detail-backdrop.open .detail-panel { transform:translateX(0); }
+.detail-header { padding:18px 22px 14px; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--surface); z-index:2; }
+.detail-body { padding:18px 22px; }
+.info-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px; }
+.info-cell { padding:10px; background:var(--surface-2); border-radius:var(--radius-md); }
+.info-label { font-size:10px; color:var(--text-dim); font-family:var(--font-display); font-weight:600; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:2px; }
+.info-value { font-size:13px; color:var(--text-primary); font-weight:500; }
+
+/* AI */
+.ai-box { background:linear-gradient(135deg,#faf5ff,#f5f0ff); border:1px solid var(--bravi-purple-border); border-radius:var(--radius-lg); padding:14px; margin-bottom:16px; }
+.ai-badge { font-size:10px; font-family:var(--font-display); font-weight:700; background:var(--bravi-purple); color:#fff; border-radius:100px; padding:2px 8px; }
+.ai-text { font-size:13px; color:var(--text-secondary); line-height:1.7; margin-top:8px; }
+.ai-loading { display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-muted); }
+.ai-dot { width:5px; height:5px; border-radius:50%; background:var(--bravi-purple); animation:ai-pulse 1.2s ease-in-out infinite; }
+.ai-dot:nth-child(2){animation-delay:.2s}.ai-dot:nth-child(3){animation-delay:.4s}
+@keyframes ai-pulse{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
+
+/* HISTÓRICO */
+.historico-item { display:flex; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); font-size:12px; }
+.historico-item:last-child { border-bottom:none; }
+.historico-dot { width:8px; height:8px; border-radius:50%; background:var(--bravi-purple); flex-shrink:0; margin-top:3px; }
+.historico-data { color:var(--text-dim); white-space:nowrap; font-family:var(--font-display); font-size:11px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <a href="index.html" style="text-decoration:none">
+      <div class="sidebar-logo-row">
+        <div class="s-mark">B</div>
+        <div><div class="s-name">Central <em>Bravi</em></div><div class="s-page">Pipeline Comercial</div></div>
+      </div>
+    </a>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-group">Visualização</div>
+    <button class="nav-item active" onclick="setViewMode('kanban',this)"><i class="ti ti-layout-kanban"></i> Kanban</button>
+    <button class="nav-item" onclick="setViewMode('lista',this)"><i class="ti ti-list"></i> Lista</button>
+    <div class="nav-group">Filtrar por</div>
+    <button class="nav-item" onclick="setFiltro('todos',this)"><i class="ti ti-stack-2"></i> Todos</button>
+    <button class="nav-item" onclick="setFiltro('ativos',this)"><i class="ti ti-bolt"></i> Em andamento</button>
+    <button class="nav-item" onclick="setFiltro('ganho',this)"><i class="ti ti-trophy"></i> Ganhos</button>
+    <button class="nav-item" onclick="setFiltro('perdido',this)"><i class="ti ti-x"></i> Perdidos</button>
+    <div class="nav-group">Ferramentas</div>
+    <button class="nav-item" onclick="exportarJSON()"><i class="ti ti-download"></i> Exportar</button>
+  </div>
+  <div class="sidebar-footer">
+    <a href="index.html" class="back-link"><i class="ti ti-arrow-left"></i> Voltar ao Hub</a>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-title">Pipeline Comercial</span>
+    </div>
+    <div class="topbar-right">
+      <div class="search-box">
+        <i class="ti ti-search"></i>
+        <input type="text" id="search-input" placeholder="Buscar empresa..." oninput="renderKanban()">
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="abrirModal()"><i class="ti ti-plus"></i> Novo prospect</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- STATS -->
+    <div class="pipeline-stats" id="pipeline-stats"></div>
+    <!-- BOARD -->
+    <div id="pipeline-board"></div>
+  </div>
+</div>
+</div>
+
+<!-- DETAIL PANEL -->
+<div class="detail-backdrop" id="detail-backdrop" onclick="fecharDetalhe(event)">
+  <div class="detail-panel">
+    <div class="detail-header">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+        <div>
+          <div style="font-family:var(--font-display);font-size:16px;font-weight:800;color:var(--text-primary)" id="d-empresa">—</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:2px" id="d-contato-sub">—</div>
+        </div>
+        <button class="icon-btn" onclick="fecharDetalhe()"><i class="ti ti-x"></i></button>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap" id="d-badges-pipe"></div>
+    </div>
+    <div class="detail-body">
+
+      <div class="ai-box" id="d-ai-box" style="display:none">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:0"><span>✨</span><span class="ai-badge">Análise IA</span></div>
+        <div class="ai-text" id="d-ai-text"></div>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-cell"><div class="info-label">Valor estimado</div><div class="info-value" id="d-valor">—</div></div>
+        <div class="info-cell"><div class="info-label">Probabilidade</div><div class="info-value" id="d-prob">—</div></div>
+        <div class="info-cell"><div class="info-label">Responsável</div><div class="info-value" id="d-resp">—</div></div>
+        <div class="info-cell"><div class="info-label">Dias no pipeline</div><div class="info-value" id="d-dias">—</div></div>
+        <div class="info-cell"><div class="info-label">Segmento</div><div class="info-value" id="d-segmento">—</div></div>
+        <div class="info-cell"><div class="info-label">Próx. ação</div><div class="info-value" id="d-proxima">—</div></div>
+      </div>
+
+      <div style="margin-bottom:16px">
+        <div style="font-size:10px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;font-family:var(--font-display);margin-bottom:8px">Notas</div>
+        <div style="font-size:13px;color:var(--text-secondary);line-height:1.7" id="d-notas">—</div>
+      </div>
+
+      <div style="margin-bottom:16px">
+        <div style="font-size:10px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;font-family:var(--font-display);margin-bottom:8px">Histórico</div>
+        <div id="d-historico"></div>
+      </div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" onclick="analisarComIA()"><i class="ti ti-sparkles"></i> Analisar com IA</button>
+        <button class="btn btn-secondary btn-sm" onclick="editarAtual()"><i class="ti ti-edit"></i> Editar</button>
+        <button class="btn btn-danger btn-sm" onclick="excluirAtual()"><i class="ti ti-trash"></i> Excluir</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PROSPECT -->
+<div class="modal-backdrop" id="modal-prospect">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">Novo Prospect</span>
+      <button class="modal-close" onclick="fecharModal()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full"><label class="form-label">Empresa <span class="req">*</span></label><input type="text" class="form-input" id="p-empresa" placeholder="Nome da empresa"></div>
+        <div class="form-group"><label class="form-label">Contato</label><input type="text" class="form-input" id="p-contato" placeholder="Nome do responsável"></div>
+        <div class="form-group"><label class="form-label">E-mail</label><input type="email" class="form-input" id="p-email" placeholder="contato@empresa.com"></div>
+        <div class="form-group"><label class="form-label">Segmento</label><input type="text" class="form-input" id="p-segmento" placeholder="Ex.: Varejo, Saúde, Fintech..."></div>
+        <div class="form-group"><label class="form-label">Responsável Bravi</label><select class="form-select" id="p-resp"><option value="">Selecionar...</option></select></div>
+        <div class="form-group"><label class="form-label">Etapa</label>
+          <select class="form-select" id="p-etapa">
+            <option value="lead">Lead</option>
+            <option value="qualificado">Qualificado</option>
+            <option value="proposta">Proposta enviada</option>
+            <option value="negociacao">Negociação</option>
+            <option value="ganho">Ganho ✅</option>
+            <option value="perdido">Perdido ❌</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Valor estimado (R$)</label><input type="number" class="form-input" id="p-valor" placeholder="0"></div>
+        <div class="form-group"><label class="form-label">Probabilidade (%)</label><input type="number" class="form-input" id="p-prob" placeholder="0" min="0" max="100"></div>
+        <div class="form-group full"><label class="form-label">Próxima ação</label><input type="text" class="form-input" id="p-proxima" placeholder="Ex.: Enviar proposta até sexta"></div>
+        <div class="form-group full"><label class="form-label">Notas</label><textarea class="form-textarea" id="p-notas" placeholder="Observações, contexto, histórico..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="salvarProspect()"><i class="ti ti-check"></i> Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CLAUDE_MODEL = 'claude-sonnet-4-20250514';
+const ETAPAS = [
+  { id:'lead',       label:'Lead',             prob:10 },
+  { id:'qualificado',label:'Qualificado',       prob:30 },
+  { id:'proposta',   label:'Proposta enviada',  prob:60 },
+  { id:'negociacao', label:'Negociação',        prob:80 },
+  { id:'ganho',      label:'Ganho',             prob:100 },
+  { id:'perdido',    label:'Perdido',           prob:0 },
+];
+
+let DB = { prospects: [] };
+let viewMode = 'kanban';
+let filtro = 'todos';
+let prospectAtual = null;
+let editId = null;
+let dragId = null;
+
+function init() {
+  try { DB.prospects = JSON.parse(localStorage.getItem('bravi_prospects') || '[]'); } catch(e) {}
+  popularSelectResp();
+  renderStats();
+  renderKanban();
+}
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function salvarDB() { localStorage.setItem('bravi_prospects', JSON.stringify(DB.prospects)); }
+function fmtBRL(v) { return v ? 'R$ ' + Number(v).toLocaleString('pt-BR') : '—'; }
+
+function setViewMode(m, el) {
+  viewMode = m;
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el?.classList.add('active');
+  renderKanban();
+}
+
+function setFiltro(f, el) {
+  filtro = f;
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el?.classList.add('active');
+  renderKanban();
+}
+
+function getDados() {
+  const q = document.getElementById('search-input')?.value.toLowerCase() || '';
+  return DB.prospects.filter(p => {
+    if (filtro === 'ativos' && ['ganho','perdido'].includes(p.etapa)) return false;
+    if (filtro === 'ganho' && p.etapa !== 'ganho') return false;
+    if (filtro === 'perdido' && p.etapa !== 'perdido') return false;
+    if (q) return (p.empresa||'').toLowerCase().includes(q) || (p.contato||'').toLowerCase().includes(q) || (p.segmento||'').toLowerCase().includes(q);
+    return true;
+  });
+}
+
+function renderStats() {
+  const ativos = DB.prospects.filter(p=>!['ganho','perdido'].includes(p.etapa));
+  const ganhos = DB.prospects.filter(p=>p.etapa==='ganho');
+  const totalPipe = ativos.reduce((a,p)=>(a + (parseFloat(p.valor)||0) * ((parseFloat(p.prob)||0)/100)),0);
+  const totalGanho = ganhos.reduce((a,p)=>a+(parseFloat(p.valor)||0),0);
+  const taxa = DB.prospects.length > 0 ? Math.round(ganhos.length / DB.prospects.length * 100) : 0;
+
+  document.getElementById('pipeline-stats').innerHTML = `
+    <div class="pipe-stat"><div class="pipe-stat-value">${DB.prospects.length}</div><div class="pipe-stat-label">Total</div></div>
+    <div class="pipe-stat"><div class="pipe-stat-value">${ativos.length}</div><div class="pipe-stat-label">Em andamento</div></div>
+    <div class="pipe-stat"><div class="pipe-stat-value">${ganhos.length}</div><div class="pipe-stat-label">Ganhos</div></div>
+    <div class="pipe-stat"><div class="pipe-stat-value" style="font-size:15px">${fmtBRL(totalPipe)}</div><div class="pipe-stat-label">Pipeline esperado</div></div>
+    <div class="pipe-stat"><div class="pipe-stat-value" style="font-size:15px">${fmtBRL(totalGanho)}</div><div class="pipe-stat-label">Receita fechada</div></div>`;
+}
+
+function renderKanban() {
+  renderStats();
+  const dados = getDados();
+  const board = document.getElementById('pipeline-board');
+
+  if (viewMode === 'lista') { renderLista(dados, board); return; }
+
+  const porEtapa = {};
+  ETAPAS.forEach(e => porEtapa[e.id] = dados.filter(p => p.etapa === e.id));
+
+  board.innerHTML = `<div class="pipeline-wrap">${ETAPAS.map(et => {
+    const cards = porEtapa[et.id];
+    const total = cards.reduce((a,p)=>a+(parseFloat(p.valor)||0),0);
+    return `<div class="pipeline-col col-${et.id}">
+      <div class="col-header">
+        <div>
+          <div class="col-title">${et.label}</div>
+          ${total > 0 ? `<div class="col-value">${fmtBRL(total)}</div>` : ''}
+        </div>
+        <span class="col-count">${cards.length}</span>
+      </div>
+      <div class="col-body" id="col-${et.id}" ondragover="dragOver(event,'${et.id}')" ondragleave="dragLeave(event)" ondrop="drop(event,'${et.id}')">
+        ${cards.length === 0 ? `<div style="text-align:center;padding:20px 10px;font-size:11px;color:var(--text-dim);font-family:var(--font-display)">Arraste cards aqui</div>` : ''}
+        ${cards.map(p => renderCard(p)).join('')}
+        <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:4px;font-size:11px;justify-content:center" onclick="abrirModalEtapa('${et.id}')"><i class="ti ti-plus"></i> Adicionar</button>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function renderCard(p) {
+  const dias = p.criadoEm ? Math.floor((Date.now()-new Date(p.criadoEm))/(1000*60*60*24)) : 0;
+  const prob = parseFloat(p.prob) || 0;
+  return `<div class="pipeline-card" draggable="true" ondragstart="dragStart(event,'${p.id}')" onclick="abrirDetalhe('${p.id}')">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div class="card-company">${p.empresa}</div>
+      <div class="card-menu">
+        <button class="icon-btn" style="width:22px;height:22px;font-size:11px" onclick="event.stopPropagation();editarProspect('${p.id}')"><i class="ti ti-edit"></i></button>
+      </div>
+    </div>
+    ${p.contato ? `<div class="card-contact">${p.contato}${p.segmento?' · '+p.segmento:''}</div>` : ''}
+    ${p.valor ? `<div class="card-value">${fmtBRL(p.valor)}</div>` : ''}
+    <div class="card-footer">
+      <div>
+        <div class="card-prob" style="color:${prob>=70?'var(--success)':prob>=40?'var(--warning)':'var(--text-muted)'}">${prob}% prob.</div>
+        <div class="prob-bar"><div class="prob-fill" style="width:${prob}%;background:${prob>=70?'var(--success)':prob>=40?'var(--warning)':'var(--bravi-purple)'}"></div></div>
+      </div>
+      <div class="card-days"><i class="ti ti-clock" style="font-size:10px"></i>${dias}d</div>
+    </div>
+    ${p.proxima ? `<div style="margin-top:8px;font-size:11px;color:var(--text-muted);border-top:1px solid var(--border);padding-top:7px"><i class="ti ti-arrow-right" style="font-size:11px;color:var(--bravi-purple)"></i> ${p.proxima}</div>` : ''}
+  </div>`;
+}
+
+function renderLista(dados, board) {
+  if (!dados.length) { board.innerHTML=`<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-title">Nenhum prospect encontrado</div><button class="btn btn-primary btn-sm" onclick="abrirModal()"><i class="ti ti-plus"></i> Adicionar</button></div>`; return; }
+  const etapaLabel = Object.fromEntries(ETAPAS.map(e=>[e.id,e.label]));
+  const etapaBadge = { lead:'badge-gray',qualificado:'badge-blue',proposta:'badge-purple',negociacao:'badge-amber',ganho:'badge-green',perdido:'badge-red' };
+  board.innerHTML=`<div class="table-wrap"><table><thead><tr><th>Empresa</th><th>Contato</th><th>Segmento</th><th>Valor</th><th>Probabilidade</th><th>Etapa</th><th>Resp.</th><th></th></tr></thead><tbody>${dados.map(p=>`
+    <tr onclick="abrirDetalhe('${p.id}')">
+      <td class="td-primary">${p.empresa}</td>
+      <td class="td-muted">${p.contato||'—'}</td>
+      <td class="td-muted">${p.segmento||'—'}</td>
+      <td class="td-muted">${fmtBRL(p.valor)}</td>
+      <td><div class="prob-bar" style="max-width:80px"><div class="prob-fill" style="width:${p.prob||0}%"></div></div><span style="font-size:11px;color:var(--text-muted)">${p.prob||0}%</span></td>
+      <td><span class="badge ${etapaBadge[p.etapa]||'badge-gray'}">${etapaLabel[p.etapa]||p.etapa}</span></td>
+      <td class="td-muted">${p.resp||'—'}</td>
+      <td><div class="row-actions"><button class="icon-btn" onclick="event.stopPropagation();editarProspect('${p.id}')"><i class="ti ti-edit"></i></button><button class="icon-btn danger" onclick="event.stopPropagation();excluir('${p.id}')"><i class="ti ti-trash"></i></button></div></td>
+    </tr>`).join('')}</tbody></table></div>`;
+}
+
+// ── DRAG & DROP ──
+function dragStart(e, id) { dragId = id; e.currentTarget.classList.add('dragging'); }
+function dragOver(e, etapa) { e.preventDefault(); document.getElementById('col-'+etapa)?.classList.add('drag-over'); }
+function dragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+function drop(e, etapa) {
+  e.preventDefault();
+  document.querySelectorAll('.col-body').forEach(c=>c.classList.remove('drag-over'));
+  document.querySelectorAll('.pipeline-card').forEach(c=>c.classList.remove('dragging'));
+  if (!dragId) return;
+  const p = DB.prospects.find(x=>x.id===dragId);
+  if (p) {
+    const etapaObj = ETAPAS.find(e=>e.id===etapa);
+    if (!p.historico) p.historico = [];
+    p.historico.push({ data: new Date().toISOString(), texto: `Movido para ${etapaObj?.label || etapa}` });
+    p.etapa = etapa;
+    salvarDB();
+    renderKanban();
+  }
+  dragId = null;
+}
+
+// ── DETALHE ──
+function abrirDetalhe(id) {
+  const p = DB.prospects.find(x=>x.id===id);
+  if (!p) return;
+  prospectAtual = p;
+  const etapaLabel = Object.fromEntries(ETAPAS.map(e=>[e.id,e.label]));
+  const etapaBadge = { lead:'badge-gray',qualificado:'badge-blue',proposta:'badge-purple',negociacao:'badge-amber',ganho:'badge-green',perdido:'badge-red' };
+  const dias = p.criadoEm ? Math.floor((Date.now()-new Date(p.criadoEm))/(1000*60*60*24)) : 0;
+
+  document.getElementById('d-empresa').textContent = p.empresa;
+  document.getElementById('d-contato-sub').textContent = [p.contato, p.email].filter(Boolean).join(' · ') || '—';
+  document.getElementById('d-badges-pipe').innerHTML = `<span class="badge ${etapaBadge[p.etapa]||'badge-gray'}">${etapaLabel[p.etapa]||p.etapa}</span>${p.segmento?`<span class="badge badge-gray">${p.segmento}</span>`:''}`;
+  document.getElementById('d-valor').textContent = fmtBRL(p.valor);
+  document.getElementById('d-prob').textContent = (p.prob||0) + '%';
+  document.getElementById('d-resp').textContent = p.resp || '—';
+  document.getElementById('d-dias').textContent = dias + ' dias';
+  document.getElementById('d-segmento').textContent = p.segmento || '—';
+  document.getElementById('d-proxima').textContent = p.proxima || '—';
+  document.getElementById('d-notas').textContent = p.notas || 'Sem notas.';
+
+  const hist = p.historico || [];
+  document.getElementById('d-historico').innerHTML = hist.length ? hist.slice().reverse().map(h=>`
+    <div class="historico-item">
+      <div class="historico-dot"></div>
+      <div style="flex:1"><div style="font-size:12px;color:var(--text-secondary)">${h.texto}</div></div>
+      <div class="historico-data">${new Date(h.data).toLocaleDateString('pt-BR')}</div>
+    </div>`).join('') : '<div style="font-size:12px;color:var(--text-dim)">Sem histórico registrado.</div>';
+
+  const aiBox = document.getElementById('d-ai-box');
+  aiBox.style.display = p.aiAnalysis ? '' : 'none';
+  if (p.aiAnalysis) document.getElementById('d-ai-text').textContent = p.aiAnalysis;
+
+  document.getElementById('detail-backdrop').classList.add('open');
+}
+
+function fecharDetalhe(e) {
+  if (e && e.target !== document.getElementById('detail-backdrop')) return;
+  document.getElementById('detail-backdrop').classList.remove('open');
+  prospectAtual = null;
+}
+
+function editarAtual() {
+  if (!prospectAtual) return;
+  fecharDetalhe();
+  editarProspect(prospectAtual.id);
+}
+
+function excluirAtual() {
+  if (!prospectAtual || !confirm('Excluir este prospect?')) return;
+  excluir(prospectAtual.id);
+  fecharDetalhe();
+}
+
+function excluir(id) {
+  DB.prospects = DB.prospects.filter(p=>p.id!==id);
+  salvarDB(); renderKanban();
+}
+
+// ── IA ──
+async function analisarComIA() {
+  if (!prospectAtual) return;
+  const aiBox = document.getElementById('d-ai-box');
+  const aiText = document.getElementById('d-ai-text');
+  aiBox.style.display = '';
+  aiText.innerHTML = '<div class="ai-loading"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div><span style="margin-left:4px">Analisando prospect...</span></div>';
+
+  const prompt = `Analise este prospect comercial da Bravi Software e dê recomendações objetivas:
+
+Empresa: ${prospectAtual.empresa}
+Segmento: ${prospectAtual.segmento || 'não informado'}
+Etapa: ${prospectAtual.etapa}
+Valor estimado: ${fmtBRL(prospectAtual.valor)}
+Probabilidade: ${prospectAtual.prob || 0}%
+Próxima ação: ${prospectAtual.proxima || 'não definida'}
+Notas: ${prospectAtual.notas || 'sem notas'}
+
+Forneça: 1 avaliação do estágio atual, 1 recomendação de próxima ação concreta, e 1 alerta ou oportunidade identificada. Seja direto e prático.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ model: CLAUDE_MODEL, max_tokens:800, messages:[{role:'user',content:prompt}] })
+    });
+    const data = await res.json();
+    const text = data.content?.[0]?.text || 'Não foi possível gerar análise.';
+    aiText.textContent = text;
+    const idx = DB.prospects.findIndex(p=>p.id===prospectAtual.id);
+    if (idx>=0) { DB.prospects[idx].aiAnalysis = text; salvarDB(); }
+  } catch(e) {
+    aiText.textContent = 'Erro ao conectar com a IA.';
+  }
+}
+
+// ── MODAL ──
+function abrirModal(etapaInicial) {
+  editId = null;
+  document.getElementById('modal-title').textContent = 'Novo Prospect';
+  ['p-empresa','p-contato','p-email','p-segmento','p-proxima','p-notas'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});
+  document.getElementById('p-valor').value='';
+  document.getElementById('p-prob').value='';
+  document.getElementById('p-etapa').value = etapaInicial || 'lead';
+  document.getElementById('p-resp').value='';
+  document.getElementById('modal-prospect').classList.add('open');
+}
+
+function abrirModalEtapa(etapa) { abrirModal(etapa); }
+
+function fecharModal() { document.getElementById('modal-prospect').classList.remove('open'); editId=null; }
+
+function salvarProspect() {
+  const empresa = document.getElementById('p-empresa').value.trim();
+  if (!empresa) { alert('Nome da empresa é obrigatório'); return; }
+
+  const antigo = editId ? DB.prospects.find(p=>p.id===editId) : null;
+  const obj = {
+    id: editId || uid(),
+    empresa,
+    contato: document.getElementById('p-contato').value.trim(),
+    email: document.getElementById('p-email').value.trim(),
+    segmento: document.getElementById('p-segmento').value.trim(),
+    resp: document.getElementById('p-resp').value,
+    etapa: document.getElementById('p-etapa').value,
+    valor: parseFloat(document.getElementById('p-valor').value)||0,
+    prob: parseFloat(document.getElementById('p-prob').value)||0,
+    proxima: document.getElementById('p-proxima').value.trim(),
+    notas: document.getElementById('p-notas').value.trim(),
+    criadoEm: antigo?.criadoEm || new Date().toISOString(),
+    historico: antigo?.historico || [{ data: new Date().toISOString(), texto: 'Prospect criado' }],
+    aiAnalysis: antigo?.aiAnalysis || ''
+  };
+
+  // registra mudança de etapa
+  if (antigo && antigo.etapa !== obj.etapa) {
+    const etapaLabel = Object.fromEntries(ETAPAS.map(e=>[e.id,e.label]));
+    obj.historico.push({ data:new Date().toISOString(), texto:`Movido para ${etapaLabel[obj.etapa]||obj.etapa}` });
+  }
+
+  if (editId) {
+    const i = DB.prospects.findIndex(p=>p.id===editId);
+    if (i>=0) DB.prospects[i] = obj;
+  } else {
+    DB.prospects.push(obj);
+  }
+
+  salvarDB(); fecharModal(); renderKanban();
+}
+
+function editarProspect(id) {
+  const p = DB.prospects.find(x=>x.id===id);
+  if (!p) return;
+  editId = id;
+  document.getElementById('modal-title').textContent = 'Editar Prospect';
+  document.getElementById('p-empresa').value = p.empresa||'';
+  document.getElementById('p-contato').value = p.contato||'';
+  document.getElementById('p-email').value = p.email||'';
+  document.getElementById('p-segmento').value = p.segmento||'';
+  document.getElementById('p-etapa').value = p.etapa||'lead';
+  document.getElementById('p-valor').value = p.valor||'';
+  document.getElementById('p-prob').value = p.prob||'';
+  document.getElementById('p-proxima').value = p.proxima||'';
+  document.getElementById('p-notas').value = p.notas||'';
+  document.getElementById('p-resp').value = p.resp||'';
+  document.getElementById('modal-prospect').classList.add('open');
+}
+
+function popularSelectResp() {
+  try {
+    const profs = JSON.parse(localStorage.getItem('bravi_profissionais')||'[]');
+    const sel = document.getElementById('p-resp');
+    sel.innerHTML = '<option value="">Selecionar...</option>' + profs.filter(p=>p.ativo!==false).map(p=>`<option value="${p.nome}">${p.nome}</option>`).join('');
+  } catch(e) {}
+}
+
+function exportarJSON() {
+  const b = new Blob([JSON.stringify({exportadoEm:new Date().toISOString(),prospects:DB.prospects},null,2)],{type:'application/json'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(b);
+  a.download=`bravi-pipeline-${new Date().toISOString().slice(0,10)}.json`; a.click();
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    document.querySelectorAll('.modal-backdrop.open').forEach(m=>m.classList.remove('open'));
+    document.getElementById('detail-backdrop').classList.remove('open');
+  }
+});
+document.querySelectorAll('.modal-backdrop').forEach(b=>b.addEventListener('click',e=>{if(e.target===b)b.classList.remove('open')}));
+
+init();
+</script>
+</body>
+</html>

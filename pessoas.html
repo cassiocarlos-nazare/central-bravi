@@ -6,6 +6,7 @@
 <title>Gestão de Pessoas — Central Bravi</title>
 <link rel="stylesheet" href="bravi-ds.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<script src="bravi-db.js"></script>
 <style>
 /* ── DASHBOARD ── */
 .prof-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
@@ -386,15 +387,18 @@ function init() {
 }
 
 function carregarDB() {
-  try { DB.profissionais = JSON.parse(localStorage.getItem('bravi_profissionais')||'[]'); } catch(e){}
-  try { DB.projetos      = JSON.parse(localStorage.getItem('bravi_projetos')||'[]'); } catch(e){}
-  try { DB.funcoes       = JSON.parse(localStorage.getItem('bravi_funcoes')||'[]'); } catch(e){}
-  try { DB.setores       = JSON.parse(localStorage.getItem('bravi_setores')||'[]'); } catch(e){}
-  try { DB.horas         = JSON.parse(localStorage.getItem('bravi_horas')||'[]'); } catch(e){}
-  try { profExtras       = JSON.parse(localStorage.getItem('bravi_prof_extras')||'{}'); } catch(e){}
+  DB.profissionais = BraviDB.ler('profissionais');
+  DB.projetos      = BraviDB.ler('projetos');
+  DB.funcoes       = BraviDB.ler('funcoes');
+  DB.setores       = BraviDB.ler('setores');
+  DB.horas         = BraviDB.ler('horas');
+  try { profExtras = JSON.parse(localStorage.getItem('bravi_prof_extras')||'{}'); } catch(e){}
 }
 
-function salvarExtras() { localStorage.setItem('bravi_prof_extras', JSON.stringify(profExtras)); }
+function salvarExtras() {
+  localStorage.setItem('bravi_prof_extras', JSON.stringify(profExtras));
+  if (BraviDB.temAPI()) BraviDB.salvar('prof_extras', profExtras);
+}
 function uid() { return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function fmtData(d) { return d ? new Date(d+'T12:00:00').toLocaleDateString('pt-BR') : '—'; }
 function fmtMes(m) { return m ? Math.floor(m/60)+'h '+( m%60 > 0 ? (m%60)+'min' : '') : '0h'; }
@@ -773,7 +777,7 @@ function renderTimeline() {
 
   // Adiciona reuniões do módulo de reuniões
   try {
-    const reunioes = JSON.parse(localStorage.getItem('bravi_reunioes')||'[]');
+    const reunioes = BraviDB.ler('reunioes');
     reunioes.filter(r=>(r.participantes||'').toLowerCase().includes((profAtual.nome||'').split(' ')[0].toLowerCase())).forEach(r=>{
       eventos.push({ tipo:'reuniao', data:r.data+'T09:00:00', titulo:r.titulo, descricao:r.projeto||'', id:'r-'+r.id });
     });
@@ -975,6 +979,27 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape') document.querySelectorAll('.modal-backdrop.open').forEach(m=>m.classList.remove('open'));
 });
 document.querySelectorAll('.modal-backdrop').forEach(b=>b.addEventListener('click',e=>{if(e.target===b)b.classList.remove('open')}));
+
+// ── Sincroniza quando o usuário volta para esta aba ──
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && !profAtual) {
+    carregarDB(); popularFiltros(); renderDashboard(); atualizarContadores();
+  }
+});
+
+// ── Sincroniza quando outra aba (ex: cadastro.html) salva dados ──
+window.addEventListener('storage', e => {
+  if (e.key?.startsWith('bravi_') && !profAtual) {
+    carregarDB(); renderDashboard(); atualizarContadores();
+  }
+});
+
+// ── Sincroniza com API na abertura (se configurada) ──
+if (BraviDB.temAPI()) {
+  BraviDB.sincronizar().then(ok => {
+    if (ok) { carregarDB(); renderDashboard(); atualizarContadores(); }
+  });
+}
 
 init();
 </script>

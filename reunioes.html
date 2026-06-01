@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reuniões — Central Bravi</title>
+<link rel="stylesheet" href="bravi-ds.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<style>
+/* ── REUNIÕES ESPECÍFICO ── */
+.meeting-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+.meeting-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; cursor:pointer; transition:all .2s; position:relative; overflow:hidden; }
+.meeting-card::before { content:''; position:absolute; top:0; left:0; width:3px; height:100%; background:var(--card-color, var(--bravi-purple)); }
+.meeting-card:hover { border-color:var(--bravi-purple-border); transform:translateY(-1px); box-shadow:0 4px 16px rgba(124,58,237,0.07); }
+.meeting-date { font-size:11px; color:var(--text-muted); font-family:var(--font-display); font-weight:600; margin-bottom:8px; display:flex; align-items:center; gap:5px; }
+.meeting-title { font-family:var(--font-display); font-size:14px; font-weight:700; color:var(--text-primary); margin-bottom:6px; line-height:1.3; }
+.meeting-project { font-size:11px; color:var(--bravi-purple); font-family:var(--font-display); font-weight:600; margin-bottom:10px; }
+.meeting-topics { font-size:12px; color:var(--text-muted); line-height:1.6; }
+.meeting-footer { display:flex; align-items:center; justify-content:space-between; margin-top:12px; padding-top:10px; border-top:1px solid var(--border); }
+.meeting-participants { display:flex; align-items:center; gap:4px; font-size:11px; color:var(--text-dim); }
+
+/* DETALHE */
+.detail-backdrop { position:fixed; inset:0; background:rgba(26,26,46,0.5); backdrop-filter:blur(3px); z-index:80; opacity:0; pointer-events:none; transition:opacity .2s; display:flex; }
+.detail-backdrop.open { opacity:1; pointer-events:all; }
+.detail-panel { width:520px; background:var(--surface); border-left:1px solid var(--border); margin-left:auto; height:100%; overflow-y:auto; transform:translateX(30px); transition:transform .25s; box-shadow:-8px 0 32px rgba(26,26,46,0.1); }
+.detail-backdrop.open .detail-panel { transform:translateX(0); }
+.detail-header { padding:20px 24px 16px; border-bottom:1px solid var(--border); display:flex; align-items:flex-start; justify-content:space-between; gap:10px; position:sticky; top:0; background:var(--surface); z-index:2; }
+.detail-title { font-family:var(--font-display); font-size:16px; font-weight:700; color:var(--text-primary); line-height:1.3; }
+.detail-body { padding:20px 24px; }
+.detail-section { margin-bottom:20px; }
+.detail-section-title { font-size:10px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.1em; font-family:var(--font-display); margin-bottom:10px; }
+.detail-text { font-size:13px; color:var(--text-secondary); line-height:1.7; }
+.topic-item { display:flex; gap:8px; padding:6px 0; border-bottom:1px solid var(--border); font-size:13px; color:var(--text-secondary); }
+.topic-item:last-child { border-bottom:none; }
+.topic-bullet { color:var(--bravi-purple); font-size:16px; line-height:1.3; flex-shrink:0; }
+.task-item { display:flex; align-items:flex-start; gap:8px; padding:8px 10px; background:var(--surface-2); border-radius:var(--radius-md); margin-bottom:6px; }
+.task-check { width:16px; height:16px; border-radius:4px; border:1.5px solid var(--border-md); flex-shrink:0; margin-top:1px; cursor:pointer; }
+.task-check.done { background:var(--success); border-color:var(--success); display:flex; align-items:center; justify-content:center; }
+.task-check.done::after { content:'✓'; color:#fff; font-size:10px; }
+.task-text { font-size:13px; color:var(--text-secondary); flex:1; }
+.task-resp { font-size:11px; color:var(--bravi-purple); font-family:var(--font-display); font-weight:600; margin-top:2px; }
+
+/* AI ANALYSIS */
+.ai-box { background:linear-gradient(135deg,#faf5ff,#f5f0ff); border:1px solid var(--bravi-purple-border); border-radius:var(--radius-lg); padding:16px; margin-bottom:20px; }
+.ai-box-header { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+.ai-badge { font-size:10px; font-family:var(--font-display); font-weight:700; background:var(--bravi-purple); color:#fff; border-radius:100px; padding:2px 8px; letter-spacing:0.04em; }
+.ai-text { font-size:13px; color:var(--text-secondary); line-height:1.7; }
+.ai-loading { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-muted); }
+.ai-dot { width:6px; height:6px; border-radius:50%; background:var(--bravi-purple); animation:ai-pulse 1.2s ease-in-out infinite; }
+.ai-dot:nth-child(2) { animation-delay:.2s; }
+.ai-dot:nth-child(3) { animation-delay:.4s; }
+@keyframes ai-pulse { 0%,100%{opacity:.3;transform:scale(.8)} 50%{opacity:1;transform:scale(1)} }
+
+/* TIPO CORES */
+.tipo-daily { --card-color:#2563EB; }
+.tipo-1-2-1 { --card-color:#7C3AED; }
+.tipo-review { --card-color:#16A34A; }
+.tipo-planning { --card-color:#D97706; }
+.tipo-retro { --card-color:#DC2626; }
+.tipo-outro { --card-color:#6B7280; }
+
+/* SEARCH/FILTER BAR */
+.filter-bar { display:flex; gap:10px; align-items:center; margin-bottom:20px; flex-wrap:wrap; }
+.filter-select { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md); padding:7px 12px; font-size:12.5px; font-family:var(--font-body); color:var(--text-secondary); outline:none; cursor:pointer; }
+.filter-select:focus { border-color:var(--bravi-purple); }
+
+/* IMPORT NOTION */
+.notion-import { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; margin-bottom:20px; }
+.notion-import-title { font-family:var(--font-display); font-size:13px; font-weight:700; color:var(--text-primary); margin-bottom:4px; }
+.notion-import-desc { font-size:12px; color:var(--text-muted); margin-bottom:12px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <a href="index.html" style="text-decoration:none">
+      <div class="sidebar-logo-row">
+        <div class="s-mark">B</div>
+        <div><div class="s-name">Central <em>Bravi</em></div><div class="s-page">Reuniões</div></div>
+      </div>
+    </a>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-group">Visualização</div>
+    <button class="nav-item active" onclick="setView('grid',this)"><i class="ti ti-layout-grid"></i> Todas as reuniões</button>
+    <button class="nav-item" onclick="setView('hoje',this)"><i class="ti ti-calendar-event"></i> Hoje</button>
+    <button class="nav-item" onclick="setView('semana',this)"><i class="ti ti-calendar-week"></i> Esta semana</button>
+    <div class="nav-group">Tipo</div>
+    <button class="nav-item" onclick="setView('daily',this)"><i class="ti ti-bolt"></i> Daily</button>
+    <button class="nav-item" onclick="setView('1-2-1',this)"><i class="ti ti-users"></i> 1-2-1</button>
+    <button class="nav-item" onclick="setView('review',this)"><i class="ti ti-checkup-list"></i> Review</button>
+    <button class="nav-item" onclick="setView('planning',this)"><i class="ti ti-clipboard-list"></i> Planning</button>
+    <div class="nav-group">Ferramentas</div>
+    <button class="nav-item" onclick="setView('importar',this)"><i class="ti ti-upload"></i> Importar dados</button>
+  </div>
+  <div class="sidebar-footer">
+    <a href="index.html" class="back-link"><i class="ti ti-arrow-left"></i> Voltar ao Hub</a>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-title" id="topbar-title">Todas as reuniões</span>
+      <span class="badge badge-purple" id="topbar-count" style="margin-left:8px">0</span>
+    </div>
+    <div class="topbar-right">
+      <div class="search-box">
+        <i class="ti ti-search"></i>
+        <input type="text" id="search-input" placeholder="Buscar reunião..." oninput="renderReunioes()">
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="abrirModal()"><i class="ti ti-plus"></i> Nova</button>
+    </div>
+  </div>
+
+  <div class="content" id="main-content">
+    <!-- renderizado por JS -->
+  </div>
+</div>
+</div>
+
+<!-- DETAIL PANEL -->
+<div class="detail-backdrop" id="detail-backdrop" onclick="fecharDetalhe(event)">
+  <div class="detail-panel" id="detail-panel">
+    <div class="detail-header">
+      <div>
+        <div class="detail-title" id="d-titulo">—</div>
+        <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap" id="d-badges"></div>
+      </div>
+      <button class="icon-btn" onclick="fecharDetalhe()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="detail-body">
+      <div class="ai-box" id="d-ai-box" style="display:none">
+        <div class="ai-box-header">
+          <span style="font-size:16px">✨</span>
+          <span class="ai-badge">Análise IA</span>
+          <span style="font-size:12px;color:var(--bravi-purple);font-family:var(--font-display);font-weight:600">Claude</span>
+        </div>
+        <div class="ai-text" id="d-ai-text"></div>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-section-title">Informações</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div style="padding:10px;background:var(--surface-2);border-radius:var(--radius-md)">
+            <div style="font-size:10px;color:var(--text-dim);font-family:var(--font-display);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Data</div>
+            <div style="font-size:13px;color:var(--text-primary);font-weight:500" id="d-data">—</div>
+          </div>
+          <div style="padding:10px;background:var(--surface-2);border-radius:var(--radius-md)">
+            <div style="font-size:10px;color:var(--text-dim);font-family:var(--font-display);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Projeto</div>
+            <div style="font-size:13px;color:var(--text-primary);font-weight:500" id="d-projeto">—</div>
+          </div>
+          <div style="padding:10px;background:var(--surface-2);border-radius:var(--radius-md)">
+            <div style="font-size:10px;color:var(--text-dim);font-family:var(--font-display);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Tipo</div>
+            <div style="font-size:13px;color:var(--text-primary);font-weight:500" id="d-tipo">—</div>
+          </div>
+          <div style="padding:10px;background:var(--surface-2);border-radius:var(--radius-md)">
+            <div style="font-size:10px;color:var(--text-dim);font-family:var(--font-display);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Participantes</div>
+            <div style="font-size:13px;color:var(--text-primary);font-weight:500" id="d-participantes">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-section" id="d-topicos-sec" style="display:none">
+        <div class="detail-section-title">Tópicos principais</div>
+        <div id="d-topicos"></div>
+      </div>
+
+      <div class="detail-section" id="d-tarefas-sec" style="display:none">
+        <div class="detail-section-title">Tarefas e próximos passos</div>
+        <div id="d-tarefas"></div>
+      </div>
+
+      <div class="detail-section" id="d-resumo-sec" style="display:none">
+        <div class="detail-section-title">Resumo</div>
+        <div class="detail-text" id="d-resumo"></div>
+      </div>
+
+      <div class="detail-section" id="d-link-sec" style="display:none">
+        <div class="detail-section-title">Documento</div>
+        <a id="d-link" href="#" target="_blank" class="btn btn-secondary btn-sm"><i class="ti ti-external-link"></i> Abrir no Drive</a>
+      </div>
+
+      <div style="margin-top:8px">
+        <button class="btn btn-ghost btn-sm" onclick="analisarComIA()" id="btn-ia"><i class="ti ti-sparkles"></i> Analisar com IA</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NOVA REUNIÃO -->
+<div class="modal-backdrop" id="modal-reuniao">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-reu-title">Nova Reunião</span>
+      <button class="modal-close" onclick="fecharModal()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full"><label class="form-label">Título <span class="req">*</span></label><input type="text" class="form-input" id="reu-titulo" placeholder="Ex.: Daily Scrum — Projeto ABC"></div>
+        <div class="form-group"><label class="form-label">Data <span class="req">*</span></label><input type="date" class="form-input" id="reu-data"></div>
+        <div class="form-group"><label class="form-label">Horário</label><input type="time" class="form-input" id="reu-hora"></div>
+        <div class="form-group"><label class="form-label">Projeto</label><select class="form-select" id="reu-projeto"><option value="">Selecionar...</option></select></div>
+        <div class="form-group"><label class="form-label">Tipo</label>
+          <select class="form-select" id="reu-tipo">
+            <option value="Outro">Selecionar...</option>
+            <option value="Daily">Daily</option>
+            <option value="1-2-1">1-2-1</option>
+            <option value="Sprint Review">Sprint Review</option>
+            <option value="Sprint Planning">Sprint Planning</option>
+            <option value="Retrospectiva">Retrospectiva</option>
+            <option value="Discovery">Discovery</option>
+            <option value="Kickoff">Kickoff</option>
+            <option value="Comercial">Comercial</option>
+            <option value="Outro">Outro</option>
+          </select>
+        </div>
+        <div class="form-group full"><label class="form-label">Participantes</label><input type="text" class="form-input" id="reu-participantes" placeholder="Ex.: João, Maria, Pedro..."></div>
+        <div class="form-group full"><label class="form-label">Tópicos principais</label><textarea class="form-textarea" id="reu-topicos" placeholder="Um tópico por linha..."></textarea></div>
+        <div class="form-group full"><label class="form-label">Tarefas e próximos passos</label><textarea class="form-textarea" id="reu-tarefas" placeholder="Uma tarefa por linha. Ex.: João — revisar PR até sexta"></textarea></div>
+        <div class="form-group full"><label class="form-label">Resumo geral</label><textarea class="form-textarea" id="reu-resumo" placeholder="Resumo narrativo da reunião..."></textarea></div>
+        <div class="form-group full"><label class="form-label">Link no Drive</label><input type="url" class="form-input" id="reu-link" placeholder="https://docs.google.com/..."></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="salvarReuniao()"><i class="ti ti-check"></i> Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CLAUDE_MODEL = 'claude-sonnet-4-20250514';
+let DB = { reunioes: [] };
+let viewAtual = 'grid';
+let reuniaoAtual = null;
+let editId = null;
+
+function init() {
+  try { DB.reunioes = JSON.parse(localStorage.getItem('bravi_reunioes') || '[]'); } catch(e) {}
+  renderReunioes();
+  popularSelectProjeto();
+}
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function salvarDB() { localStorage.setItem('bravi_reunioes', JSON.stringify(DB.reunioes)); }
+
+// ── VIEW ──
+function setView(v, el) {
+  viewAtual = v;
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  el?.classList.add('active');
+  const t = { grid:'Todas as reuniões', hoje:'Reuniões de hoje', semana:'Esta semana', daily:'Daily', '1-2-1':'1-2-1', review:'Sprint Review', planning:'Sprint Planning', importar:'Importar dados' };
+  document.getElementById('topbar-title').textContent = t[v] || v;
+  renderReunioes();
+}
+
+function filtrarReunioes() {
+  const q = document.getElementById('search-input')?.value.toLowerCase() || '';
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const semanaIni = new Date(hoje); semanaIni.setDate(semanaIni.getDate() - semanaIni.getDay());
+  const semanaFim = new Date(semanaIni); semanaFim.setDate(semanaFim.getDate() + 6);
+
+  return DB.reunioes.filter(r => {
+    if (viewAtual === 'hoje') { const d = new Date(r.data+'T12:00:00'); return d >= hoje && d < new Date(hoje.getTime()+86400000); }
+    if (viewAtual === 'semana') { const d = new Date(r.data+'T12:00:00'); return d >= semanaIni && d <= semanaFim; }
+    if (['daily','1-2-1','review','planning'].includes(viewAtual)) {
+      const map = { daily:'Daily', '1-2-1':'1-2-1', review:'Sprint Review', planning:'Sprint Planning' };
+      if (r.tipo !== map[viewAtual]) return false;
+    }
+    if (q) return (r.titulo||'').toLowerCase().includes(q) || (r.projeto||'').toLowerCase().includes(q) || (r.participantes||'').toLowerCase().includes(q);
+    return true;
+  }).sort((a,b) => new Date(b.data) - new Date(a.data));
+}
+
+// ── RENDER ──
+function renderReunioes() {
+  const content = document.getElementById('main-content');
+  if (viewAtual === 'importar') { renderImportar(); return; }
+
+  const dados = filtrarReunioes();
+  document.getElementById('topbar-count').textContent = dados.length;
+
+  if (!dados.length) {
+    content.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">🎙️</div>
+      <div class="empty-title">Nenhuma reunião encontrada</div>
+      <div class="empty-desc">As reuniões são geradas automaticamente pelo Apps Script ou podem ser adicionadas manualmente</div>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-primary btn-sm" onclick="abrirModal()"><i class="ti ti-plus"></i> Nova reunião</button>
+        <button class="btn btn-secondary btn-sm" onclick="setView('importar',null)"><i class="ti ti-upload"></i> Importar dados</button>
+      </div>
+    </div>`;
+    return;
+  }
+
+  const tipoClass = { 'Daily':'tipo-daily','1-2-1':'tipo-1-2-1','Sprint Review':'tipo-review','Sprint Planning':'tipo-planning','Retrospectiva':'tipo-retro' };
+  const tipoCor = { 'Daily':'badge-blue','1-2-1':'badge-purple','Sprint Review':'badge-green','Sprint Planning':'badge-amber','Retrospectiva':'badge-red','Kickoff':'badge-teal','Comercial':'badge-teal','Outro':'badge-gray' };
+
+  content.innerHTML = `<div class="meeting-grid">${dados.map(r => {
+    const topicos = (r.topicos||'').split('\n').filter(t=>t.trim()).slice(0,3);
+    const tarefas = (r.tarefas||'').split('\n').filter(t=>t.trim()).length;
+    const tc = tipoClass[r.tipo] || 'tipo-outro';
+    return `<div class="meeting-card ${tc}" onclick="abrirDetalhe('${r.id}')">
+      <div class="meeting-date"><i class="ti ti-calendar" style="font-size:12px"></i>${r.data ? new Date(r.data+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'}) : '—'}${r.hora ? ' · '+r.hora : ''}</div>
+      <div class="meeting-title">${r.titulo}</div>
+      ${r.projeto ? `<div class="meeting-project"><i class="ti ti-folder" style="font-size:11px"></i> ${r.projeto}</div>` : ''}
+      ${topicos.length ? `<div class="meeting-topics">${topicos.map(t=>`<div style="display:flex;gap:5px"><span style="color:var(--bravi-purple)">·</span>${t}</div>`).join('')}</div>` : ''}
+      <div class="meeting-footer">
+        <span class="badge ${tipoCor[r.tipo]||'badge-gray'}">${r.tipo||'Outro'}</span>
+        <div class="meeting-participants">
+          ${tarefas > 0 ? `<span class="badge badge-amber" style="font-size:9px">${tarefas} tarefa${tarefas>1?'s':''}</span>` : ''}
+          ${r.participantes ? `<span style="margin-left:4px">${r.participantes.split(',').length} pessoa${r.participantes.split(',').length>1?'s':''}</span>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function renderImportar() {
+  document.getElementById('main-content').innerHTML = `
+    <div style="max-width:720px">
+      <div style="font-family:var(--font-display);font-size:18px;font-weight:800;color:var(--text-primary);margin-bottom:4px">Importar reuniões</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:20px">Importe o resumo das reuniões geradas pelo Apps Script</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px">
+        <div class="import-area" onclick="document.getElementById('imp-json').click()">
+          <div class="import-icon">📋</div>
+          <div class="import-title">Importar JSON (backup)</div>
+          <div class="import-desc">Arquivo exportado pela Central Bravi</div>
+          <input type="file" id="imp-json" accept=".json" style="display:none" onchange="importarJSON(this)">
+        </div>
+        <div class="import-area" onclick="document.getElementById('imp-csv').click()">
+          <div class="import-icon">📊</div>
+          <div class="import-title">Importar CSV</div>
+          <div class="import-desc">titulo, data, projeto, tipo, participantes, topicos</div>
+          <input type="file" id="imp-csv" accept=".csv" style="display:none" onchange="importarCSV(this)">
+        </div>
+        <div class="import-area" onclick="exportarJSON()">
+          <div class="import-icon">💾</div>
+          <div class="import-title">Exportar backup</div>
+          <div class="import-desc">Salva todas as reuniões em JSON</div>
+        </div>
+        <div class="import-area" onclick="limparTudo()">
+          <div class="import-icon">🗑️</div>
+          <div class="import-title">Limpar todas as reuniões</div>
+          <div class="import-desc">Remove todos os registros locais</div>
+        </div>
+      </div>
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px">
+        <div style="font-size:10px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;font-family:var(--font-display)">Integração automática via Apps Script</div>
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.7">
+          O Apps Script (<strong>processarReunioes</strong>) gera as análises automaticamente e salva no Notion e Google Drive.<br>
+          Para visualizar aqui, exporte as reuniões do Notion como CSV ou use o backup JSON desta página.
+        </div>
+      </div>
+    </div>`;
+}
+
+// ── DETALHE ──
+function abrirDetalhe(id) {
+  const r = DB.reunioes.find(x => x.id === id);
+  if (!r) return;
+  reuniaoAtual = r;
+
+  document.getElementById('d-titulo').textContent = r.titulo;
+  document.getElementById('d-data').textContent = r.data ? new Date(r.data+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}) : '—';
+  document.getElementById('d-projeto').textContent = r.projeto || '—';
+  document.getElementById('d-tipo').textContent = r.tipo || '—';
+  document.getElementById('d-participantes').textContent = r.participantes || '—';
+
+  const badges = document.getElementById('d-badges');
+  const tipoCor = { 'Daily':'badge-blue','1-2-1':'badge-purple','Sprint Review':'badge-green','Sprint Planning':'badge-amber','Retrospectiva':'badge-red' };
+  badges.innerHTML = `<span class="badge ${tipoCor[r.tipo]||'badge-gray'}">${r.tipo||'Outro'}</span>`;
+
+  // tópicos
+  const topicos = (r.topicos||'').split('\n').filter(t=>t.trim());
+  const topicosSec = document.getElementById('d-topicos-sec');
+  if (topicos.length) {
+    topicosSec.style.display = '';
+    document.getElementById('d-topicos').innerHTML = topicos.map(t=>`<div class="topic-item"><span class="topic-bullet">·</span>${t}</div>`).join('');
+  } else { topicosSec.style.display = 'none'; }
+
+  // tarefas
+  const tarefas = (r.tarefas||'').split('\n').filter(t=>t.trim());
+  const tarefasSec = document.getElementById('d-tarefas-sec');
+  if (tarefas.length) {
+    tarefasSec.style.display = '';
+    document.getElementById('d-tarefas').innerHTML = tarefas.map(t=>{
+      const parts = t.split('—');
+      const texto = parts[0].trim();
+      const resp = parts[1]?.trim() || '';
+      return `<div class="task-item"><div class="task-check"></div><div><div class="task-text">${texto}</div>${resp?`<div class="task-resp">→ ${resp}</div>`:''}</div></div>`;
+    }).join('');
+  } else { tarefasSec.style.display = 'none'; }
+
+  // resumo
+  const resumoSec = document.getElementById('d-resumo-sec');
+  if (r.resumo) { resumoSec.style.display=''; document.getElementById('d-resumo').textContent = r.resumo; }
+  else { resumoSec.style.display='none'; }
+
+  // link drive
+  const linkSec = document.getElementById('d-link-sec');
+  if (r.link) { linkSec.style.display=''; document.getElementById('d-link').href = r.link; }
+  else { linkSec.style.display='none'; }
+
+  // AI
+  document.getElementById('d-ai-box').style.display = r.aiAnalysis ? '' : 'none';
+  if (r.aiAnalysis) document.getElementById('d-ai-text').textContent = r.aiAnalysis;
+
+  document.getElementById('detail-backdrop').classList.add('open');
+}
+
+function fecharDetalhe(e) {
+  if (e && e.target !== document.getElementById('detail-backdrop')) return;
+  document.getElementById('detail-backdrop').classList.remove('open');
+  reuniaoAtual = null;
+}
+
+// ── IA ANÁLISE ──
+async function analisarComIA() {
+  if (!reuniaoAtual) return;
+  const btn = document.getElementById('btn-ia');
+  const aiBox = document.getElementById('d-ai-box');
+  const aiText = document.getElementById('d-ai-text');
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> Analisando...';
+  aiBox.style.display = '';
+  aiText.innerHTML = '<div class="ai-loading"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div><span style="margin-left:4px">Claude está analisando...</span></div>';
+
+  const prompt = `Analise esta reunião da Bravi Software e forneça insights em 3-4 frases:
+
+Título: ${reuniaoAtual.titulo}
+Tipo: ${reuniaoAtual.tipo}
+Projeto: ${reuniaoAtual.projeto || 'não informado'}
+Data: ${reuniaoAtual.data}
+Tópicos: ${reuniaoAtual.topicos || 'não informado'}
+Tarefas: ${reuniaoAtual.tarefas || 'não informado'}
+Resumo: ${reuniaoAtual.resumo || 'não informado'}
+
+Forneça: 1 insight sobre os tópicos, 1 observação sobre as tarefas/próximos passos, e 1 recomendação prática. Seja objetivo e direto.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: CLAUDE_MODEL,
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.[0]?.text || 'Não foi possível gerar análise.';
+    aiText.textContent = text;
+
+    // salva na reunião
+    const idx = DB.reunioes.findIndex(r => r.id === reuniaoAtual.id);
+    if (idx >= 0) { DB.reunioes[idx].aiAnalysis = text; salvarDB(); }
+  } catch(e) {
+    aiText.textContent = 'Erro ao conectar com a IA. Verifique sua conexão.';
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="ti ti-sparkles"></i> Analisar com IA';
+}
+
+// ── MODAL ──
+function abrirModal() {
+  editId = null;
+  document.getElementById('modal-reu-title').textContent = 'Nova Reunião';
+  ['reu-titulo','reu-hora','reu-participantes','reu-topicos','reu-tarefas','reu-resumo','reu-link'].forEach(id => { const e=document.getElementById(id); if(e)e.value=''; });
+  document.getElementById('reu-data').value = new Date().toISOString().slice(0,10);
+  document.getElementById('reu-tipo').value = 'Outro';
+  document.getElementById('modal-reuniao').classList.add('open');
+}
+
+function fecharModal() { document.getElementById('modal-reuniao').classList.remove('open'); }
+
+function salvarReuniao() {
+  const titulo = document.getElementById('reu-titulo').value.trim();
+  const data = document.getElementById('reu-data').value;
+  if (!titulo || !data) { alert('Título e data são obrigatórios'); return; }
+
+  const obj = {
+    id: editId || uid(),
+    titulo, data,
+    hora: document.getElementById('reu-hora').value,
+    projeto: document.getElementById('reu-projeto').value,
+    tipo: document.getElementById('reu-tipo').value,
+    participantes: document.getElementById('reu-participantes').value.trim(),
+    topicos: document.getElementById('reu-topicos').value.trim(),
+    tarefas: document.getElementById('reu-tarefas').value.trim(),
+    resumo: document.getElementById('reu-resumo').value.trim(),
+    link: document.getElementById('reu-link').value.trim(),
+    criadoEm: new Date().toISOString()
+  };
+
+  if (editId) {
+    const i = DB.reunioes.findIndex(r => r.id === editId);
+    if (i >= 0) DB.reunioes[i] = obj;
+  } else {
+    DB.reunioes.push(obj);
+  }
+
+  salvarDB();
+  fecharModal();
+  renderReunioes();
+}
+
+function popularSelectProjeto() {
+  try {
+    const projetos = JSON.parse(localStorage.getItem('bravi_projetos') || '[]');
+    const sel = document.getElementById('reu-projeto');
+    sel.innerHTML = '<option value="">Selecionar...</option>' + projetos.filter(p=>p.status==='ativo').map(p=>`<option value="${p.nome}">${p.nome}</option>`).join('');
+  } catch(e) {}
+}
+
+// ── IMPORT/EXPORT ──
+function importarJSON(input) {
+  const f = input.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      const lista = data.reunioes || (Array.isArray(data) ? data : []);
+      DB.reunioes = [...DB.reunioes, ...lista.filter(x => x.titulo && x.data)];
+      salvarDB(); renderReunioes();
+      alert(`✅ ${lista.length} reuniões importadas!`);
+    } catch(err) { alert('Arquivo inválido'); }
+  };
+  r.readAsText(f);
+}
+
+function importarCSV(input) {
+  const f = input.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = e => {
+    const linhas = e.target.result.split('\n').map(l=>l.trim()).filter(l=>l);
+    if (linhas.length < 2) { alert('Arquivo vazio'); return; }
+    const headers = linhas[0].split(',').map(h=>h.trim().toLowerCase());
+    let n = 0;
+    for (let i = 1; i < linhas.length; i++) {
+      const vals = linhas[i].split(',').map(v=>v.trim().replace(/^"|"$/g,''));
+      const obj = { id: uid(), criadoEm: new Date().toISOString() };
+      headers.forEach((h,idx) => { if (vals[idx]) obj[h] = vals[idx]; });
+      if (!obj.titulo || !obj.data) continue;
+      DB.reunioes.push(obj); n++;
+    }
+    salvarDB(); renderReunioes();
+    alert(`✅ ${n} reuniões importadas!`);
+  };
+  r.readAsText(f);
+}
+
+function exportarJSON() {
+  const b = new Blob([JSON.stringify({ exportadoEm: new Date().toISOString(), reunioes: DB.reunioes }, null, 2)], { type:'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(b);
+  a.download = `bravi-reunioes-${new Date().toISOString().slice(0,10)}.json`; a.click();
+}
+
+function limparTudo() {
+  if (!confirm('Remover TODAS as reuniões? Esta ação não pode ser desfeita.')) return;
+  DB.reunioes = []; salvarDB(); renderReunioes();
+}
+
+// ── ESC / BACKDROP ──
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-backdrop.open').forEach(m=>m.classList.remove('open'));
+    document.getElementById('detail-backdrop').classList.remove('open');
+  }
+});
+document.querySelectorAll('.modal-backdrop').forEach(b=>b.addEventListener('click',e=>{if(e.target===b)b.classList.remove('open')}));
+
+// spin animation
+const style = document.createElement('style');
+style.textContent = '@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}';
+document.head.appendChild(style);
+
+init();
+</script>
+</body>
+</html>

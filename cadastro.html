@@ -6,6 +6,7 @@
 <title>Cadastro Geral — Central Bravi</title>
 <link rel="stylesheet" href="bravi-ds.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<script src="bravi-db.js"></script>
 <style>
 /* Quick-add inline */
 .qa-wrap { display:flex; gap:6px; align-items:center; }
@@ -423,12 +424,12 @@ let secao='profissionais',filtros={profissionais:'todos',clientes:'todos',projet
 
 function init(){
   ['profissionais','clientes','projetos','setores','funcoes','vinculos'].forEach(k=>{
-    try{DB[k]=JSON.parse(localStorage.getItem('bravi_'+k)||'[]')}catch(e){}
+    DB[k] = BraviDB.ler(k);
   });
   renderTudo();atualizarContadores();
 }
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
-function salvarDB(k){localStorage.setItem('bravi_'+k,JSON.stringify(DB[k]))}
+function salvarDB(k){ BraviDB.salvar(k, DB[k]); }
 function V(id){const e=document.getElementById(id);return e?e.value.trim():''}
 function setV(id,v){const e=document.getElementById(id);if(e)e.value=v}
 
