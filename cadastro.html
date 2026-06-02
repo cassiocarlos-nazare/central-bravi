@@ -587,17 +587,39 @@ function renderClientes(q=''){
     return true;
   });
   const el=document.getElementById('table-clientes');
-  if(!d.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">🏢</div><div class="empty-title">Nenhum cliente encontrado</div><div class="empty-desc">Clique em "Novo"</div><button class="btn btn-primary btn-sm" onclick="abrirModal()"><i class="ti ti-plus"></i> Cadastrar</button></div>`;return}
-  el.innerHTML=`<table><thead><tr><th>Empresa</th><th>CNPJ</th><th>Contato</th><th>Segmento</th><th>Projetos ativos</th><th>Status</th><th></th></tr></thead><tbody>${d.map(c=>`
-    <tr onclick="editarCliente('${c.id}')">
-      <td class="td-primary">${c.nome}</td>
-      <td class="td-muted">${c.cnpj||'—'}</td>
-      <td><div class="td-primary">${c.contato||'—'}</div><div class="td-muted" style="font-size:11px">${c.email||''}</div></td>
-      <td class="td-muted">${c.segmento||'—'}</td>
-      <td><span class="badge badge-blue"><span class="badge-dot"></span>${DB.projetos.filter(p=>p.clienteId===c.id&&p.status==='ativo').length}</span></td>
-      <td><span class="badge ${c.ativo!==false?'badge-green':'badge-red'}"><span class="badge-dot"></span>${c.ativo!==false?'Ativo':'Inativo'}</span></td>
-      <td><div class="row-actions"><button class="icon-btn" onclick="event.stopPropagation();editarCliente('${c.id}')"><i class="ti ti-edit"></i></button><button class="icon-btn danger" onclick="event.stopPropagation();excluir('clientes','${c.id}')"><i class="ti ti-trash"></i></button></div></td>
-    </tr>`).join('')}</tbody></table>`;
+  if(!d.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">🏢</div><div class="empty-title">Nenhum cliente encontrado</div><div class="empty-desc">Clique em "Novo"</div><button class="btn btn-primary btn-sm" onclick="abrirModal()"><i class="ti ti-plus"></i> Cadastrar</button></div>`;return;}
+  el.innerHTML=`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">${d.map(c=>{
+    const nProj=DB.projetos.filter(p=>p.clienteId===c.id&&p.status==='ativo').length;
+    const hMes=DB.horas?DB.horas.filter(h=>{
+      const proj=DB.projetos.find(p=>p.id===h.projetoId||p.timeneye_project_id===h.timeneye_project_id);
+      const d2=new Date(h.data||'');const n=new Date();
+      return proj&&proj.clienteId===c.id&&d2.getMonth()===n.getMonth()&&d2.getFullYear()===n.getFullYear();
+    }).reduce((a,h)=>a+(h.minutos||0),0):0;
+    return`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;cursor:pointer;transition:all .2s;position:relative" onmouseenter="this.style.borderColor='var(--bravi-purple-border)';this.style.transform='translateY(-1px)'" onmouseleave="this.style.borderColor='var(--border)';this.style.transform=''" onclick="window.location.href='cliente.html?id=${c.id}'">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <div style="width:40px;height:40px;border-radius:var(--radius-md);background:linear-gradient(135deg,#2563eb22,#2563eb44);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🏢</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-family:var(--font-display);font-size:13px;font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.nome}</div>
+          <div style="font-size:11px;color:var(--text-muted)">${c.segmento||'—'}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
+        <span class="badge ${c.ativo!==false?'badge-green':'badge-red'}" style="font-size:9px"><span class="badge-dot"></span>${c.ativo!==false?'Ativo':'Inativo'}</span>
+        <span class="badge badge-blue" style="font-size:9px">${nProj} projeto${nProj!==1?'s':''}</span>
+      </div>
+      ${c.contato?`<div style="font-size:11px;color:var(--text-dim);margin-bottom:4px"><i class="ti ti-user" style="font-size:10px;margin-right:3px"></i>${c.contato}</div>`:''}
+      ${hMes>0?`<div style="font-size:11px;color:var(--bravi-purple);font-family:var(--font-display);font-weight:600;margin-top:8px"><i class="ti ti-clock" style="font-size:10px;margin-right:3px"></i>${Math.floor(hMes/60)}h este mês</div>`:''}
+      <div style="position:absolute;top:10px;right:10px;display:flex;gap:4px;opacity:0;transition:opacity .15s" class="card-actions">
+        <button class="icon-btn" style="width:24px;height:24px;font-size:11px" onclick="event.stopPropagation();editarCliente('${c.id}')"><i class="ti ti-edit"></i></button>
+        <button class="icon-btn danger" style="width:24px;height:24px;font-size:11px" onclick="event.stopPropagation();excluir('clientes','${c.id}')"><i class="ti ti-trash"></i></button>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+  // mostra ações ao hover
+  el.querySelectorAll('[onmouseenter]').forEach(card=>{
+    card.addEventListener('mouseenter',()=>card.querySelector('.card-actions').style.opacity='1');
+    card.addEventListener('mouseleave',()=>card.querySelector('.card-actions').style.opacity='0');
+  });
 }
 
 function renderProjetos(q=''){
@@ -608,23 +630,34 @@ function renderProjetos(q=''){
     return true;
   });
   const el=document.getElementById('table-projetos');
-  if(!d.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">📁</div><div class="empty-title">Nenhum projeto encontrado</div><div class="empty-desc">Clique em "Novo"</div><button class="btn btn-primary btn-sm" onclick="abrirModal()"><i class="ti ti-plus"></i> Cadastrar</button></div>`;return}
-  const sBadge={ativo:'badge-green',prospect:'badge-amber',arquivado:'badge-gray'};
-  const tBadge={alocacao:'badge-purple',escopo:'badge-blue',interno:'badge-teal'};
+  if(!d.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">📁</div><div class="empty-title">Nenhum projeto encontrado</div><div class="empty-desc">Clique em "Novo"</div><button class="btn btn-primary btn-sm" onclick="abrirModal()"><i class="ti ti-plus"></i> Cadastrar</button></div>`;return;}
+  const sCor={ativo:'#16a34a',prospect:'#d97706',arquivado:'#6b7280'};
   const tLabel={alocacao:'Alocação',escopo:'Escopo',interno:'Interno'};
-  el.innerHTML=`<table><thead><tr><th>Projeto</th><th>Cliente</th><th>Tipo</th><th>Início</th><th>Equipe</th><th>Status</th><th></th></tr></thead><tbody>${d.map(p=>{
+  el.innerHTML=`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">${d.map(p=>{
     const cli=DB.clientes.find(c=>c.id===p.clienteId);
-    const eq=DB.vinculos.filter(v=>v.projetoId===p.id&&v.ativo!==false).length;
-    return`<tr onclick="editarProjeto('${p.id}')">
-      <td><div class="td-primary">${p.nome}</div>${p.desc?`<div class="td-muted" style="font-size:11px">${p.desc.substring(0,50)}...</div>`:''}</td>
-      <td class="td-muted">${cli?cli.nome:'Interno'}</td>
-      <td><span class="badge ${tBadge[p.tipo]||'badge-gray'}">${tLabel[p.tipo]||p.tipo||'—'}</span></td>
-      <td class="td-muted">${p.inicio?new Date(p.inicio+'T12:00:00').toLocaleDateString('pt-BR'):'—'}</td>
-      <td><span class="badge badge-teal"><span class="badge-dot"></span>${eq} pessoa${eq!==1?'s':''}</span></td>
-      <td><span class="badge ${sBadge[p.status]||'badge-gray'}"><span class="badge-dot"></span>${p.status}</span></td>
-      <td><div class="row-actions"><button class="icon-btn" onclick="event.stopPropagation();editarProjeto('${p.id}')"><i class="ti ti-edit"></i></button><button class="icon-btn danger" onclick="event.stopPropagation();excluir('projetos','${p.id}')"><i class="ti ti-trash"></i></button></div></td>
-    </tr>`;
-  }).join('')}</tbody></table>`;
+    const hMes=DB.horas?DB.horas.filter(h=>{
+      const d2=new Date(h.data||'');const n=new Date();
+      return (h.timeneye_project_id===p.timeneye_project_id||h.projeto===p.nome)&&d2.getMonth()===n.getMonth()&&d2.getFullYear()===n.getFullYear();
+    }).reduce((a,h)=>a+(h.minutos||0),0):0;
+    return`<div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid ${sCor[p.status]||'#6b7280'};border-radius:var(--radius-lg);padding:18px;cursor:pointer;transition:all .2s;position:relative" onmouseenter="this.style.boxShadow='0 4px 14px rgba(0,0,0,0.08)';this.style.transform='translateY(-1px)'" onmouseleave="this.style.boxShadow='';this.style.transform=''" onclick="window.location.href='projeto.html?id=${p.id}'">
+      <div style="font-family:var(--font-display);font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.nome}</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">${cli?cli.nome:'Interno'}</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">
+        <span style="background:${sCor[p.status]||'#6b7280'}22;color:${sCor[p.status]||'#6b7280'};border-radius:100px;padding:2px 8px;font-size:9px;font-family:var(--font-display);font-weight:700">${p.status}</span>
+        <span style="background:var(--bravi-purple-dim);color:var(--bravi-purple);border-radius:100px;padding:2px 8px;font-size:9px;font-family:var(--font-display);font-weight:700">${tLabel[p.tipo]||p.tipo||'—'}</span>
+      </div>
+      ${p.inicio?`<div style="font-size:10px;color:var(--text-dim)"><i class="ti ti-calendar" style="font-size:10px;margin-right:2px"></i>${new Date(p.inicio+'T12:00:00').toLocaleDateString('pt-BR')}</div>`:''}
+      ${hMes>0?`<div style="font-size:11px;color:var(--bravi-purple);font-family:var(--font-display);font-weight:600;margin-top:8px"><i class="ti ti-clock" style="font-size:10px;margin-right:3px"></i>${Math.floor(hMes/60)}h este mês</div>`:''}
+      <div style="position:absolute;top:10px;right:10px;display:flex;gap:4px;opacity:0;transition:opacity .15s" class="card-actions">
+        <button class="icon-btn" style="width:24px;height:24px;font-size:11px" onclick="event.stopPropagation();editarProjeto('${p.id}')"><i class="ti ti-edit"></i></button>
+        <button class="icon-btn danger" style="width:24px;height:24px;font-size:11px" onclick="event.stopPropagation();excluir('projetos','${p.id}')"><i class="ti ti-trash"></i></button>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+  el.querySelectorAll('[onmouseenter]').forEach(card=>{
+    card.addEventListener('mouseenter',()=>card.querySelector('.card-actions').style.opacity='1');
+    card.addEventListener('mouseleave',()=>card.querySelector('.card-actions').style.opacity='0');
+  });
 }
 
 function renderSetores(){
