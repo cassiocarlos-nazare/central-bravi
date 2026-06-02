@@ -780,7 +780,7 @@ function renderAtividades() {
   if (resumoEl) resumoEl.textContent = `${ativas.length} registro${ativas.length!==1?'s':''} · ${fmtPeriodo}`;
   if (totalEl)  totalEl.textContent  = fmtMes(totalMins);
 
-  // ── GRÁFICO 1: Pie — phases utilizadas ──
+  // ── GRÁFICO 1: Pizza — phases utilizadas ──
   const porFase = {};
   ativas.forEach(h => {
     const k = h.fase || h.descricao || 'Outros';
@@ -790,37 +790,47 @@ function renderAtividades() {
 
   if (_chartPie) { _chartPie.destroy(); _chartPie = null; }
   const canvasPie = document.getElementById('chart-pie-phases');
+  const totalMinsFase = Object.values(porFase).reduce((a,b)=>a+b,0);
+
   if (canvasPie && Object.keys(porFase).length > 0) {
-    const labels = Object.keys(porFase).slice(0,8);
-    const data   = labels.map(k => Math.round(porFase[k]/60*10)/10);
-    const total  = data.reduce((a,b)=>a+b,0);
+    const labels = Object.keys(porFase).sort((a,b)=>porFase[b]-porFase[a]).slice(0,8);
+    // Dados em minutos para o chart (tooltip mostra em horas)
+    const dataMin = labels.map(k => porFase[k]);
     _chartPie = new Chart(canvasPie, {
-      type: 'doughnut',
-      data: { labels, datasets: [{ data, backgroundColor: COR.slice(0,labels.length), borderWidth:2, borderColor:'#1A1A2E' }] },
+      type: 'pie', // pizza, não rosca
+      data: { labels, datasets: [{ data: dataMin, backgroundColor: COR.slice(0,labels.length), borderWidth:2, borderColor:'#f8f9ff' }] },
       options: {
-        cutout: '60%', responsive:false,
+        responsive: false,
         plugins: {
-          legend: { display:false },
-          tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw}h (${Math.round(ctx.raw/total*100)}%)` } }
+          legend: { display: false },
+          tooltip: { callbacks: {
+            label: ctx => {
+              const h = Math.floor(ctx.raw/60), m = ctx.raw%60;
+              const pct = Math.round(ctx.raw/totalMinsFase*100);
+              return ` ${ctx.label}: ${h}h${m>0?' '+m+'min':''} (${pct}%)`;
+            }
+          }}
         }
       }
     });
-    // Legenda manual
+    // Legenda manual com % correto
     const legEl = document.getElementById('chart-pie-legend');
-    if (legEl) legEl.innerHTML = labels.map((l,i) => `
-      <div style="display:flex;align-items:center;gap:5px;margin-bottom:4px">
-        <div style="width:8px;height:8px;border-radius:50%;background:${COR[i]};flex-shrink:0"></div>
-        <span style="color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px" title="${l}">${l}</span>
-        <span style="color:var(--text-primary);font-weight:700;font-family:var(--font-display);margin-left:auto;padding-left:6px">${Math.round(porFase[l]/total*100)}%</span>
-      </div>`).join('');
+    if (legEl) legEl.innerHTML = labels.map((l,i) => {
+      const pct = Math.round(porFase[l]/totalMinsFase*100);
+      const h   = Math.floor(porFase[l]/60), m = porFase[l]%60;
+      return `<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px">
+        <div style="width:10px;height:10px;border-radius:2px;background:${COR[i]};flex-shrink:0"></div>
+        <span style="color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100px;font-size:11px" title="${l}">${l}</span>
+        <span style="color:var(--text-primary);font-weight:700;font-family:var(--font-display);margin-left:auto;padding-left:4px;font-size:11px">${pct}%</span>
+      </div>`;
+    }).join('');
   } else if (canvasPie) {
-    const ctx = canvasPie.getContext('2d');
-    ctx.clearRect(0,0,canvasPie.width,canvasPie.height);
+    const ctx = canvasPie.getContext('2d'); ctx.clearRect(0,0,canvasPie.width,canvasPie.height);
     const legEl = document.getElementById('chart-pie-legend');
     if (legEl) legEl.innerHTML = '<span style="color:var(--text-dim);font-size:12px">Sem dados</span>';
   }
 
-  // ── GRÁFICO 2: Barras — principais atividades por horas ──
+  // ── GRÁFICO 2: Colunas verticais — principais fases por horas ──
   const porAtiv = {};
   ativas.forEach(h => {
     const k = h.fase || h.descricao || 'Outros';
@@ -831,23 +841,40 @@ function renderAtividades() {
   if (_chartBar) { _chartBar.destroy(); _chartBar = null; }
   const canvasBar = document.getElementById('chart-bar-ativ');
   if (canvasBar && topAtiv.length > 0) {
-    canvasBar.height = Math.max(topAtiv.length * 28 + 30, 180);
+    canvasBar.height = 200;
     _chartBar = new Chart(canvasBar, {
       type: 'bar',
       data: {
-        labels: topAtiv.map(([k]) => k.length > 20 ? k.slice(0,20)+'…' : k),
-        datasets: [{ data: topAtiv.map(([,v]) => Math.round(v/60*10)/10), backgroundColor: '#7C3AED99', borderColor:'#7C3AED', borderWidth:1, borderRadius:4 }]
+        labels: topAtiv.map(([k]) => k.length > 12 ? k.slice(0,12)+'…' : k),
+        datasets: [{
+          data: topAtiv.map(([,v]) => Math.round(v/60*10)/10),
+          backgroundColor: topAtiv.map((_,i) => COR[i%COR.length]+'cc'),
+          borderColor:     topAtiv.map((_,i) => COR[i%COR.length]),
+          borderWidth: 1, borderRadius: 6, borderSkipped: false
+        }]
       },
       options: {
-        indexAxis: 'y', responsive:true,
+        responsive: true, maintainAspectRatio: false,
         plugins: {
-          legend: { display:false },
-          tooltip: { callbacks: { label: ctx => ` ${ctx.raw}h` } },
-          datalabels: { display:false }
+          legend: { display: false },
+          tooltip: { callbacks: {
+            label: ctx => {
+              const mins = topAtiv[ctx.dataIndex]?.[1] || 0;
+              const h = Math.floor(mins/60), m = mins%60;
+              return ` ${h}h${m>0?' '+m+'min':''}`;
+            }
+          }}
         },
         scales: {
-          x: { grid: { color:'rgba(255,255,255,0.05)' }, ticks: { color:'#888', font:{size:11}, callback: v => v+'h' } },
-          y: { grid: { display:false }, ticks: { color:'#888', font:{size:11} } }
+          x: {
+            grid: { display: false },
+            ticks: { color:'#888', font:{ size:10 }, maxRotation: 30 }
+          },
+          y: {
+            grid: { color:'rgba(0,0,0,0.05)' },
+            ticks: { color:'#888', font:{ size:11 }, callback: v => v+'h' },
+            beginAtZero: true
+          }
         }
       }
     });
