@@ -188,51 +188,27 @@
     <div class="dashboard-view" id="dashboard-view">
 
       <!-- STATS -->
-      <div class="prof-grid">
-        <div class="stat-card"><div class="stat-card-value" id="st-total">0</div><div class="stat-card-label">Total</div></div>
-        <div class="stat-card"><div class="stat-card-value" id="st-ativos">0</div><div class="stat-card-label">Ativos</div></div>
-        <div class="stat-card"><div class="stat-card-value" id="st-horas">0h</div><div class="stat-card-label">Horas no mês</div></div>
+      <div class="prof-grid" style="grid-template-columns:repeat(3,1fr)">
+        <div class="stat-card"><div class="stat-card-value" id="st-ativos">0</div><div class="stat-card-label">Profissionais ativos</div></div>
+        <div class="stat-card"><div class="stat-card-value" id="st-horas">0h</div><div class="stat-card-label" id="st-horas-label">Horas no mês</div></div>
         <div class="stat-card"><div class="stat-card-value" id="st-projetos">0</div><div class="stat-card-label">Projetos ativos</div></div>
       </div>
 
-      <!-- FILTROS -->
-      <div class="filter-bar">
+      <!-- FILTROS + PERÍODO numa única barra -->
+      <div class="filter-bar" style="flex-wrap:wrap;gap:10px">
         <span class="filter-label">Filtros</span>
-        <select class="filter-select" id="f-projeto" onchange="renderDashboard()">
-          <option value="">Todos os projetos</option>
-        </select>
-        <select class="filter-select" id="f-funcao" onchange="renderDashboard()">
-          <option value="">Todas as funções</option>
-        </select>
-        <select class="filter-select" id="f-setor" onchange="renderDashboard()">
-          <option value="">Todos os setores</option>
-        </select>
+        <select class="filter-select" id="f-funcao" onchange="renderDashboard()"><option value="">Todas as funções</option></select>
+        <select class="filter-select" id="f-projeto" onchange="renderDashboard()"><option value="">Todos os projetos</option></select>
+        <select class="filter-select" id="f-setor" onchange="renderDashboard()"><option value="">Todos os setores</option></select>
         <div class="filter-divider"></div>
-        <select class="filter-select" id="f-regime" onchange="renderDashboard()">
-          <option value="">Todos os regimes</option>
-          <option value="clt">CLT</option>
-          <option value="pj">PJ</option>
-          <option value="estagio">Estágio</option>
-          <option value="freelancer">Freelancer</option>
-        </select>
+        <span class="filter-label">Período</span>
+        <input type="date" class="filter-select" id="dash-ini" onchange="renderDashboard()" style="font-size:11px;padding:4px 8px">
+        <span style="font-size:11px;color:var(--text-dim)">→</span>
+        <input type="date" class="filter-select" id="dash-fim" onchange="renderDashboard()" style="font-size:11px;padding:4px 8px">
+        <button class="btn btn-ghost btn-sm" onclick="setDashPeriodo('hoje')" style="font-size:10px;padding:3px 8px">Hoje</button>
+        <button class="btn btn-ghost btn-sm" onclick="setDashPeriodo('semana')" style="font-size:10px;padding:3px 8px">Semana</button>
+        <button class="btn btn-ghost btn-sm active" onclick="setDashPeriodo('mes')" id="btn-periodo-mes" style="font-size:10px;padding:3px 8px">Mês</button>
         <button class="btn btn-ghost btn-sm" onclick="limparFiltros()"><i class="ti ti-x"></i> Limpar</button>
-      </div>
-
-      <!-- HORAS DO MÊS -->
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:20px">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
-          <div style="font-family:var(--font-display);font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em">Horas lançadas</div>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <select class="filter-select" id="dash-mes" onchange="renderDashboard()" style="font-size:11px;padding:4px 8px">
-              <option value="">Mês atual</option>
-            </select>
-            <span style="font-size:11px;color:var(--text-dim)">a</span>
-          </div>
-        </div>
-        <div id="dash-horas-info" style="display:flex;align-items:baseline;gap:8px">
-          <span style="font-family:var(--font-display);font-size:32px;font-weight:800;color:var(--text-primary)" id="dash-horas-total">0h</span>
-          <span style="font-size:13px;color:var(--text-muted)" id="dash-horas-label">no mês atual</span>
-        </div>
       </div>
 
       <!-- GRID PROFISSIONAIS -->
@@ -295,7 +271,9 @@
           </div>
           <div class="section-card">
             <div style="font-size:10px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;font-family:var(--font-display);margin-bottom:14px">Principais atividades (horas)</div>
-            <canvas id="chart-bar-ativ" width="100%" height="180"></canvas>
+            <div style="height:200px;position:relative">
+              <canvas id="chart-bar-ativ"></canvas>
+            </div>
           </div>
         </div>
         <!-- Tabela agrupada -->
@@ -465,10 +443,29 @@ function popularFiltros() {
   fs.innerHTML = '<option value="">Todos os setores</option>' + DB.setores.map(s=>`<option value="${s.nome}">${s.nome}</option>`).join('');
 }
 
+// ── Cache de horas em memória (evita refetch) ──
+const _horasMemCache = {};
+
+async function buscarHorasAPI(prof, ini, fim) {
+  const apiUrl = BraviDB.getApiUrl();
+  if (!apiUrl || !prof?.email) return getHorasProf(prof);
+  const cacheKey = prof.email + '|' + (ini||'') + '|' + (fim||'');
+  if (_horasMemCache[cacheKey]) return _horasMemCache[cacheKey];
+  try {
+    const url = apiUrl + '?action=horas-usuario&email=' + encodeURIComponent(prof.email) +
+                (ini ? '&ini=' + ini : '') + (fim ? '&fim=' + fim : '') + '&_=' + Date.now();
+    const r = await fetch(url);
+    if (!r.ok) return getHorasProf(prof);
+    const j = await r.json();
+    if (j.ok && Array.isArray(j.dados)) { _horasMemCache[cacheKey] = j.dados; return j.dados; }
+  } catch(e) {}
+  return getHorasProf(prof);
+}
+
 function limparFiltros() {
-  ['f-projeto','f-funcao','f-setor','f-regime'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  ['f-projeto','f-funcao','f-setor'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   document.getElementById('search-input').value='';
-  renderDashboard();
+  setDashPeriodo('mes');
 }
 
 function setFiltroStatus(s, el) {
@@ -485,7 +482,6 @@ function getProfsFiltrados() {
   const fProj  = document.getElementById('f-projeto')?.value||'';
   const fFunc  = document.getElementById('f-funcao')?.value||'';
   const fSetor = document.getElementById('f-setor')?.value||'';
-  const fReg   = document.getElementById('f-regime')?.value||'';
 
   return DB.profissionais.filter(p => {
     if (filtroStatus==='ativos'  && p.ativo===false) return false;
@@ -493,65 +489,71 @@ function getProfsFiltrados() {
     if (fProj && p.projetoPrincipal !== fProj) return false;
     if (fFunc && p.funcao !== fFunc) return false;
     if (fSetor && p.setor !== fSetor) return false;
-    if (fReg && p.regime !== fReg) return false;
     if (q) return (p.nome||'').toLowerCase().includes(q)||(p.funcao||'').toLowerCase().includes(q)||(p.setor||'').toLowerCase().includes(q);
     return true;
   });
 }
 
 // ── RENDER DASHBOARD ──
+function setDashPeriodo(modo) {
+  const ini = document.getElementById('dash-ini');
+  const fim = document.getElementById('dash-fim');
+  if (!ini || !fim) return;
+  const hoje = new Date();
+  if (modo === 'hoje') {
+    ini.value = fim.value = hoje.toISOString().slice(0,10);
+  } else if (modo === 'semana') {
+    const seg = new Date(hoje); seg.setDate(hoje.getDate() - ((hoje.getDay()+6)%7));
+    const sex = new Date(seg); sex.setDate(seg.getDate() + 6);
+    ini.value = seg.toISOString().slice(0,10);
+    fim.value = sex.toISOString().slice(0,10);
+  } else { // mês
+    ini.value = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().slice(0,10);
+    fim.value = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0).toISOString().slice(0,10);
+  }
+  renderDashboard();
+}
+
 function renderDashboard() {
   const profs = getProfsFiltrados();
   document.getElementById('grid-count').textContent = profs.length;
 
   // Stats
   const ativos = DB.profissionais.filter(p=>p.ativo!==false).length;
-  document.getElementById('st-total').textContent   = DB.profissionais.length;
-  document.getElementById('st-ativos').textContent  = ativos;
-  document.getElementById('st-projetos').textContent= DB.projetos.filter(p=>p.status==='ativo').length;
+  document.getElementById('st-ativos').textContent   = ativos;
+  document.getElementById('st-projetos').textContent = DB.projetos.filter(p=>p.status==='ativo').length;
 
-  // Popula seletor de mês
-  const mesEl = document.getElementById('dash-mes');
-  if (mesEl && mesEl.options.length <= 1) {
+  // Inicializa datas se vazias (padrão: mês atual)
+  const iniEl = document.getElementById('dash-ini');
+  const fimEl = document.getElementById('dash-fim');
+  if (iniEl && !iniEl.value) {
     const hoje = new Date();
-    for (let i = 0; i < 6; i++) {
-      const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
-      const val = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-      const lbl = d.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
-      const opt = document.createElement('option');
-      opt.value = val; opt.textContent = lbl;
-      if (i === 0) opt.selected = true;
-      mesEl.appendChild(opt);
-    }
+    iniEl.value = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().slice(0,10);
+    fimEl.value = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0).toISOString().slice(0,10);
   }
+  const dashIni = iniEl?.value || '';
+  const dashFim = fimEl?.value || '';
 
-  // Calcula horas do mês selecionado respeitando filtro de profissionais
-  const mesSel = mesEl ? mesEl.value : '';
+  // Horas do período via localStorage (rápido)
   let totalMins = 0;
-  let mesLabel = 'no mês atual';
   profs.forEach(prof => {
     getHorasProf(prof).forEach(h => {
-      const d = new Date(h.data || '');
-      const hMes = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-      if (mesSel && hMes !== mesSel) return;
-      if (!mesSel) {
-        const n = new Date();
-        if (d.getMonth() !== n.getMonth() || d.getFullYear() !== n.getFullYear()) return;
-      }
-      totalMins += (h.minutos || 0);
+      if (dashIni && h.data < dashIni) return;
+      if (dashFim && h.data > dashFim) return;
+      totalMins += (h.minutos||0);
     });
   });
 
-  const horas = Math.floor(totalMins/60);
-  const mins  = totalMins % 60;
-  document.getElementById('dash-horas-total').textContent = horas + 'h' + (mins > 0 ? ' ' + mins + 'min' : '');
+  const horas = Math.floor(totalMins/60), mins = totalMins%60;
+  const label = dashIni && dashFim
+    ? (dashIni===dashFim
+        ? new Date(dashIni+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'long'})
+        : new Date(dashIni+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}) + ' → ' +
+          new Date(dashFim+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}))
+    : 'no período';
 
-  if (mesSel && mesEl) {
-    const opt = Array.from(mesEl.options).find(o => o.value === mesSel);
-    if (opt) mesLabel = 'em ' + opt.textContent;
-  }
-  document.getElementById('dash-horas-label').textContent = mesLabel;
-  document.getElementById('st-horas').textContent = horas + 'h';
+  document.getElementById('st-horas').textContent       = horas+'h'+(mins>0?' '+mins+'min':'');
+  document.getElementById('st-horas-label').textContent = label;
 
   atualizarContadores();
   renderGrid(profs);
@@ -592,9 +594,12 @@ function renderGrid(profs) {
   grid.innerHTML = profs.map(p=>{
     const ini = p.nome?p.nome.split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase():'??';
     const proj = DB.projetos.find(pr=>pr.id===p.projetoPrincipal);
+    const dashIni2 = document.getElementById('dash-ini')?.value || '';
+    const dashFim2 = document.getElementById('dash-fim')?.value || '';
     const hMes = getHorasProf(p).filter(h=>{
-      const d=new Date(h.data||''); const n=new Date();
-      return d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear();
+      if (dashIni2 && h.data < dashIni2) return false;
+      if (dashFim2 && h.data > dashFim2) return false;
+      return true;
     }).reduce((a,h)=>a+(h.minutos||0),0);
     const meses = p.admissao?Math.floor((Date.now()-new Date(p.admissao))/(1000*60*60*24*30.5)):0;
     const tempo = meses>=12?`${Math.floor(meses/12)}a ${meses%12}m`:`${meses}m`;
@@ -642,21 +647,23 @@ function voltarDashboard() {
   document.querySelectorAll('.tab-panel').forEach((b,i)=>b.classList.toggle('active',i===0));
 }
 
-function renderProfileHeader(p) {
+async function renderProfileHeader(p) {
   const ini = p.nome?p.nome.split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase():'??';
   const proj = DB.projetos.find(pr=>pr.id===p.projetoPrincipal);
   const meses = p.admissao?Math.floor((Date.now()-new Date(p.admissao))/(1000*60*60*24*30.5)):0;
-  const tempo = meses>=12?`${Math.floor(meses/12)} anos ${meses%12} meses`:`${meses} meses`;
-  const mesAtual = new Date().getMonth()+1;
-  const anoAtual = new Date().getFullYear();
-  const horasMes = getHorasProf(p).filter(h=>{
-    const d=new Date(h.data||'');
-    return d.getMonth()+1===mesAtual && d.getFullYear()===anoAtual;
-  }).reduce((a,h)=>a+(h.minutos||0),0);
+  const tempo = meses>=12?`${Math.floor(meses/12)} ano${Math.floor(meses/12)>1?'s':''} ${meses%12>0?meses%12+' meses':''}`.trim():`${meses} meses`;
+
+  // Horas do mês corrente via API (busca dados completos)
+  const hoje   = new Date();
+  const mesIni = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().slice(0,10);
+  const mesFim = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0).toISOString().slice(0,10);
+  const horasDoMes = await buscarHorasAPI(p, mesIni, mesFim);
+  const horasMes   = horasDoMes.reduce((a,h)=>a+(h.minutos||0), 0);
+  const mesLabel   = hoje.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
 
   const extras = getExtras(p.id);
   const numStacks = Object.values(extras.qualificacoes||{}).flat().length;
-  const numEquip = (extras.equipamentos||[]).length;
+  const numEquip  = (extras.equipamentos||[]).length;
 
   document.getElementById('profile-header').innerHTML = `
     <div class="profile-avatar-lg">${p.foto?`<img src="${p.foto}">`:`${ini}`}</div>
@@ -671,7 +678,7 @@ function renderProfileHeader(p) {
       </div>
       <div class="profile-stats-bar">
         <div class="profile-stat"><div class="profile-stat-value">${tempo}</div><div class="profile-stat-label">Empresa</div></div>
-        <div class="profile-stat"><div class="profile-stat-value">${fmtMes(horasMes)}</div><div class="profile-stat-label">Horas/mês</div></div>
+        <div class="profile-stat" title="${mesLabel}"><div class="profile-stat-value">${fmtMes(horasMes)}</div><div class="profile-stat-label">Horas/mês</div></div>
         <div class="profile-stat"><div class="profile-stat-value">${numStacks}</div><div class="profile-stat-label">Qualificações</div></div>
         <div class="profile-stat"><div class="profile-stat-value">${numEquip}</div><div class="profile-stat-label">Equipamentos</div></div>
       </div>
@@ -738,10 +745,9 @@ function setAtivDefaults(modo) {
   renderAtividades();
 }
 
-function renderAtividades() {
+async function renderAtividades() {
   if (!profAtual) return;
 
-  // ── Inicializa datas default (mês corrente) ──
   const iniEl = document.getElementById('f-ativ-ini');
   const fimEl = document.getElementById('f-ativ-fim');
   if (iniEl && !iniEl.value) {
@@ -753,19 +759,25 @@ function renderAtividades() {
   const fim  = fimEl?.value || '';
   const proj = document.getElementById('f-proj-ativ')?.value || '';
 
-  // ── Popula select de projetos ──
+  // Loading state
+  const el2 = document.getElementById('atividades-list');
+  if (el2) el2.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-muted)"><i class="ti ti-loader-2" style="animation:spin 1s linear infinite;font-size:20px;display:block;margin:0 auto 8px"></i>Buscando via API...</div>`;
+  const chartsEl = document.getElementById('ativ-charts');
+  if (chartsEl) chartsEl.style.display = 'none';
+
+  // Busca via API (dados completos — não depende do localStorage)
+  const todas = await buscarHorasAPI(profAtual, ini, fim);
+
+  // Popula select de projetos
   const selProj = document.getElementById('f-proj-ativ');
-  if (selProj && selProj.options.length <= 1) {
-    const projetosUsados = [...new Set(getHorasProf(profAtual).map(h => h.projeto).filter(Boolean))];
+  if (selProj) {
+    const projetosUsados = [...new Set(todas.map(h => h.projeto).filter(Boolean))].sort();
+    const valAtual = selProj.value;
     selProj.innerHTML = '<option value="">Todos os projetos</option>' +
-      projetosUsados.map(n => `<option value="${n}">${n}</option>`).join('');
+      projetosUsados.map(n => `<option value="${n}" ${n===valAtual?'selected':''}>${n}</option>`).join('');
   }
 
-  // ── Filtra horas com matching robusto ──
-  const todas = getHorasProf(profAtual);
   const ativas = todas.filter(h => {
-    if (ini && h.data < ini) return false;
-    if (fim && h.data > fim) return false;
     if (proj && h.projeto !== proj) return false;
     return true;
   }).sort((a,b) => new Date(b.data) - new Date(a.data));
@@ -946,23 +958,28 @@ function setHorasDefaults() {
   renderHoras();
 }
 
-function renderHoras() {
+async function renderHoras() {
   if (!profAtual) return;
   const ini = document.getElementById('f-horas-ini')?.value;
   const fim = document.getElementById('f-horas-fim')?.value;
   const hoje = new Date();
   const mesAtual = hoje.getMonth()+1;
   const anoAtual = hoje.getFullYear();
+  const mesIni = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().slice(0,10);
+  const mesFim = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0).toISOString().slice(0,10);
 
-  const hPeriodo = getHorasProf(profAtual).filter(h=>{
-    if(ini&&h.data<ini)return false;
-    if(fim&&h.data>fim)return false;
-    return true;
-  });
-  const hMes = getHorasProf(profAtual).filter(h=>{
-    const d=new Date(h.data||'');
-    return d.getMonth()+1===mesAtual&&d.getFullYear()===anoAtual;
-  });
+  // Loading
+  const cont = document.getElementById('horas-content');
+  if (cont) cont.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted)"><i class="ti ti-loader-2" style="animation:spin 1s linear infinite;font-size:20px;display:block;margin:0 auto 8px"></i>Buscando horas via API...</div>';
+
+  // Busca dados via API para garantir dados completos
+  const [hPeriodoAll, hMesAll] = await Promise.all([
+    ini ? buscarHorasAPI(profAtual, ini, fim) : buscarHorasAPI(profAtual, ini, fim),
+    buscarHorasAPI(profAtual, mesIni, mesFim)
+  ]);
+
+  const hPeriodo = hPeriodoAll;
+  const hMes = hMesAll;
 
   const minPeriodo = hPeriodo.reduce((a,h)=>a+(h.minutos||0),0);
   const minMes = hMes.reduce((a,h)=>a+(h.minutos||0),0);
