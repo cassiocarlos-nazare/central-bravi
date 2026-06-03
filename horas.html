@@ -347,13 +347,8 @@ function renderEquipeChips(){
 }
 function toggleEquipe(ctx,eqId,el){
   el.classList.toggle('active');
-  const eq=equipes.find(e=>e.id===eqId);if(!eq)return;
-  if(el.classList.contains('active')){
-    const pEmails=new Set(eq.profIds.map(id=>{const p=DB.profissionais.find(x=>x.id===id);return p?(p.email||'').toLowerCase():'';}).filter(Boolean));
-    const projs=[...new Set(DB.horas.filter(h=>pEmails.has((h.profEmail||'').toLowerCase())).map(h=>h.projeto).filter(Boolean))];
-    if(ctx==='conf')projs.forEach(p=>projSel_conf.add(p));else projs.forEach(p=>projSel_men.add(p));
-  }
-  renderProjMulti(ctx);renderViewAtual();
+  // Equipe apenas filtra profissionais — não seleciona projetos automaticamente
+  renderViewAtual();
 }
 function renderProjMulti(ctx){
   const el=document.getElementById('proj-multi-'+ctx);if(!el)return;
@@ -378,9 +373,13 @@ function bsConf(pct){const c=clsConf(pct);const t=pct>=100?'Acima':pct>=90?'OK':
 function setSemana(modo,btn){
   document.querySelectorAll('#view-conferencia .periodo-btn').forEach(b=>b.classList.remove('active'));
   if(btn)btn.classList.add('active');
-  const hoje=new Date();let seg,dom;
-  if(modo==='anterior'){const dw=hoje.getDay()||7;seg=new Date(hoje);seg.setDate(hoje.getDate()-(dw-1)-7);dom=new Date(seg);dom.setDate(seg.getDate()+6);}
-  else{const dw=hoje.getDay()||7;seg=new Date(hoje);seg.setDate(hoje.getDate()-(dw-1));dom=new Date(seg);dom.setDate(seg.getDate()+6);}
+  // Usa a data mais recente com dados como referência (não o dia atual)
+  const datasComDados=DB.horas.map(h=>h.data).filter(Boolean).sort();
+  const refISO=datasComDados.length?datasComDados[datasComDados.length-1]:new Date().toISOString().slice(0,10);
+  const ref=new Date(refISO+'T12:00:00');
+  let seg,dom;
+  if(modo==='anterior'){const dw=ref.getDay()||7;seg=new Date(ref);seg.setDate(ref.getDate()-(dw-1)-7);dom=new Date(seg);dom.setDate(seg.getDate()+6);}
+  else{const dw=ref.getDay()||7;seg=new Date(ref);seg.setDate(ref.getDate()-(dw-1));dom=new Date(seg);dom.setDate(seg.getDate()+6);}
   confIni=seg.toISOString().slice(0,10);confFim=dom.toISOString().slice(0,10);
   document.getElementById('conf-ini').value=confIni;document.getElementById('conf-fim').value=confFim;
   renderProjMulti('conf');renderConferencia();
@@ -423,7 +422,13 @@ function renderConferencia(){
   const horasFilt=filtrarProjSel(todasHoras,projSel_conf);
   const faseFilt=document.getElementById('conf-fase')?.value||'';
   const horas=faseFilt?horasFilt.filter(h=>h.fase===faseFilt):horasFilt;
-  const profs=getProfsAtivos();
+  // Filtra profissionais pelas equipes ativas (se alguma estiver selecionada)
+  const equipesAtivas=[...document.querySelectorAll('#equipe-chips-conf .equipe-chip.active')].map(el=>{const idx=[...el.parentElement.children].indexOf(el);return equipes[idx]?.id;}).filter(Boolean);
+  let profs=getProfsAtivos();
+  if(equipesAtivas.length){
+    const profIdsPermitidos=new Set(equipesAtivas.flatMap(eqId=>(equipes.find(e=>e.id===eqId)?.profIds||[])));
+    profs=profs.filter(p=>profIdsPermitidos.has(p.id));
+  }
   const metaMin=40*60;
   const totalMin=horas.reduce((a,h)=>a+(h.minutos||0),0);
   let okCount=0,alertaCount=0;
