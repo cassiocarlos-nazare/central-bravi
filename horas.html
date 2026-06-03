@@ -393,8 +393,14 @@ function renderEquipeChips(){
   });
 }
 function toggleEquipe(ctx,eqId,el){
-  el.classList.toggle('active');
-  // Equipe apenas filtra profissionais — não seleciona projetos automaticamente
+  const eraAtiva=el.classList.contains('active');
+  // Desativa todos os chips de equipe do contexto
+  document.querySelectorAll(`#equipe-chips-${ctx} .equipe-chip`).forEach(c=>c.classList.remove('active'));
+  // Se não era ativa, ativa esta; se era, deixa todas desativas
+  if(!eraAtiva) el.classList.add('active');
+  // Limpa seleção de projetos ao mudar equipe
+  if(ctx==='conf') projSel_conf.clear(); else projSel_men.clear();
+  renderProjMulti(ctx);
   renderViewAtual();
 }
 function renderProjMulti(ctx){
@@ -420,29 +426,18 @@ function bsConf(pct){const c=clsConf(pct);const t=pct>=100?'Acima':pct>=90?'OK':
 function setSemana(modo,btn){
   document.querySelectorAll('#view-conferencia .periodo-btn').forEach(b=>b.classList.remove('active'));
   if(btn)btn.classList.add('active');
-  // Encontra a semana com mais registros no banco
-  const contPorSemana={};
-  DB.horas.forEach(h=>{
-    if(!h.data)return;
-    const d=new Date(h.data+'T12:00:00');
-    const dw=d.getDay()||7;
-    const seg=new Date(d);seg.setDate(d.getDate()-(dw-1));
-    const k=seg.toISOString().slice(0,10);
-    contPorSemana[k]=(contPorSemana[k]||0)+1;
-  });
-  const semanas=Object.entries(contPorSemana).sort((a,b)=>b[1]-a[1]);
-  // semana mais recente com dados (não necessariamente a com mais registros)
-  const semanasOrdenadas=Object.keys(contPorSemana).sort();
-  const ultimaSemana=semanasOrdenadas[semanasOrdenadas.length-1]||new Date().toISOString().slice(0,10);
-  let refSemana;
-  if(modo==='anterior'){
-    // pega a penúltima semana com dados, ou a última se só houver uma
-    refSemana=semanasOrdenadas.length>1?semanasOrdenadas[semanasOrdenadas.length-2]:ultimaSemana;
+  let seg,dom;
+  if(modo==='atual'){
+    // Semana atual = semana real de hoje
+    const hoje=new Date();const dw=hoje.getDay()||7;
+    seg=new Date(hoje);seg.setDate(hoje.getDate()-(dw-1));
+    dom=new Date(seg);dom.setDate(seg.getDate()+6);
   } else {
-    refSemana=ultimaSemana;
+    // Semana anterior = semana anterior à real de hoje
+    const hoje=new Date();const dw=hoje.getDay()||7;
+    seg=new Date(hoje);seg.setDate(hoje.getDate()-(dw-1)-7);
+    dom=new Date(seg);dom.setDate(seg.getDate()+6);
   }
-  const seg=new Date(refSemana+'T12:00:00');
-  const dom=new Date(seg);dom.setDate(seg.getDate()+6);
   confIni=seg.toISOString().slice(0,10);confFim=dom.toISOString().slice(0,10);
   document.getElementById('conf-ini').value=confIni;document.getElementById('conf-fim').value=confFim;
   renderProjMulti('conf');renderConferencia();
