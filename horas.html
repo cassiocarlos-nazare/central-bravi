@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle de Horas — Central Bravi</title>
+<link rel="stylesheet" href="bravi-ds.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<script src="bravi-db.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+.filter-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 16px;margin-bottom:16px}
+.filter-label{font-size:10px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;font-family:var(--font-display);white-space:nowrap}
+.filter-select{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-md);padding:6px 10px;font-size:12px;font-family:var(--font-body);color:var(--text-secondary);outline:none;cursor:pointer}
+.filter-select:focus{border-color:var(--bravi-purple)}
+.filter-divider{width:1px;height:24px;background:var(--border);flex-shrink:0}
+.periodo-btn{padding:5px 12px;border-radius:var(--radius-md);font-size:11px;font-family:var(--font-display);font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface-2);color:var(--text-muted);transition:all .15s;white-space:nowrap}
+.periodo-btn:hover{border-color:var(--bravi-purple-border);color:var(--bravi-purple)}
+.periodo-btn.active{background:var(--bravi-purple);border-color:var(--bravi-purple);color:#fff}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.stat-card.purple::before{background:var(--bravi-purple)}
+.stat-card.blue::before{background:#2563EB}
+.stat-card.green::before{background:#16A34A}
+.stat-card.amber::before{background:#D97706}
+.stat-val{font-family:var(--font-display);font-size:24px;font-weight:800;color:var(--text-primary);line-height:1}
+.stat-lbl{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;font-family:var(--font-display);font-weight:500;margin-top:4px}
+.stat-sub{font-size:11px;color:var(--text-dim);margin-top:3px}
+.tabs{display:flex;gap:2px;background:var(--surface-2);border-radius:var(--radius-lg);padding:4px;margin-bottom:20px;border:1px solid var(--border);overflow-x:auto}
+.tab-btn{padding:7px 16px;border-radius:var(--radius-md);font-size:12px;font-family:var(--font-display);font-weight:600;cursor:pointer;border:none;background:none;color:var(--text-muted);white-space:nowrap;transition:all .15s;display:flex;align-items:center;gap:5px}
+.tab-btn:hover{color:var(--text-primary);background:var(--surface)}
+.tab-btn.active{background:var(--surface);color:var(--bravi-purple);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.tab-panel{display:none}
+.tab-panel.active{display:block;animation:fadeUp .2s ease}
+.main-table{width:100%;border-collapse:collapse;font-size:12px}
+.main-table th{padding:9px 12px;text-align:left;font-size:10px;font-family:var(--font-display);font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;border-bottom:2px solid var(--border);white-space:nowrap;position:sticky;top:0;background:var(--surface);z-index:1}
+.main-table th.right{text-align:right}
+.main-table td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--text-secondary);vertical-align:middle}
+.main-table tr:last-child td{border-bottom:none}
+.main-table tbody tr:hover td{background:var(--bravi-purple-dim);cursor:pointer}
+.main-table tfoot td{background:var(--surface-2);font-family:var(--font-display);font-weight:700;padding:10px 12px}
+.main-table td.right{text-align:right}
+.main-table td.center{text-align:center}
+.av{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--bravi-purple),var(--bravi-purple-light));display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;font-size:10px;color:#fff;flex-shrink:0}
+.prog{display:flex;align-items:center;gap:6px}
+.prog-track{flex:1;height:5px;background:var(--border);border-radius:100px;overflow:hidden;min-width:50px}
+.prog-fill{height:100%;border-radius:100px;transition:width .5s}
+.c-ok{background:var(--bravi-purple)}.c-good{background:#16A34A}.c-warn{background:#D97706}.c-danger{background:#DC2626}
+.prog-pct{font-size:10px;font-family:var(--font-display);font-weight:700;width:30px;text-align:right}
+.t-ok{color:var(--bravi-purple)}.t-good{color:#16A34A}.t-warn{color:#D97706}.t-danger{color:#DC2626}
+.bs{font-size:10px;font-family:var(--font-display);font-weight:700;border-radius:100px;padding:2px 7px;display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
+.bs-ok{background:#ede9fe;color:#5b21b6;border:1px solid #ddd6fe}
+.bs-good{background:#dcfce7;color:#166534;border:1px solid #bbf7d0}
+.bs-warn{background:#fef3c7;color:#92400e;border:1px solid #fde68a}
+.bs-danger{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
+.drill-view{display:none}.drill-view.active{display:block}.list-view.hidden{display:none}
+.drill-hdr{background:var(--bravi-dark);border-radius:var(--radius-xl);padding:24px 28px;display:flex;align-items:flex-start;gap:20px;margin-bottom:20px}
+.drill-av{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--bravi-purple),var(--bravi-purple-light));display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:22px;color:#fff;flex-shrink:0;border:3px solid rgba(124,58,237,.3)}
+.drill-name{font-family:var(--font-display);font-size:20px;font-weight:800;color:#fff}
+.drill-sub{font-size:12px;color:rgba(255,255,255,.5);margin-top:2px}
+.drill-stats-bar{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:rgba(255,255,255,.08);border-radius:var(--radius-md);overflow:hidden;margin-top:14px}
+.ds{padding:10px 12px;background:rgba(255,255,255,.05)}
+.ds-val{font-family:var(--font-display);font-size:15px;font-weight:800;color:#fff}
+.ds-lbl{font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px}
+.chart-title{font-size:10px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;font-family:var(--font-display);margin-bottom:14px}
+.equipe-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:0}
+.equipe-chip{display:inline-flex;align-items:center;gap:5px;background:var(--bravi-purple-dim);border:1px solid var(--bravi-purple-border);border-radius:100px;padding:3px 10px;font-size:11px;font-family:var(--font-display);font-weight:600;color:var(--bravi-purple);cursor:pointer;transition:all .15s}
+.equipe-chip:hover,.equipe-chip.active{background:var(--bravi-purple);color:#fff}
+.proj-multi{display:flex;flex-wrap:wrap;gap:5px;padding:6px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-md);max-height:80px;overflow-y:auto;min-width:200px}
+.proj-chip{display:inline-flex;align-items:center;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:100px;padding:2px 8px;font-size:10px;font-family:var(--font-display);font-weight:600;color:var(--text-secondary);cursor:pointer;transition:all .1s;white-space:nowrap}
+.proj-chip.sel{background:var(--bravi-purple);border-color:var(--bravi-purple);color:#fff}
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000;align-items:center;justify-content:center}
+.modal-backdrop.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius-xl);padding:28px;width:500px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+.modal-title{font-family:var(--font-display);font-size:16px;font-weight:800;color:var(--text-primary);margin-bottom:20px}
+.alerta-dia{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-family:var(--font-display);font-weight:700;border-radius:100px;padding:1px 6px}
+.alerta-dia.ok{background:#dcfce7;color:#166534}
+.alerta-dia.warn{background:#fef3c7;color:#92400e}
+.alerta-dia.danger{background:#fee2e2;color:#991b1b}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.spin{animation:spin 1s linear infinite;display:inline-block}
+.loading-box{display:flex;align-items:center;justify-content:center;gap:10px;padding:48px;color:var(--text-dim);font-size:13px}
+.table-wrap{overflow-x:auto;max-height:520px;overflow-y:auto}
+</style>
+</head>
+<body>
+<div class="app-layout">
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon">B</div>
+    <div><div class="brand-name">Central <span>Bravi</span></div><div class="brand-sub">Controle de Horas</div></div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Visão</div>
+    <a class="nav-item active" id="snav-conferencia" onclick="setView('conferencia',this)"><i class="ti ti-clipboard-check"></i> Conferência Semanal</a>
+    <a class="nav-item" id="snav-mensal" onclick="setView('mensal',this)"><i class="ti ti-calendar-month"></i> Visão Mensal</a>
+    <a class="nav-item" id="snav-relatorios" onclick="setView('relatorios',this)"><i class="ti ti-report"></i> Relatórios</a>
+    <div class="nav-section-label" style="margin-top:16px">Equipes</div>
+    <a class="nav-item" onclick="abrirGerenciarEquipes()"><i class="ti ti-users-group"></i> Gerenciar Equipes</a>
+    <div class="nav-section-label" style="margin-top:16px">Ações</div>
+    <a class="nav-item" onclick="sincronizarTimeneye()"><i class="ti ti-clock-bolt" id="icon-sync"></i> Sincronizar Timeneye</a>
+    <a class="nav-item" onclick="sincronizarDrive()"><i class="ti ti-refresh"></i> Sincronizar Drive</a>
+  </nav>
+  <div style="margin-top:auto;padding:16px 0">
+    <a href="index.html" class="nav-item"><i class="ti ti-arrow-left"></i> Voltar ao Hub</a>
+  </div>
+</aside>
+<div class="main-content">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title" id="topbar-title">Controle de Horas</div>
+      <div class="topbar-sub" id="topbar-sub">Carregando...</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <input type="text" class="form-input" id="search-input" placeholder="Buscar profissional..." style="width:200px;font-size:12px" oninput="renderViewAtual()">
+    </div>
+  </div>
+
+  <!-- VIEW CONFERENCIA -->
+  <div id="view-conferencia">
+    <div class="filter-bar">
+      <span class="filter-label">Semana</span>
+      <button class="periodo-btn active" id="pbtn-anterior" onclick="setSemana('anterior',this)">Semana anterior</button>
+      <button class="periodo-btn" id="pbtn-atual" onclick="setSemana('atual',this)">Semana atual</button>
+      <div class="filter-divider"></div>
+      <span class="filter-label">De</span>
+      <input type="date" class="filter-select" id="conf-ini" onchange="setCustomSemana()" style="font-size:11px;padding:4px 8px">
+      <span style="font-size:11px;color:var(--text-dim)">até</span>
+      <input type="date" class="filter-select" id="conf-fim" onchange="setCustomSemana()" style="font-size:11px;padding:4px 8px">
+      <div class="filter-divider"></div>
+      <span class="filter-label">Equipe</span>
+      <div id="equipe-chips-conf" class="equipe-chips"></div>
+      <div class="filter-divider"></div>
+      <span class="filter-label">Projetos</span>
+      <div id="proj-multi-conf" class="proj-multi"></div>
+      <div class="filter-divider"></div>
+      <span class="filter-label">Fase</span>
+      <select class="filter-select" id="conf-fase" onchange="renderConferencia()" style="min-width:120px"><option value="">Todas as fases</option></select>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card purple"><div class="stat-val" id="cs-total">--</div><div class="stat-lbl">Total de horas</div><div class="stat-sub" id="cs-periodo">--</div></div>
+      <div class="stat-card blue"><div class="stat-val" id="cs-media">--</div><div class="stat-lbl">Média / profissional</div><div class="stat-sub" id="cs-prof-count">--</div></div>
+      <div class="stat-card green"><div class="stat-val" id="cs-ok">0</div><div class="stat-lbl">Meta atingida >= 90%</div><div class="stat-sub">de 40h semanais</div></div>
+      <div class="stat-card amber"><div class="stat-val" id="cs-alerta">0</div><div class="stat-lbl">Atenção &lt; 70%</div><div class="stat-sub">verificar lançamentos</div></div>
+    </div>
+    <div class="list-view" id="conf-list">
+      <div class="section-card" style="padding:0;overflow:hidden">
+        <div class="table-wrap" id="conf-table-wrap"><div class="loading-box"><i class="ti ti-loader-2 spin" style="font-size:20px"></i> Carregando...</div></div>
+      </div>
+    </div>
+    <div class="drill-view" id="conf-drill">
+      <button class="back-profile" onclick="voltarConf()"><i class="ti ti-arrow-left"></i> Voltar para a lista</button>
+      <div class="drill-hdr" id="conf-drill-hdr"></div>
+      <div class="chart-grid">
+        <div class="chart-card"><div class="chart-title">Horas por projeto</div><div style="height:180px;position:relative"><canvas id="cd-chart-proj"></canvas></div></div>
+        <div class="chart-card"><div class="chart-title">Distribuição por fase</div><div style="display:flex;align-items:center;justify-content:center;gap:16px;padding-top:4px"><canvas id="cd-chart-pie" width="130" height="130"></canvas><div id="cd-pie-legend" style="font-size:11px;flex:1"></div></div></div>
+      </div>
+      <div class="section-card" style="padding:0;overflow:hidden;margin-bottom:16px">
+        <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;font-family:var(--font-display)">Lançamentos dia a dia</span>
+          <button class="btn btn-ghost btn-sm" onclick="exportCSVDrill()"><i class="ti ti-download"></i> CSV</button>
+        </div>
+        <div class="table-wrap" id="cd-dias-wrap"></div>
+      </div>
+      <div class="section-card" style="padding:0;overflow:hidden">
+        <div style="padding:14px 16px;border-bottom:1px solid var(--border)">
+          <span style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;font-family:var(--font-display)">Agrupado por Projeto / Fase</span>
+        </div>
+        <div class="table-wrap" id="cd-proj-wrap"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW MENSAL -->
+  <div id="view-mensal" style="display:none">
+    <div class="filter-bar">
+      <span class="filter-label">Período</span>
+      <button class="periodo-btn active" id="pbtn-mes" onclick="setMensal('mes',this)">Mês atual</button>
+      <button class="periodo-btn" id="pbtn-quinzena" onclick="setMensal('quinzena',this)">1ª quinzena</button>
+      <div class="filter-divider"></div>
+      <input type="date" class="filter-select" id="men-ini" onchange="setCustomMensal()" style="font-size:11px;padding:4px 8px">
+      <span style="font-size:11px;color:var(--text-dim)">a</span>
+      <input type="date" class="filter-select" id="men-fim" onchange="setCustomMensal()" style="font-size:11px;padding:4px 8px">
+      <div class="filter-divider"></div>
+      <span class="filter-label">Equipe</span>
+      <div id="equipe-chips-men" class="equipe-chips"></div>
+      <div class="filter-divider"></div>
+      <span class="filter-label">Projetos</span>
+      <div id="proj-multi-men" class="proj-multi"></div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card purple"><div class="stat-val" id="ms-total">--</div><div class="stat-lbl">Total de horas</div><div class="stat-sub" id="ms-periodo">--</div></div>
+      <div class="stat-card blue"><div class="stat-val" id="ms-projetos">--</div><div class="stat-lbl">Projetos envolvidos</div><div class="stat-sub" id="ms-profs">--</div></div>
+      <div class="stat-card green"><div class="stat-val" id="ms-media">--</div><div class="stat-lbl">Média / profissional</div><div class="stat-sub">no período</div></div>
+      <div class="stat-card amber"><div class="stat-val" id="ms-alerta">0</div><div class="stat-lbl">Abaixo de 70%</div><div class="stat-sub">da expectativa</div></div>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" id="mtab-prof-btn" onclick="setMensalTab('profissionais',this)"><i class="ti ti-users"></i> Por Profissional</button>
+      <button class="tab-btn" id="mtab-proj-btn" onclick="setMensalTab('projetos',this)"><i class="ti ti-folder"></i> Por Projeto</button>
+    </div>
+    <div class="tab-panel active" id="mtab-profissionais"><div class="section-card" style="padding:0;overflow:hidden"><div class="table-wrap" id="men-prof-wrap"><div class="loading-box"><i class="ti ti-loader-2 spin" style="font-size:20px"></i></div></div></div></div>
+    <div class="tab-panel" id="mtab-projetos"><div class="section-card" style="padding:0;overflow:hidden"><div class="table-wrap" id="men-proj-wrap"><div class="loading-box"><i class="ti ti-loader-2 spin" style="font-size:20px"></i></div></div></div></div>
+  </div>
+
+  <!-- VIEW RELATORIOS -->
+  <div id="view-relatorios" style="display:none">
+    <div class="filter-bar">
+      <span class="filter-label">Período</span>
+      <input type="date" class="filter-select" id="rel-ini" style="font-size:11px;padding:4px 8px">
+      <span style="font-size:11px;color:var(--text-dim)">a</span>
+      <input type="date" class="filter-select" id="rel-fim" style="font-size:11px;padding:4px 8px">
+      <div class="filter-divider"></div>
+      <span class="filter-label">Profissional</span>
+      <select class="filter-select" id="rel-prof" style="min-width:180px"><option value="">Todos</option></select>
+      <div class="filter-divider"></div>
+      <span class="filter-label">Projeto</span>
+      <select class="filter-select" id="rel-proj" style="min-width:180px"><option value="">Todos</option></select>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px">
+      <div class="section-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div><div style="font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--text-primary)"><i class="ti ti-folder" style="color:var(--bravi-purple)"></i> Por Projeto</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Horas totais + detalhado por profissional</div></div>
+          <div style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm" onclick="gerarRelatorio('projeto','pdf')"><i class="ti ti-file-type-pdf"></i> PDF</button><button class="btn btn-ghost btn-sm" onclick="gerarRelatorio('projeto','csv')"><i class="ti ti-download"></i> CSV</button></div>
+        </div>
+        <button class="btn btn-primary btn-sm" style="width:100%" onclick="gerarRelatorio('projeto','tela')"><i class="ti ti-eye"></i> Visualizar</button>
+      </div>
+      <div class="section-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div><div style="font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--text-primary)"><i class="ti ti-user" style="color:var(--bravi-purple)"></i> Por Profissional</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Horas totais + detalhado por projeto</div></div>
+          <div style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm" onclick="gerarRelatorio('profissional','pdf')"><i class="ti ti-file-type-pdf"></i> PDF</button><button class="btn btn-ghost btn-sm" onclick="gerarRelatorio('profissional','csv')"><i class="ti ti-download"></i> CSV</button></div>
+        </div>
+        <button class="btn btn-primary btn-sm" style="width:100%" onclick="gerarRelatorio('profissional','tela')"><i class="ti ti-eye"></i> Visualizar</button>
+      </div>
+      <div class="section-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div><div style="font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--text-primary)"><i class="ti ti-activity" style="color:var(--bravi-purple)"></i> Atividades por Profissional</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Resumo de atividades com horas por agrupamento</div></div>
+          <div style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm" onclick="gerarRelatorio('atividades','pdf')"><i class="ti ti-file-type-pdf"></i> PDF</button><button class="btn btn-ghost btn-sm" onclick="gerarRelatorio('atividades','csv')"><i class="ti ti-download"></i> CSV</button></div>
+        </div>
+        <button class="btn btn-primary btn-sm" style="width:100%" onclick="gerarRelatorio('atividades','tela')"><i class="ti ti-eye"></i> Visualizar</button>
+      </div>
+      <div class="section-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div><div style="font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--text-primary)"><i class="ti ti-calendar-time" style="color:var(--bravi-purple)"></i> Lançamentos Dia a Dia</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Listagem diária por profissional selecionado</div></div>
+          <div style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm" onclick="gerarRelatorio('diario','pdf')"><i class="ti ti-file-type-pdf"></i> PDF</button><button class="btn btn-ghost btn-sm" onclick="gerarRelatorio('diario','csv')"><i class="ti ti-download"></i> CSV</button></div>
+        </div>
+        <button class="btn btn-primary btn-sm" style="width:100%" onclick="gerarRelatorio('diario','tela')"><i class="ti ti-eye"></i> Visualizar</button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- MODAL EQUIPES -->
+<div class="modal-backdrop" id="modal-equipes">
+  <div class="modal">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div class="modal-title" style="margin-bottom:0">Gerenciar Equipes</div>
+      <button class="icon-btn" onclick="fecharModal('equipes')"><i class="ti ti-x"></i></button>
+    </div>
+    <div id="equipes-lista" style="margin-bottom:20px"></div>
+    <div style="border-top:1px solid var(--border);padding-top:16px">
+      <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:10px;font-family:var(--font-display)">NOVA EQUIPE</div>
+      <div style="display:grid;gap:10px">
+        <input type="text" class="form-input" id="eq-nome-input" placeholder="Nome da equipe (ex: Equipe BSL)">
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="filter-label">Tipo</span>
+          <select class="filter-select" id="eq-tipo-input"><option value="projeto">Por Projeto</option><option value="cliente">Por Cliente</option><option value="todos">Bravi (todos)</option></select>
+          <select class="filter-select" id="eq-ref-input" style="flex:1"><option value="">Selecione...</option></select>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted)">Profissionais:</div>
+        <div id="eq-preview" style="display:flex;flex-wrap:wrap;gap:5px;min-height:28px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-md);padding:8px"></div>
+        <button class="btn btn-primary btn-sm" onclick="salvarEquipe()"><i class="ti ti-plus"></i> Criar equipe</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL RELATORIO -->
+<div class="modal-backdrop" id="modal-relatorio" style="z-index:1001">
+  <div class="modal" style="width:820px;max-width:95vw">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div class="modal-title" style="margin-bottom:0" id="rel-modal-titulo">Relatório</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm" onclick="imprimirRelatorio()"><i class="ti ti-printer"></i> Imprimir / PDF</button>
+        <button class="icon-btn" onclick="fecharModal('relatorio')"><i class="ti ti-x"></i></button>
+      </div>
+    </div>
+    <div id="rel-modal-content" style="max-height:70vh;overflow-y:auto"></div>
+  </div>
+</div>
+
+<script>
+let DB={profissionais:[],projetos:[],horas:[],setores:[],funcoes:[],clientes:[]};
+let equipes=[];
+let confIni='',confFim='',menIni='',menFim='';
+let viewAtual='conferencia',mensalTab='profissionais';
+let confDrillProf=null;
+let projSel_conf=new Set(),projSel_men=new Set();
+let _charts={},drillData=null;
+const COR=['#7C3AED','#2563EB','#16A34A','#D97706','#DC2626','#0891B2','#9333EA','#059669','#F59E0B','#EF4444'];
+
+function init(){
+  carregarDB();carregarEquipes();popularFiltrosGlobais();
+  setSemana('anterior',document.getElementById('pbtn-anterior'));
+  setMensal('mes',document.getElementById('pbtn-mes'));
+  const hoje=new Date();
+  document.getElementById('rel-ini').value=new Date(hoje.getFullYear(),hoje.getMonth(),1).toISOString().slice(0,10);
+  document.getElementById('rel-fim').value=new Date(hoje.getFullYear(),hoje.getMonth()+1,0).toISOString().slice(0,10);
+}
+function carregarDB(){
+  DB.profissionais=BraviDB.ler('profissionais');DB.projetos=BraviDB.ler('projetos');
+  DB.horas=BraviDB.ler('horas');DB.setores=BraviDB.ler('setores');
+  DB.funcoes=BraviDB.ler('funcoes');DB.clientes=BraviDB.ler('clientes');
+}
+function carregarEquipes(){
+  try{equipes=JSON.parse(localStorage.getItem('bravi_equipes')||'[]');}catch(e){equipes=[];}
+  if(!equipes.length){equipes=[{id:'eq_bravi',nome:'Equipe Bravi',tipo:'todos',ref:'',profIds:[]}];salvarEquipes();}
+  sincronizarEquipes();
+}
+function sincronizarEquipes(){
+  equipes.forEach(eq=>{
+    if(eq.tipo==='todos') eq.profIds=DB.profissionais.filter(p=>p.ativo!==false).map(p=>p.id);
+    else if(eq.tipo==='projeto'){const em=new Set(DB.horas.filter(h=>h.projeto===eq.ref).map(h=>(h.profEmail||'').toLowerCase()));eq.profIds=DB.profissionais.filter(p=>em.has((p.email||'').toLowerCase())).map(p=>p.id);}
+    else if(eq.tipo==='cliente'){const em=new Set(DB.horas.filter(h=>h.cliente===eq.ref).map(h=>(h.profEmail||'').toLowerCase()));eq.profIds=DB.profissionais.filter(p=>em.has((p.email||'').toLowerCase())).map(p=>p.id);}
+  });
+  salvarEquipes();
+}
+function salvarEquipes(){localStorage.setItem('bravi_equipes',JSON.stringify(equipes));}
+
+function popularFiltrosGlobais(){
+  renderEquipeChips();renderProjMulti('conf');renderProjMulti('men');
+  const fases=[...new Set(DB.horas.map(h=>h.fase).filter(Boolean))].sort();
+  document.getElementById('conf-fase').innerHTML='<option value="">Todas as fases</option>'+fases.map(f=>`<option value="${f}">${f}</option>`).join('');
+  const pAtivos=[...DB.profissionais].filter(p=>p.ativo!==false).sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));
+  document.getElementById('rel-prof').innerHTML='<option value="">Todos</option>'+pAtivos.map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
+  const pjAtivos=[...new Set(DB.horas.map(h=>h.projeto).filter(Boolean))].sort();
+  document.getElementById('rel-proj').innerHTML='<option value="">Todos</option>'+pjAtivos.map(p=>`<option value="${p}">${p}</option>`).join('');
+}
+function renderEquipeChips(){
+  ['conf','men'].forEach(ctx=>{
+    const el=document.getElementById('equipe-chips-'+ctx);if(!el)return;
+    el.innerHTML=equipes.map(eq=>`<span class="equipe-chip" onclick="toggleEquipe('${ctx}','${eq.id}',this)">${eq.nome}</span>`).join('');
+  });
+}
+function toggleEquipe(ctx,eqId,el){
+  el.classList.toggle('active');
+  const eq=equipes.find(e=>e.id===eqId);if(!eq)return;
+  if(el.classList.contains('active')){
+    const pEmails=new Set(eq.profIds.map(id=>{const p=DB.profissionais.find(x=>x.id===id);return p?(p.email||'').toLowerCase():'';}).filter(Boolean));
+    const projs=[...new Set(DB.horas.filter(h=>pEmails.has((h.profEmail||'').toLowerCase())).map(h=>h.projeto).filter(Boolean))];
+    if(ctx==='conf')projs.forEach(p=>projSel_conf.add(p));else projs.forEach(p=>projSel_men.add(p));
+  }
+  renderProjMulti(ctx);renderViewAtual();
+}
+function renderProjMulti(ctx){
+  const el=document.getElementById('proj-multi-'+ctx);if(!el)return;
+  const sel=ctx==='conf'?projSel_conf:projSel_men;
+  const horas=ctx==='conf'?getHoras(confIni,confFim):getHoras(menIni,menFim);
+  const projs=[...new Set(horas.map(h=>h.projeto).filter(Boolean))].sort();
+  el.innerHTML=projs.map(p=>`<span class="proj-chip ${sel.has(p)?'sel':''}" onclick="toggleProj('${ctx}','${p.replace(/'/g,'&#39;')}',this)">${p}</span>`).join('')||'<span style="font-size:11px;color:var(--text-dim);padding:2px 4px">Nenhum projeto no período</span>';
+}
+function toggleProj(ctx,proj,el){const sel=ctx==='conf'?projSel_conf:projSel_men;if(sel.has(proj))sel.delete(proj);else sel.add(proj);el.classList.toggle('sel');renderViewAtual();}
+
+function getHoras(ini,fim){return DB.horas.filter(h=>{if(ini&&h.data<ini)return false;if(fim&&h.data>fim)return false;return true;});}
+function getHorasProf(prof,horas){return horas.filter(h=>h.profId===prof.id||(prof.email&&h.profEmail&&h.profEmail.toLowerCase()===prof.email.toLowerCase())||(prof.timeneye_user_id&&h.timeneye_user_id&&String(h.timeneye_user_id)===String(prof.timeneye_user_id)));}
+function filtrarProjSel(horas,sel){if(!sel||sel.size===0)return horas;return horas.filter(h=>sel.has(h.projeto));}
+function fmtH(m){if(!m)return '0h';const h=Math.floor(m/60),mn=m%60;return h+'h'+(mn>0?' '+mn+'min':'');}
+function fmtData(iso){if(!iso)return '--';const d=new Date(iso+'T12:00:00');return d.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'});}
+function calcDiasUteis(ini,fim){if(!ini||!fim)return 5;let n=0;for(let d=new Date(ini+'T12:00:00');d<=new Date(fim+'T12:00:00');d.setDate(d.getDate()+1)){if(d.getDay()>0&&d.getDay()<6)n++;}return n||1;}
+function getProfsAtivos(){const q=(document.getElementById('search-input')?.value||'').toLowerCase();return DB.profissionais.filter(p=>{if(p.ativo===false)return false;if(q)return(p.nome||'').toLowerCase().includes(q);return true;});}
+function avatarIni(nome){return nome?nome.split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase():'??';}
+function clsConf(pct){if(pct>=100)return 'good';if(pct>=90)return 'ok';if(pct>=70)return 'warn';return 'danger';}
+function bsConf(pct){const c=clsConf(pct);const t=pct>=100?'Acima':pct>=90?'OK':pct>=70?'Atenção':'Baixo';return `<span class="bs bs-${c}">${t} ${pct}%</span>`;}
+
+function setSemana(modo,btn){
+  document.querySelectorAll('#view-conferencia .periodo-btn').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  const hoje=new Date();let seg,dom;
+  if(modo==='anterior'){const dw=hoje.getDay()||7;seg=new Date(hoje);seg.setDate(hoje.getDate()-(dw-1)-7);dom=new Date(seg);dom.setDate(seg.getDate()+6);}
+  else{const dw=hoje.getDay()||7;seg=new Date(hoje);seg.setDate(hoje.getDate()-(dw-1));dom=new Date(seg);dom.setDate(seg.getDate()+6);}
+  confIni=seg.toISOString().slice(0,10);confFim=dom.toISOString().slice(0,10);
+  document.getElementById('conf-ini').value=confIni;document.getElementById('conf-fim').value=confFim;
+  renderProjMulti('conf');renderConferencia();
+}
+function setCustomSemana(){
+  confIni=document.getElementById('conf-ini').value;confFim=document.getElementById('conf-fim').value;
+  document.querySelectorAll('#view-conferencia .periodo-btn').forEach(b=>b.classList.remove('active'));
+  renderProjMulti('conf');if(confIni&&confFim)renderConferencia();
+}
+function setMensal(modo,btn){
+  document.querySelectorAll('#view-mensal .periodo-btn').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  const hoje=new Date();
+  if(modo==='mes'){menIni=new Date(hoje.getFullYear(),hoje.getMonth(),1).toISOString().slice(0,10);menFim=new Date(hoje.getFullYear(),hoje.getMonth()+1,0).toISOString().slice(0,10);}
+  else{menIni=new Date(hoje.getFullYear(),hoje.getMonth(),1).toISOString().slice(0,10);menFim=new Date(hoje.getFullYear(),hoje.getMonth(),15).toISOString().slice(0,10);}
+  document.getElementById('men-ini').value=menIni;document.getElementById('men-fim').value=menFim;
+  renderProjMulti('men');renderMensal();
+}
+function setCustomMensal(){
+  menIni=document.getElementById('men-ini').value;menFim=document.getElementById('men-fim').value;
+  document.querySelectorAll('#view-mensal .periodo-btn').forEach(b=>b.classList.remove('active'));
+  renderProjMulti('men');if(menIni&&menFim)renderMensal();
+}
+
+function setView(v,el){
+  viewAtual=v;
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));if(el)el.classList.add('active');
+  ['conferencia','mensal','relatorios'].forEach(id=>{document.getElementById('view-'+id).style.display=id===v?'':'none';});
+  document.getElementById('topbar-title').textContent={conferencia:'Conferência Semanal',mensal:'Visão Mensal',relatorios:'Relatórios'}[v];
+  renderViewAtual();
+}
+function renderViewAtual(){if(viewAtual==='conferencia')renderConferencia();else if(viewAtual==='mensal')renderMensal();}
+
+function renderConferencia(){
+  if(!confIni||!confFim)return;
+  document.getElementById('conf-list').classList.remove('hidden');
+  document.getElementById('conf-drill').classList.remove('active');
+  confDrillProf=null;
+  const todasHoras=getHoras(confIni,confFim);
+  const horasFilt=filtrarProjSel(todasHoras,projSel_conf);
+  const faseFilt=document.getElementById('conf-fase')?.value||'';
+  const horas=faseFilt?horasFilt.filter(h=>h.fase===faseFilt):horasFilt;
+  const profs=getProfsAtivos();
+  const metaMin=40*60;
+  const totalMin=horas.reduce((a,h)=>a+(h.minutos||0),0);
+  let okCount=0,alertaCount=0;
+  profs.forEach(p=>{const m=getHorasProf(p,horas).reduce((a,h)=>a+(h.minutos||0),0);const pct=Math.round(m/metaMin*100);if(pct>=90)okCount++;else if(pct<70)alertaCount++;});
+  document.getElementById('cs-total').textContent=fmtH(totalMin);
+  document.getElementById('cs-periodo').textContent=fmtData(confIni)+' a '+fmtData(confFim);
+  document.getElementById('cs-media').textContent=fmtH(profs.length?Math.round(totalMin/profs.length):0);
+  document.getElementById('cs-prof-count').textContent=profs.length+' profissionais';
+  document.getElementById('cs-ok').textContent=okCount;document.getElementById('cs-alerta').textContent=alertaCount;
+  document.getElementById('topbar-sub').textContent=fmtData(confIni)+' a '+fmtData(confFim);
+  const dias=[];for(let d=new Date(confIni+'T12:00:00');d<=new Date(confFim+'T12:00:00');d.setDate(d.getDate()+1))dias.push(d.toISOString().slice(0,10));
+  const rows=profs.map(p=>{
+    const hP=getHorasProf(p,horas);const minTot=hP.reduce((a,h)=>a+(h.minutos||0),0);
+    const pct=Math.round(minTot/metaMin*100);
+    const porDia={};hP.forEach(h=>{porDia[h.data]=(porDia[h.data]||0)+(h.minutos||0);});
+    const projs=[...new Set(hP.map(h=>h.projeto).filter(Boolean))];
+    return{p,minTot,pct,porDia,projs};
+  }).sort((a,b)=>b.minTot-a.minTot);
+  document.getElementById('conf-table-wrap').innerHTML=`
+    <table class="main-table"><thead><tr>
+      <th>Profissional</th>
+      ${dias.map(d=>`<th class="center" style="font-size:9px">${new Date(d+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit'})}</th>`).join('')}
+      <th class="right">Total</th><th style="width:130px">Meta (40h)</th><th class="right">Status</th><th>Projetos</th><th></th>
+    </tr></thead><tbody>
+    ${rows.map(({p,minTot,pct,porDia,projs})=>{
+      const cls=clsConf(pct);
+      const diasHtml=dias.map(d=>{
+        const m=porDia[d]||0;const diaStr=m?`${Math.floor(m/60)}h${m%60?m%60+'m':''}`:'-';
+        const dw=new Date(d+'T12:00:00').getDay();const wknd=dw===0||dw===6;
+        let ac='';if(!wknd&&m>0){if(m<360)ac='warn';else if(m>600)ac='ok';}
+        return `<td class="center" style="font-size:11px;color:${wknd?'var(--text-dim)':m?'var(--text-primary)':'var(--border)'}">
+          ${ac?`<span class="alerta-dia ${ac}">${diaStr}</span>`:diaStr}</td>`;
+      }).join('');
+      return `<tr onclick="abrirDrillConf('${p.id}')">
+        <td><div style="display:flex;align-items:center;gap:8px"><div class="av">${avatarIni(p.nome)}</div><div><div style="font-weight:600;color:var(--text-primary);font-size:12px">${p.nome}</div><div style="font-size:10px;color:var(--text-dim)">${p.funcao||'--'}</div></div></div></td>
+        ${diasHtml}
+        <td class="right"><strong style="font-family:var(--font-display)">${fmtH(minTot)}</strong></td>
+        <td><div class="prog"><div class="prog-track"><div class="prog-fill c-${cls}" style="width:${Math.min(pct,100)}%"></div></div><span class="prog-pct t-${cls}">${pct}%</span></div></td>
+        <td class="right">${bsConf(pct)}</td>
+        <td style="font-size:10px;color:var(--text-muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${projs.slice(0,2).join(', ')+(projs.length>2?' +'+(projs.length-2):'')}</td>
+        <td><i class="ti ti-chevron-right" style="color:var(--text-dim);font-size:13px"></i></td>
+      </tr>`;
+    }).join('')}
+    </tbody><tfoot><tr>
+      <td colspan="${dias.length+1}">Total (${rows.length})</td>
+      <td class="right" style="color:var(--bravi-purple)">${fmtH(rows.reduce((a,r)=>a+r.minTot,0))}</td>
+      <td colspan="3"></td>
+    </tr></tfoot></table>`;
+}
+
+function abrirDrillConf(profId){
+  const p=DB.profissionais.find(x=>x.id===profId);if(!p)return;
+  confDrillProf=p;
+  document.getElementById('conf-list').classList.add('hidden');
+  document.getElementById('conf-drill').classList.add('active');
+  document.getElementById('topbar-title').textContent=p.nome;
+  renderDrillConf(p);
+}
+function voltarConf(){
+  confDrillProf=null;
+  document.getElementById('conf-list').classList.remove('hidden');
+  document.getElementById('conf-drill').classList.remove('active');
+  document.getElementById('topbar-title').textContent='Conferência Semanal';
+  destroyCharts(['cd-proj','cd-pie']);
+}
+function renderDrillConf(p){
+  const todasHoras=getHoras(confIni,confFim);
+  const horasFilt=filtrarProjSel(todasHoras,projSel_conf);
+  const faseFilt=document.getElementById('conf-fase')?.value||'';
+  const horas=faseFilt?horasFilt.filter(h=>h.fase===faseFilt):horasFilt;
+  const hP=getHorasProf(p,horas);
+  const minTot=hP.reduce((a,h)=>a+(h.minutos||0),0);
+  const metaMin=40*60;const pct=Math.round(minTot/metaMin*100);
+  const diasUteis=calcDiasUteis(confIni,confFim);
+  drillData={p,hProf:hP,confIni,confFim};
+  const porProj={};hP.forEach(h=>{const k=h.projeto||'Sem projeto';porProj[k]=(porProj[k]||0)+(h.minutos||0);});
+  const topProj=Object.entries(porProj).sort((a,b)=>b[1]-a[1]);
+  const porFase={};hP.forEach(h=>{const k=h.fase||h.descricao||'Outros';porFase[k]=(porFase[k]||0)+(h.minutos||0);});
+  const topFase=Object.entries(porFase).sort((a,b)=>b[1]-a[1]);
+  const totFase=topFase.reduce((a,[,v])=>a+v,0);
+  const porDia={};hP.forEach(h=>{if(!porDia[h.data])porDia[h.data]=[];porDia[h.data].push(h);});
+  document.getElementById('conf-drill-hdr').innerHTML=`
+    <div class="drill-av">${avatarIni(p.nome)}</div>
+    <div style="flex:1"><div class="drill-name">${p.nome}</div><div class="drill-sub">${p.funcao||'--'}${p.setor?' · '+p.setor:''}${p.email?' · '+p.email:''}</div>
+    <div class="drill-stats-bar">
+      <div class="ds"><div class="ds-val">${fmtH(minTot)}</div><div class="ds-lbl">Lançado</div></div>
+      <div class="ds"><div class="ds-val">40h</div><div class="ds-lbl">Meta</div></div>
+      <div class="ds"><div class="ds-val">${pct}%</div><div class="ds-lbl">Realizado</div></div>
+      <div class="ds"><div class="ds-val">${Object.keys(porDia).length}/${diasUteis}</div><div class="ds-lbl">Dias</div></div>
+      <div class="ds"><div class="ds-val">${topProj.length}</div><div class="ds-lbl">Projetos</div></div>
+    </div></div>`;
+  destroyCharts(['cd-proj','cd-pie']);
+  const cpj=document.getElementById('cd-chart-proj');
+  if(cpj&&topProj.length){const t8=topProj.slice(0,8);_charts['cd-proj']=new Chart(cpj,{type:'bar',data:{labels:t8.map(([k])=>k.length>14?k.slice(0,14)+'…':k),datasets:[{data:t8.map(([,v])=>Math.round(v/60*10)/10),backgroundColor:t8.map((_,i)=>COR[i%COR.length]+'cc'),borderColor:t8.map((_,i)=>COR[i%COR.length]),borderWidth:1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+fmtH(t8[ctx.dataIndex][1])}}},scales:{x:{grid:{display:false},ticks:{color:'#888',font:{size:10},maxRotation:30}},y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{color:'#888',font:{size:11},callback:v=>v+'h'},beginAtZero:true}}}});}
+  const cpi=document.getElementById('cd-chart-pie');
+  if(cpi&&topFase.length){const t8f=topFase.slice(0,8);_charts['cd-pie']=new Chart(cpi,{type:'pie',data:{labels:t8f.map(([k])=>k),datasets:[{data:t8f.map(([,v])=>v),backgroundColor:COR.slice(0,t8f.length),borderWidth:2,borderColor:'#f8f9ff'}]},options:{responsive:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{const h=Math.floor(ctx.raw/60),m=ctx.raw%60,pc=Math.round(ctx.raw/totFase*100);return ` ${ctx.label}: ${h}h${m?' '+m+'min':''} (${pc}%)`;}}}}}}); document.getElementById('cd-pie-legend').innerHTML=t8f.map(([l,v],i)=>{const pc=Math.round(v/totFase*100);return `<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px"><div style="width:10px;height:10px;border-radius:2px;background:${COR[i]};flex-shrink:0"></div><span style="color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90px;font-size:11px">${l}</span><span style="color:var(--text-primary);font-weight:700;font-family:var(--font-display);margin-left:auto;padding-left:4px;font-size:11px">${pc}%</span></div>`;}).join('');}
+  const dias=Object.keys(porDia).sort();
+  document.getElementById('cd-dias-wrap').innerHTML=dias.length?`<table class="main-table"><thead><tr><th>Data</th><th>Projeto</th><th>Fase</th><th>Descrição</th><th class="right">Horas</th></tr></thead><tbody>
+    ${dias.map(dia=>{const regs=porDia[dia];const mDia=regs.reduce((a,h)=>a+(h.minutos||0),0);const dw=new Date(dia+'T12:00:00').getDay();let al='';if(dw>0&&dw<6){if(mDia<360)al=' ⚠️';else if(mDia>600)al=' ✅';}
+    return `<tr style="background:var(--surface-2)"><td colspan="4" style="font-family:var(--font-display);font-size:11px;font-weight:700;color:var(--text-muted)">${fmtData(dia)}${al}</td><td class="right" style="font-family:var(--font-display);font-weight:700;font-size:12px;color:var(--bravi-purple)">${fmtH(mDia)}</td></tr>
+    ${regs.map(h=>`<tr><td style="color:var(--text-dim);font-size:11px;padding-left:24px">${dia}</td><td style="color:var(--bravi-purple);font-size:11px;font-weight:600">${h.projeto||'--'}</td><td style="font-size:11px">${h.fase||'--'}</td><td style="font-size:11px;color:var(--text-muted)">${h.descricao||'--'}</td><td class="right" style="font-family:var(--font-display);font-weight:600;font-size:12px">${fmtH(h.minutos)}</td></tr>`).join('')}`;
+    }).join('')}
+  </tbody><tfoot><tr><td colspan="4" style="font-weight:700">Total</td><td class="right" style="color:var(--bravi-purple);font-weight:800;font-family:var(--font-display)">${fmtH(minTot)}</td></tr></tfoot></table>`:`<div class="loading-box">Sem lançamentos no período</div>`;
+  const agrupado={};hP.forEach(h=>{const k=(h.projeto||'Sem projeto')+'||'+(h.fase||h.descricao||'Sem fase');if(!agrupado[k])agrupado[k]={projeto:h.projeto||'Sem projeto',fase:h.fase||h.descricao||'Sem fase',minutos:0,qtd:0};agrupado[k].minutos+=(h.minutos||0);agrupado[k].qtd++;});
+  const grupos=Object.values(agrupado).sort((a,b)=>b.minutos-a.minutos);
+  document.getElementById('cd-proj-wrap').innerHTML=grupos.length?`<table class="main-table"><thead><tr><th>Projeto</th><th>Fase / Atividade</th><th class="center">Reg.</th><th class="right">Horas</th></tr></thead><tbody>${grupos.map(g=>`<tr><td style="color:var(--bravi-purple);font-weight:600;font-family:var(--font-display);font-size:12px">${g.projeto}</td><td>${g.fase}</td><td class="center" style="color:var(--text-muted)">${g.qtd}x</td><td class="right" style="font-family:var(--font-display);font-weight:700">${fmtH(g.minutos)}</td></tr>`).join('')}</tbody><tfoot><tr><td colspan="3" style="font-weight:700">Total</td><td class="right" style="color:var(--bravi-purple);font-weight:800;font-family:var(--font-display)">${fmtH(minTot)}</td></tr></tfoot></table>`:`<div class="loading-box">Sem dados</div>`;
+}
+
+function setMensalTab(aba,el){
+  mensalTab=aba;
+  document.querySelectorAll('#view-mensal .tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('#view-mensal .tab-panel').forEach(p=>p.classList.remove('active'));
+  if(el)el.classList.add('active');document.getElementById('mtab-'+aba).classList.add('active');
+  renderMensal();
+}
+function renderMensal(){
+  if(!menIni||!menFim)return;
+  const todasHoras=getHoras(menIni,menFim);
+  const horas=filtrarProjSel(todasHoras,projSel_men);
+  const profs=getProfsAtivos();
+  const diasUteis=calcDiasUteis(menIni,menFim);
+  const expectMin=diasUteis*8*60;
+  const totalMin=horas.reduce((a,h)=>a+(h.minutos||0),0);
+  const projsUnicos=[...new Set(horas.map(h=>h.projeto).filter(Boolean))];
+  let alertaCount=0;
+  profs.forEach(p=>{const m=getHorasProf(p,horas).reduce((a,h)=>a+(h.minutos||0),0);if(expectMin&&m/expectMin<0.7)alertaCount++;});
+  document.getElementById('ms-total').textContent=fmtH(totalMin);
+  document.getElementById('ms-periodo').textContent=fmtData(menIni)+' a '+fmtData(menFim);
+  document.getElementById('ms-projetos').textContent=projsUnicos.length;
+  document.getElementById('ms-profs').textContent=profs.length+' profissionais';
+  document.getElementById('ms-media').textContent=fmtH(profs.length?Math.round(totalMin/profs.length):0);
+  document.getElementById('ms-alerta').textContent=alertaCount;
+  if(mensalTab==='profissionais'){
+    const rows=profs.map(p=>{const hP=getHorasProf(p,horas);const minTot=hP.reduce((a,h)=>a+(h.minutos||0),0);const pct=expectMin?Math.round(minTot/expectMin*100):0;const projs=[...new Set(hP.map(h=>h.projeto).filter(Boolean))];return{p,minTot,pct,projs};}).sort((a,b)=>b.minTot-a.minTot);
+    document.getElementById('men-prof-wrap').innerHTML=`<table class="main-table"><thead><tr><th>Profissional</th><th>Função</th><th>Projetos</th><th class="right">Horas</th><th style="width:150px">Expectativa (${fmtH(expectMin)})</th><th class="right">Status</th></tr></thead><tbody>
+    ${rows.map(({p,minTot,pct,projs})=>`<tr><td><div style="display:flex;align-items:center;gap:8px"><div class="av">${avatarIni(p.nome)}</div><div><div style="font-weight:600;font-size:12px;color:var(--text-primary)">${p.nome}</div></div></div></td><td style="font-size:11px;color:var(--text-muted)">${p.funcao||'--'}</td><td style="font-size:10px;color:var(--text-muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${projs.slice(0,2).join(', ')+(projs.length>2?' +'+(projs.length-2):'')}</td><td class="right"><strong style="font-family:var(--font-display)">${fmtH(minTot)}</strong></td><td><div class="prog"><div class="prog-track"><div class="prog-fill c-${clsConf(pct)}" style="width:${Math.min(pct,100)}%"></div></div><span class="prog-pct t-${clsConf(pct)}">${pct}%</span></div></td><td class="right">${bsConf(pct)}</td></tr>`).join('')}
+    </tbody><tfoot><tr><td colspan="3">Total (${rows.length})</td><td class="right" style="color:var(--bravi-purple)">${fmtH(rows.reduce((a,r)=>a+r.minTot,0))}</td><td colspan="2"></td></tr></tfoot></table>`;
+  } else {
+    const porProj={};horas.forEach(h=>{const k=h.projeto||'Sem projeto';if(!porProj[k])porProj[k]={nome:k,cliente:h.cliente||'',minutos:0,profs:new Set(),fases:{}};porProj[k].minutos+=(h.minutos||0);if(h.profEmail)porProj[k].profs.add(h.profEmail);const f=h.fase||'Outros';porProj[k].fases[f]=(porProj[k].fases[f]||0)+(h.minutos||0);});
+    const rows=Object.values(porProj).sort((a,b)=>b.minutos-a.minutos);const total=rows.reduce((a,r)=>a+r.minutos,0);
+    document.getElementById('men-proj-wrap').innerHTML=rows.length?`<table class="main-table"><thead><tr><th>Projeto</th><th>Cliente</th><th class="right">Profissionais</th><th class="right">Horas</th><th style="width:130px">% do total</th><th>Top fases</th></tr></thead><tbody>
+    ${rows.map(r=>{const pct=total?Math.round(r.minutos/total*100):0;const topF=Object.entries(r.fases).sort((a,b)=>b[1]-a[1]).slice(0,2).map(([f])=>f).join(', ');return `<tr><td style="font-weight:600;color:var(--bravi-purple);font-family:var(--font-display);font-size:12px">${r.nome}</td><td style="font-size:11px;color:var(--text-muted)">${r.cliente||'--'}</td><td class="right" style="font-family:var(--font-display);font-weight:700">${r.profs.size}</td><td class="right" style="font-family:var(--font-display);font-weight:700">${fmtH(r.minutos)}</td><td><div class="prog"><div class="prog-track"><div class="prog-fill c-ok" style="width:${pct}%"></div></div><span class="prog-pct t-ok">${pct}%</span></div></td><td style="font-size:10px;color:var(--text-muted)">${topF||'--'}</td></tr>`;}).join('')}
+    </tbody><tfoot><tr><td colspan="3">Total</td><td class="right" style="color:var(--bravi-purple)">${fmtH(total)}</td><td colspan="2"></td></tr></tfoot></table>`:`<div class="loading-box">Sem dados no período</div>`;
+  }
+}
+
+function gerarRelatorio(tipo,formato){
+  const ini=document.getElementById('rel-ini').value;const fim=document.getElementById('rel-fim').value;
+  const profId=document.getElementById('rel-prof').value;const projNome=document.getElementById('rel-proj').value;
+  if(!ini||!fim){alert('Selecione o período');return;}
+  let horas=getHoras(ini,fim);if(projNome)horas=horas.filter(h=>h.projeto===projNome);
+  let html='',titulo='',csvRows=[];
+  const fmtCell=(s)=>'"'+(String(s||'').replace(/"/g,'""'))+'"';
+  if(tipo==='projeto'){
+    titulo='Relatório por Projeto — '+ini+' a '+fim;
+    const porProj={};horas.forEach(h=>{const k=h.projeto||'Sem projeto';if(!porProj[k])porProj[k]={nome:k,cliente:h.cliente||'',profs:{}};const e=(h.profEmail||h.profNome||'?').toLowerCase();if(!porProj[k].profs[e])porProj[k].profs[e]={nome:h.profNome||e,minutos:0};porProj[k].profs[e].minutos+=(h.minutos||0);});
+    csvRows=[['Projeto','Cliente','Profissional','Horas']];
+    html=Object.values(porProj).sort((a,b)=>{const ta=Object.values(b.profs).reduce((s,p)=>s+p.minutos,0);const tb=Object.values(a.profs).reduce((s,p)=>s+p.minutos,0);return ta-tb;}).map(proj=>{const tot=Object.values(proj.profs).reduce((a,p)=>a+p.minutos,0);const rows2=Object.values(proj.profs).sort((a,b)=>b.minutos-a.minutos);rows2.forEach(r=>csvRows.push([proj.nome,proj.cliente,r.nome,fmtH(r.minutos)]));csvRows.push([proj.nome,proj.cliente,'TOTAL',fmtH(tot)]);return `<div style="margin-bottom:24px"><div style="font-size:15px;font-weight:800;color:#7C3AED;margin-bottom:3px">${proj.nome}</div><div style="font-size:11px;color:#6b7280;margin-bottom:10px">${proj.cliente||'--'} · Total: <strong>${fmtH(tot)}</strong></div><table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;padding:5px 8px;border-bottom:1px solid #e5e7eb;color:#9ca3af;font-size:10px">Profissional</th><th style="text-align:right;padding:5px 8px;border-bottom:1px solid #e5e7eb;color:#9ca3af;font-size:10px">Horas</th></tr></thead><tbody>${rows2.map(r=>`<tr><td style="padding:5px 8px;border-bottom:1px solid #f3f4f6;font-size:12px">${r.nome}</td><td style="padding:5px 8px;border-bottom:1px solid #f3f4f6;text-align:right;font-weight:700;font-size:12px">${fmtH(r.minutos)}</td></tr>`).join('')}</tbody></table></div>`;}).join('');
+  } else if(tipo==='profissional'){
+    titulo='Relatório por Profissional — '+ini+' a '+fim;
+    const profs=profId?DB.profissionais.filter(p=>p.id===profId):getProfsAtivos();
+    csvRows=[['Profissional','Projeto','Horas']];
+    html=profs.map(p=>{const hP=getHorasProf(p,horas);const minTot=hP.reduce((a,h)=>a+(h.minutos||0),0);const porPrj={};hP.forEach(h=>{const k=h.projeto||'Sem projeto';porPrj[k]=(porPrj[k]||0)+(h.minutos||0);});const rows2=Object.entries(porPrj).sort((a,b)=>b[1]-a[1]);rows2.forEach(([proj,m])=>csvRows.push([p.nome,proj,fmtH(m)]));csvRows.push([p.nome,'TOTAL',fmtH(minTot)]);return `<div style="margin-bottom:24px"><div style="font-size:15px;font-weight:800;color:#7C3AED;margin-bottom:3px">${p.nome}</div><div style="font-size:11px;color:#6b7280;margin-bottom:10px">${p.funcao||'--'} · Total: <strong>${fmtH(minTot)}</strong></div><table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;padding:5px 8px;border-bottom:1px solid #e5e7eb;color:#9ca3af;font-size:10px">Projeto</th><th style="text-align:right;padding:5px 8px;border-bottom:1px solid #e5e7eb;color:#9ca3af;font-size:10px">Horas</th></tr></thead><tbody>${rows2.map(([proj,m])=>`<tr><td style="padding:5px 8px;border-bottom:1px solid #f3f4f6;font-size:12px">${proj}</td><td style="padding:5px 8px;border-bottom:1px solid #f3f4f6;text-align:right;font-weight:700;font-size:12px">${fmtH(m)}</td></tr>`).join('')}</tbody></table></div>`;}).join('');
+  } else if(tipo==='atividades'){
+    titulo='Atividades por Profissional — '+ini+' a '+fim;
+    const profs=profId?DB.profissionais.filter(p=>p.id===profId):getProfsAtivos();
+    csvRows=[['Profissional','Fase/Atividade','Registros','Horas']];
+    html=profs.map(p=>{const hP=getHorasProf(p,horas);if(!hP.length)return '';const minTot=hP.reduce((a,h)=>a+(h.minutos||0),0);const porAtiv={};hP.forEach(h=>{const k=h.fase||h.descricao||'Outros';if(!porAtiv[k])porAtiv[k]={minutos:0,qtd:0};porAtiv[k].minutos+=(h.minutos||0);porAtiv[k].qtd++;});const rows2=Object.entries(porAtiv).sort((a,b)=>b[1].minutos-a[1].minutos);rows2.forEach(([f,v])=>csvRows.push([p.nome,f,v.qtd,fmtH(v.minutos)]));return `<div style="margin-bottom:24px"><div style="font-size:15px;font-weight:800;color:#7C3AED;margin-bottom:3px">${p.nome}</div><div style="font-size:11px;color:#6b7280;margin-bottom:10px">Total: <strong>${fmtH(minTot)}</strong></div><table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;padding:5px 8px;border-bottom:1px solid #e5e7eb;color:#9ca3af;font-size:10px">Atividade</th><th style="text-align:center;padding:5px 8px;border-bottom:1px solid #e5e7eb;color:#9ca3af;font-size:10px">Reg.</th><th style="text-align:right;padding:5px 8px;border-bottom:1px solid #e5e7eb;color:#9ca3af;font-size:10px">Horas</th></tr></thead><tbody>${rows2.map(([f,v])=>`<tr><td style="padding:5px 8px;border-bottom:1px solid #f3f4f6;font-size:12px">${f}</td><td style="padding:5px 8px;border-bottom:1px solid #f3f4f6;text-align:center;color:#9ca3af;font-size:12px">${v.qtd}x</td><td style="padding:5px 8px;border-bottom:1px solid #f3f4f6;text-align:right;font-weight:700;font-size:12px">${fmtH(v.minutos)}</td></tr>`).join('')}</tbody></table></div>`;}).join('');
+  } else if(tipo==='diario'){
+    titulo='Lançamentos Dia a Dia — '+ini+' a '+fim;
+    const profs=profId?DB.profissionais.filter(p=>p.id===profId):getProfsAtivos();
+    csvRows=[['Profissional','Data','Projeto','Fase','Descrição','Horas']];
+    html=profs.map(p=>{const hP=getHorasProf(p,horas).sort((a,b)=>a.data.localeCompare(b.data));if(!hP.length)return '';const minTot=hP.reduce((a,h)=>a+(h.minutos||0),0);hP.forEach(h=>csvRows.push([p.nome,h.data,h.projeto||'--',h.fase||'--',h.descricao||'--',fmtH(h.minutos)]));return `<div style="margin-bottom:24px"><div style="font-size:15px;font-weight:800;color:#7C3AED;margin-bottom:3px">${p.nome}</div><div style="font-size:11px;color:#6b7280;margin-bottom:10px">Total: <strong>${fmtH(minTot)}</strong> · ${hP.length} registros</div><table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;padding:5px 8px;border-bottom:1px solid #e5e7eb;color:#9ca3af;font-size:10px">Data</th><th style="text-align:left;padding:5px 8px;border-bottom:1px solid #e5e7eb;color:#9ca3af;font-size:10px">Projeto</th><th style="text-align:left;padding:5px 8px;border-bottom:1px solid #e5e7eb;color:#9ca3af;font-size:10px">Fase</th><th style="text-align:left;padding:5px 8px;border-bottom:1px solid #e5e7eb;color:#9ca3af;font-size:10px">Descrição</th><th style="text-align:right;padding:5px 8px;border-bottom:1px solid #e5e7eb;color:#9ca3af;font-size:10px">Horas</th></tr></thead><tbody>${hP.map(h=>`<tr><td style="padding:5px 8px;border-bottom:1px solid #f3f4f6;color:#6b7280;font-size:11px;white-space:nowrap">${fmtData(h.data)}</td><td style="padding:5px 8px;border-bottom:1px solid #f3f4f6;color:#7C3AED;font-weight:600;font-size:11px">${h.projeto||'--'}</td><td style="padding:5px 8px;border-bottom:1px solid #f3f4f6;font-size:11px">${h.fase||'--'}</td><td style="padding:5px 8px;border-bottom:1px solid #f3f4f6;color:#6b7280;font-size:11px">${h.descricao||'--'}</td><td style="padding:5px 8px;border-bottom:1px solid #f3f4f6;text-align:right;font-weight:700;font-size:11px">${fmtH(h.minutos)}</td></tr>`).join('')}</tbody></table></div>`;}).join('');
+  }
+  if(formato==='tela'||formato==='pdf'){
+    document.getElementById('rel-modal-titulo').textContent=titulo;
+    document.getElementById('rel-modal-content').innerHTML=html||'<div style="padding:32px;text-align:center;color:#6b7280">Nenhum dado no período</div>';
+    document.getElementById('modal-relatorio').classList.add('open');
+    if(formato==='pdf')setTimeout(()=>imprimirRelatorio(),400);
+  } else if(formato==='csv'){
+    const bom='\uFEFF';const csv=bom+csvRows.map(r=>r.map(c=>'"'+(String(c||'').replace(/"/g,'""'))+'"').join(',')).join('\n');
+    const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=titulo.replace(/[^a-zA-Z0-9]/g,'_')+'.csv';a.click();URL.revokeObjectURL(url);
+  }
+}
+function imprimirRelatorio(){
+  const titulo=document.getElementById('rel-modal-titulo').textContent;
+  const conteudo=document.getElementById('rel-modal-content').innerHTML;
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>${titulo}</title><style>body{font-family:Arial,sans-serif;padding:24px;font-size:12px}@media print{body{padding:0}}</style></head><body><h2 style="color:#1a1a2e;margin-bottom:16px">${titulo}</h2>${conteudo}</body></html>`);
+  w.document.close();w.focus();setTimeout(()=>w.print(),500);
+}
+
+function abrirGerenciarEquipes(){
+  renderEquipesLista();popularRefEquipe();
+  document.getElementById('modal-equipes').classList.add('open');
+}
+function renderEquipesLista(){
+  document.getElementById('equipes-lista').innerHTML=equipes.map(eq=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-md);margin-bottom:8px">
+      <div><div style="font-family:var(--font-display);font-size:13px;font-weight:700">${eq.nome}</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">${eq.profIds.length} profissionais · ${eq.tipo==='todos'?'Todos':eq.tipo+': '+(eq.ref||'')}</div></div>
+      <button class="icon-btn danger" onclick="excluirEquipe('${eq.id}')"><i class="ti ti-trash"></i></button>
+    </div>`).join('')||'<div style="color:var(--text-dim);font-size:12px;padding:8px">Nenhuma equipe criada</div>';
+}
+function popularRefEquipe(){
+  const tipo=document.getElementById('eq-tipo-input').value;
+  const sel=document.getElementById('eq-ref-input');
+  if(tipo==='projeto'){const projs=[...new Set(DB.horas.map(h=>h.projeto).filter(Boolean))].sort();sel.innerHTML='<option value="">Selecione o projeto</option>'+projs.map(p=>`<option value="${p}">${p}</option>`).join('');}
+  else if(tipo==='cliente'){const clis=[...new Set(DB.horas.map(h=>h.cliente).filter(Boolean))].sort();sel.innerHTML='<option value="">Selecione o cliente</option>'+clis.map(c=>`<option value="${c}">${c}</option>`).join('');}
+  else sel.innerHTML='<option value="">Todos os profissionais</option>';
+  sel.onchange=previewEquipe;
+  document.getElementById('eq-tipo-input').onchange=()=>{popularRefEquipe();previewEquipe();};
+  previewEquipe();
+}
+function previewEquipe(){
+  const tipo=document.getElementById('eq-tipo-input').value;const ref=document.getElementById('eq-ref-input').value;
+  let profs=[];
+  if(tipo==='todos')profs=DB.profissionais.filter(p=>p.ativo!==false);
+  else if(tipo==='projeto'&&ref){const em=new Set(DB.horas.filter(h=>h.projeto===ref).map(h=>(h.profEmail||'').toLowerCase()));profs=DB.profissionais.filter(p=>em.has((p.email||'').toLowerCase()));}
+  else if(tipo==='cliente'&&ref){const em=new Set(DB.horas.filter(h=>h.cliente===ref).map(h=>(h.profEmail||'').toLowerCase()));profs=DB.profissionais.filter(p=>em.has((p.email||'').toLowerCase()));}
+  document.getElementById('eq-preview').innerHTML=profs.length?profs.map(p=>`<span style="background:var(--bravi-purple-dim);border:1px solid var(--bravi-purple-border);border-radius:100px;padding:2px 8px;font-size:11px;color:var(--bravi-purple)">${p.nome}</span>`).join(''):'<span style="color:var(--text-dim);font-size:11px">Nenhum encontrado</span>';
+}
+function salvarEquipe(){
+  const nome=document.getElementById('eq-nome-input').value.trim();const tipo=document.getElementById('eq-tipo-input').value;const ref=document.getElementById('eq-ref-input').value;
+  if(!nome){alert('Digite o nome');return;}
+  equipes.push({id:'eq_'+Date.now(),nome,tipo,ref,profIds:[]});
+  sincronizarEquipes();salvarEquipes();renderEquipesLista();renderEquipeChips();
+  document.getElementById('eq-nome-input').value='';
+}
+function excluirEquipe(id){if(!confirm('Remover?'))return;equipes=equipes.filter(e=>e.id!==id);salvarEquipes();renderEquipesLista();renderEquipeChips();}
+
+function exportCSVDrill(){
+  if(!drillData)return;
+  const rows=[['Data','Projeto','Fase','Descrição','Minutos','Horas']];
+  drillData.hProf.sort((a,b)=>a.data.localeCompare(b.data)).forEach(h=>rows.push([h.data,h.projeto||'',h.fase||'',h.descricao||'',h.minutos||0,fmtH(h.minutos)]));
+  const bom='\uFEFF';const csv=bom+rows.map(r=>r.map(c=>'"'+(String(c||'').replace(/"/g,'""'))+'"').join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=(drillData.p.nome||'prof').replace(/\s+/g,'_')+'_'+confIni+'_'+confFim+'.csv';a.click();URL.revokeObjectURL(url);
+}
+function fecharModal(id){document.getElementById('modal-'+id).classList.remove('open');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal-backdrop.open').forEach(m=>m.classList.remove('open'));});
+document.querySelectorAll('.modal-backdrop').forEach(b=>b.addEventListener('click',e=>{if(e.target===b)b.classList.remove('open');}));
+function destroyCharts(ids){ids.forEach(id=>{if(_charts[id]){_charts[id].destroy();delete _charts[id];}});}
+
+async function sincronizarTimeneye(){
+  const icon=document.getElementById('icon-sync');icon.className='ti ti-loader-2 spin';
+  try{const r=await fetch(BraviDB.getApiUrl()+'?action=sync-timeneye&_='+Date.now());const j=await r.json();if(j.ok){await BraviDB.sincronizar();carregarDB();popularFiltrosGlobais();renderViewAtual();alert('Timeneye sincronizado!\n'+j.resultado.horas+' horas');}else alert('Erro: '+(j.erro||'?'));}catch(e){alert('Erro: '+e.message);}
+  icon.className='ti ti-clock-bolt';
+}
+async function sincronizarDrive(){
+  BraviDB.enviarTudoParaAPI();await new Promise(r=>setTimeout(r,2000));
+  const ok=await BraviDB.sincronizar();if(ok){carregarDB();popularFiltrosGlobais();renderViewAtual();}
+  alert(ok?'Drive sincronizado!':'Sync parcial');
+}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){carregarDB();renderViewAtual();}});
+window.addEventListener('storage',e=>{if(e.key?.startsWith('bravi_')){carregarDB();renderViewAtual();}});
+const _s=document.createElement('style');_s.textContent='@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}';document.head.appendChild(_s);
+init();
+</script>
+</body>
+</html>
