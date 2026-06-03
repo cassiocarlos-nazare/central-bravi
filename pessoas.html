@@ -760,7 +760,7 @@ async function renderAtividades() {
   const proj = document.getElementById('f-proj-ativ')?.value || '';
 
   // Loading state
-  const el2 = document.getElementById('atividades-list');
+  let el2 = document.getElementById('atividades-list');
   if (el2) el2.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-muted)"><i class="ti ti-loader-2" style="animation:spin 1s linear infinite;font-size:20px;display:block;margin:0 auto 8px"></i>Buscando via API...</div>`;
   const chartsEl = document.getElementById('ativ-charts');
   if (chartsEl) chartsEl.style.display = 'none';
@@ -902,7 +902,7 @@ async function renderAtividades() {
     agrupado[k].datas.push(h.data);
   });
 
-  const el2 = document.getElementById('atividades-list');
+  el2 = document.getElementById('atividades-list');
   if (!ativas.length) {
     if (_chartPie) { _chartPie.destroy(); _chartPie = null; }
     if (_chartBar) { _chartBar.destroy(); _chartBar = null; }
