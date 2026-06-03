@@ -122,7 +122,7 @@ html,body{height:100%;font-family:'Open Sans',Arial,sans-serif;background:#F4F4F
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 .spin{animation:spin 1s linear infinite;display:inline-block}
 .loading-box{display:flex;align-items:center;justify-content:center;gap:10px;padding:48px;color:var(--text-dim);font-size:13px}
-.table-wrap{overflow-x:auto;max-height:520px;overflow-y:auto}
+.table-wrap{overflow-x:auto;overflow-y:visible}
 /* FIX LAYOUT — garante grid mesmo se bravi-ds.css não aplicar */
 .app-layout{display:grid!important;grid-template-columns:220px 1fr!important;height:100vh!important;overflow:hidden!important}
 </style>
@@ -213,18 +213,27 @@ html,body{height:100%;font-family:'Open Sans',Arial,sans-serif;background:#F4F4F
         <div class="chart-card"><div class="chart-title">Horas por projeto</div><div style="height:180px;position:relative"><canvas id="cd-chart-proj"></canvas></div></div>
         <div class="chart-card"><div class="chart-title">Distribuição por fase</div><div style="display:flex;align-items:center;justify-content:center;gap:16px;padding-top:4px"><canvas id="cd-chart-pie" width="130" height="130"></canvas><div id="cd-pie-legend" style="font-size:11px;flex:1"></div></div></div>
       </div>
+      <!-- Resumo de atividades agrupadas -->
+      <div class="section-card" style="padding:0;overflow:hidden;margin-bottom:16px">
+        <div style="padding:14px 16px;border-bottom:1px solid var(--border)">
+          <span style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;font-family:var(--font-display)">Resumo de Atividades (Agrupadas)</span>
+        </div>
+        <div id="cd-ativ-wrap"></div>
+      </div>
+      <!-- Lançamentos dia a dia -->
       <div class="section-card" style="padding:0;overflow:hidden;margin-bottom:16px">
         <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
-          <span style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;font-family:var(--font-display)">Lançamentos dia a dia</span>
+          <span style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;font-family:var(--font-display)">Lançamentos Dia a Dia</span>
           <button class="btn btn-ghost btn-sm" onclick="exportCSVDrill()"><i class="ti ti-download"></i> CSV</button>
         </div>
-        <div class="table-wrap" id="cd-dias-wrap"></div>
+        <div id="cd-dias-wrap"></div>
       </div>
+      <!-- Agrupado por projeto/fase -->
       <div class="section-card" style="padding:0;overflow:hidden">
         <div style="padding:14px 16px;border-bottom:1px solid var(--border)">
           <span style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;font-family:var(--font-display)">Agrupado por Projeto / Fase</span>
         </div>
-        <div class="table-wrap" id="cd-proj-wrap"></div>
+        <div id="cd-proj-wrap"></div>
       </div>
     </div>
   </div>
@@ -400,7 +409,7 @@ function popularFiltrosGlobais(){
 function renderEquipeChips(){
   ['conf','men'].forEach(ctx=>{
     const el=document.getElementById('equipe-chips-'+ctx);if(!el)return;
-    el.innerHTML=equipes.map(eq=>`<span class="equipe-chip" onclick="toggleEquipe('${ctx}','${eq.id}',this)">${eq.nome}</span>`).join('');
+    el.innerHTML=equipes.map(eq=>`<span class="equipe-chip" data-eqid="${eq.id}" onclick="toggleEquipe('${ctx}','${eq.id}',this)">${eq.nome}</span>`).join('');
   });
 }
 function toggleEquipe(ctx,eqId,el){
@@ -515,20 +524,31 @@ function renderViewAtual(){if(viewAtual==='conferencia')renderConferencia();else
 
 function renderConferencia(){
   if(!confIni||!confFim)return;
+  if(confDrillProf) return; // não rerender se drill aberto
   document.getElementById('conf-list').classList.remove('hidden');
   document.getElementById('conf-drill').classList.remove('active');
-  confDrillProf=null;
+
   const todasHoras=getHoras(confIni,confFim);
   const horasFilt=filtrarProjSel(todasHoras,projSel_conf);
   const faseFilt=document.getElementById('conf-fase')?.value||'';
   const horas=faseFilt?horasFilt.filter(h=>h.fase===faseFilt):horasFilt;
-  // Filtra profissionais pelas equipes ativas (se alguma estiver selecionada)
-  const equipesAtivas=[...document.querySelectorAll('#equipe-chips-conf .equipe-chip.active')].map(el=>{const idx=[...el.parentElement.children].indexOf(el);return equipes[idx]?.id;}).filter(Boolean);
+
+  // Filtra profissionais por equipe ativa
+  const equipesAtivas=[...document.querySelectorAll('#equipe-chips-conf .equipe-chip.active')]
+    .map(el=>el.dataset.eqid).filter(Boolean);
   let profs=getProfsAtivos();
   if(equipesAtivas.length){
     const profIdsPermitidos=new Set(equipesAtivas.flatMap(eqId=>(equipes.find(e=>e.id===eqId)?.profIds||[])));
     profs=profs.filter(p=>profIdsPermitidos.has(p.id));
   }
+
+  // Atualiza fases disponíveis com base nos projetos selecionados
+  const horasParaFase=projSel_conf.size>0?horasFilt:todasHoras;
+  const fasesDisp=[...new Set(horasParaFase.map(h=>h.fase).filter(Boolean))].sort();
+  const selFaseEl=document.getElementById('conf-fase');
+  const faseSel=selFaseEl?.value||'';
+  selFaseEl.innerHTML='<option value="">Todas as fases</option>'+fasesDisp.map(f=>`<option value="${f}" ${f===faseSel?'selected':''}>${f}</option>`).join('');
+
   const metaMin=40*60;
   const totalMin=horas.reduce((a,h)=>a+(h.minutos||0),0);
   let okCount=0,alertaCount=0;
@@ -632,6 +652,17 @@ function renderDrillConf(p){
   const cpi=document.getElementById('cd-chart-pie');
   if(cpi&&topFase.length){const t8f=topFase.slice(0,8);_charts['cd-pie']=new Chart(cpi,{type:'pie',data:{labels:t8f.map(([k])=>k),datasets:[{data:t8f.map(([,v])=>v),backgroundColor:COR.slice(0,t8f.length),borderWidth:2,borderColor:'#f8f9ff'}]},options:{responsive:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{const h=Math.floor(ctx.raw/60),m=ctx.raw%60,pc=Math.round(ctx.raw/totFase*100);return ` ${ctx.label}: ${h}h${m?' '+m+'min':''} (${pc}%)`;}}}}}}); document.getElementById('cd-pie-legend').innerHTML=t8f.map(([l,v],i)=>{const pc=Math.round(v/totFase*100);return `<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px"><div style="width:10px;height:10px;border-radius:2px;background:${COR[i]};flex-shrink:0"></div><span style="color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90px;font-size:11px">${l}</span><span style="color:var(--text-primary);font-weight:700;font-family:var(--font-display);margin-left:auto;padding-left:4px;font-size:11px">${pc}%</span></div>`;}).join('');}
   const dias=Object.keys(porDia).sort();
+  // Resumo de atividades agrupadas por atividade/descrição (independente de projeto)
+  const porAtiv={};
+  hP.forEach(h=>{
+    const k=h.descricao||h.fase||'Sem descrição';
+    if(!porAtiv[k])porAtiv[k]={label:k,minutos:0,qtd:0};
+    porAtiv[k].minutos+=(h.minutos||0);porAtiv[k].qtd++;
+  });
+  const atividades=Object.values(porAtiv).sort((a,b)=>b.minutos-a.minutos);
+  const ativWrap=document.getElementById('cd-ativ-wrap');
+  if(ativWrap) ativWrap.innerHTML=atividades.length?`<table class="main-table"><thead><tr><th>Atividade / Descrição</th><th class="center">Registros</th><th class="right">Horas</th><th style="width:120px">% do total</th></tr></thead><tbody>${atividades.map(a=>{const pct=minTot?Math.round(a.minutos/minTot*100):0;return `<tr><td style="font-size:12px">${a.label}</td><td class="center" style="color:var(--text-muted);font-size:11px">${a.qtd}x</td><td class="right" style="font-family:var(--font-display);font-weight:700">${fmtH(a.minutos)}</td><td><div class="prog"><div class="prog-track"><div class="prog-fill c-ok" style="width:${pct}%"></div></div><span class="prog-pct t-ok" style="color:#6b7280">${pct}%</span></div></td></tr>`;}).join('')}</tbody><tfoot><tr><td colspan="2" style="font-weight:700">Total</td><td class="right" style="color:var(--bravi-purple);font-weight:800;font-family:var(--font-display)">${fmtH(minTot)}</td><td></td></tr></tfoot></table>`:`<div class="loading-box">Sem atividades</div>`;
+
   document.getElementById('cd-dias-wrap').innerHTML=dias.length?`<table class="main-table"><thead><tr><th>Data</th><th>Projeto</th><th>Fase</th><th>Descrição</th><th class="right">Horas</th></tr></thead><tbody>
     ${dias.map(dia=>{const regs=porDia[dia];const mDia=regs.reduce((a,h)=>a+(h.minutos||0),0);const dw=new Date(dia+'T12:00:00').getDay();let al='';if(dw>0&&dw<6){if(mDia<360)al=' ⚠️';else if(mDia>600)al=' ✅';}
     return `<tr style="background:var(--surface-2)"><td colspan="4" style="font-family:var(--font-display);font-size:11px;font-weight:700;color:var(--text-muted)">${fmtData(dia)}${al}</td><td class="right" style="font-family:var(--font-display);font-weight:700;font-size:12px;color:var(--bravi-purple)">${fmtH(mDia)}</td></tr>
