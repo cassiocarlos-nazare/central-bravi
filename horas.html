@@ -306,9 +306,12 @@ function init(){
   carregarDB();carregarEquipes();popularFiltrosGlobais();
   setSemana('anterior',document.getElementById('pbtn-anterior'));
   setMensal('mes',document.getElementById('pbtn-mes'));
-  const hoje=new Date();
-  document.getElementById('rel-ini').value=new Date(hoje.getFullYear(),hoje.getMonth(),1).toISOString().slice(0,10);
-  document.getElementById('rel-fim').value=new Date(hoje.getFullYear(),hoje.getMonth()+1,0).toISOString().slice(0,10);
+  // Período padrão relatórios = mês com mais dados
+  const contM={};DB.horas.forEach(h=>{if(h.data){const m=h.data.slice(0,7);contM[m]=(contM[m]||0)+1;}});
+  const melhorM=Object.keys(contM).length?Object.entries(contM).sort((a,b)=>b[1]-a[1])[0][0]:new Date().toISOString().slice(0,7);
+  const [rAno,rMes]=melhorM.split('-').map(Number);
+  document.getElementById('rel-ini').value=new Date(rAno,rMes-1,1).toISOString().slice(0,10);
+  document.getElementById('rel-fim').value=new Date(rAno,rMes,0).toISOString().slice(0,10);
 }
 function carregarDB(){
   DB.profissionais=BraviDB.ler('profissionais');DB.projetos=BraviDB.ler('projetos');
@@ -373,13 +376,29 @@ function bsConf(pct){const c=clsConf(pct);const t=pct>=100?'Acima':pct>=90?'OK':
 function setSemana(modo,btn){
   document.querySelectorAll('#view-conferencia .periodo-btn').forEach(b=>b.classList.remove('active'));
   if(btn)btn.classList.add('active');
-  // Usa a data mais recente com dados como referência (não o dia atual)
-  const datasComDados=DB.horas.map(h=>h.data).filter(Boolean).sort();
-  const refISO=datasComDados.length?datasComDados[datasComDados.length-1]:new Date().toISOString().slice(0,10);
-  const ref=new Date(refISO+'T12:00:00');
-  let seg,dom;
-  if(modo==='anterior'){const dw=ref.getDay()||7;seg=new Date(ref);seg.setDate(ref.getDate()-(dw-1)-7);dom=new Date(seg);dom.setDate(seg.getDate()+6);}
-  else{const dw=ref.getDay()||7;seg=new Date(ref);seg.setDate(ref.getDate()-(dw-1));dom=new Date(seg);dom.setDate(seg.getDate()+6);}
+  // Encontra a semana com mais registros no banco
+  const contPorSemana={};
+  DB.horas.forEach(h=>{
+    if(!h.data)return;
+    const d=new Date(h.data+'T12:00:00');
+    const dw=d.getDay()||7;
+    const seg=new Date(d);seg.setDate(d.getDate()-(dw-1));
+    const k=seg.toISOString().slice(0,10);
+    contPorSemana[k]=(contPorSemana[k]||0)+1;
+  });
+  const semanas=Object.entries(contPorSemana).sort((a,b)=>b[1]-a[1]);
+  // semana mais recente com dados (não necessariamente a com mais registros)
+  const semanasOrdenadas=Object.keys(contPorSemana).sort();
+  const ultimaSemana=semanasOrdenadas[semanasOrdenadas.length-1]||new Date().toISOString().slice(0,10);
+  let refSemana;
+  if(modo==='anterior'){
+    // pega a penúltima semana com dados, ou a última se só houver uma
+    refSemana=semanasOrdenadas.length>1?semanasOrdenadas[semanasOrdenadas.length-2]:ultimaSemana;
+  } else {
+    refSemana=ultimaSemana;
+  }
+  const seg=new Date(refSemana+'T12:00:00');
+  const dom=new Date(seg);dom.setDate(seg.getDate()+6);
   confIni=seg.toISOString().slice(0,10);confFim=dom.toISOString().slice(0,10);
   document.getElementById('conf-ini').value=confIni;document.getElementById('conf-fim').value=confFim;
   renderProjMulti('conf');renderConferencia();
@@ -392,9 +411,19 @@ function setCustomSemana(){
 function setMensal(modo,btn){
   document.querySelectorAll('#view-mensal .periodo-btn').forEach(b=>b.classList.remove('active'));
   if(btn)btn.classList.add('active');
-  const hoje=new Date();
-  if(modo==='mes'){menIni=new Date(hoje.getFullYear(),hoje.getMonth(),1).toISOString().slice(0,10);menFim=new Date(hoje.getFullYear(),hoje.getMonth()+1,0).toISOString().slice(0,10);}
-  else{menIni=new Date(hoje.getFullYear(),hoje.getMonth(),1).toISOString().slice(0,10);menFim=new Date(hoje.getFullYear(),hoje.getMonth(),15).toISOString().slice(0,10);}
+  // Encontra o mês com mais registros
+  const contPorMes={};
+  DB.horas.forEach(h=>{if(h.data){const m=h.data.slice(0,7);contPorMes[m]=(contPorMes[m]||0)+1;}});
+  const meses=Object.keys(contPorMes).sort();
+  const melhorMes=meses.length?Object.entries(contPorMes).sort((a,b)=>b[1]-a[1])[0][0]:new Date().toISOString().slice(0,7);
+  const [ano,mes]=melhorMes.split('-').map(Number);
+  if(modo==='mes'){
+    menIni=new Date(ano,mes-1,1).toISOString().slice(0,10);
+    menFim=new Date(ano,mes,0).toISOString().slice(0,10);
+  } else {
+    menIni=new Date(ano,mes-1,1).toISOString().slice(0,10);
+    menFim=new Date(ano,mes-1,15).toISOString().slice(0,10);
+  }
   document.getElementById('men-ini').value=menIni;document.getElementById('men-fim').value=menFim;
   renderProjMulti('men');renderMensal();
 }
