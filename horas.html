@@ -179,12 +179,23 @@ html,body{height:100%;font-family:'Open Sans',Arial,sans-serif;background:#F4F4F
       <div id="equipe-chips-conf" class="equipe-chips"></div>
       <div class="filter-divider"></div>
       <span class="filter-label">Projetos</span>
-      <div id="proj-multi-conf" class="proj-multi"></div>
+      <div style="position:relative">
+        <button class="periodo-btn" id="proj-dropdown-btn-conf" onclick="toggleProjDropdown('conf')" style="display:flex;align-items:center;gap:5px">
+          <span id="proj-count-conf">Todos</span> <i class="ti ti-chevron-down" style="font-size:11px"></i>
+        </button>
+        <div id="proj-dropdown-conf" style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:100;background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px;min-width:280px;max-width:420px;max-height:260px;overflow-y:auto;box-shadow:0 4px 20px rgba(0,0,0,.1)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--border)">
+            <span style="font-size:10px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em">Selecione projetos</span>
+            <button onclick="limparProjetos('conf')" style="font-size:10px;color:var(--bravi-purple);background:none;border:none;cursor:pointer;font-weight:600">Limpar</button>
+          </div>
+          <div id="proj-multi-conf" class="proj-multi" style="max-height:none;border:none;background:none;padding:0;gap:4px"></div>
+        </div>
+      </div>
       <div class="filter-divider"></div>
       <span class="filter-label">Fase</span>
       <select class="filter-select" id="conf-fase" onchange="renderConferencia()" style="min-width:120px"><option value="">Todas as fases</option></select>
     </div>
-    <div class="stats-row">
+    <div id="conf-stats-row" class="stats-row">
       <div class="stat-card purple"><div class="stat-val" id="cs-total">--</div><div class="stat-lbl">Total de horas</div><div class="stat-sub" id="cs-periodo">--</div></div>
       <div class="stat-card blue"><div class="stat-val" id="cs-media">--</div><div class="stat-lbl">Média / profissional</div><div class="stat-sub" id="cs-prof-count">--</div></div>
       <div class="stat-card green"><div class="stat-val" id="cs-ok">0</div><div class="stat-lbl">Meta atingida >= 90%</div><div class="stat-sub">de 40h semanais</div></div>
@@ -409,7 +420,28 @@ function renderProjMulti(ctx){
   const horas=ctx==='conf'?getHoras(confIni,confFim):getHoras(menIni,menFim);
   const projs=[...new Set(horas.map(h=>h.projeto).filter(Boolean))].sort();
   el.innerHTML=projs.map(p=>`<span class="proj-chip ${sel.has(p)?'sel':''}" onclick="toggleProj('${ctx}','${p.replace(/'/g,'&#39;')}',this)">${p}</span>`).join('')||'<span style="font-size:11px;color:var(--text-dim);padding:2px 4px">Nenhum projeto no período</span>';
+  // Atualiza contador no botão
+  const countEl=document.getElementById('proj-count-'+ctx);
+  if(countEl) countEl.textContent=sel.size>0?sel.size+' selecionado'+(sel.size>1?'s':''):'Todos';
 }
+function toggleProjDropdown(ctx){
+  const dd=document.getElementById('proj-dropdown-'+ctx);
+  if(!dd)return;
+  const aberto=dd.style.display!=='none';
+  // Fecha todos
+  document.querySelectorAll('[id^=proj-dropdown-]').forEach(d=>d.style.display='none');
+  if(!aberto) dd.style.display='block';
+}
+function limparProjetos(ctx){
+  if(ctx==='conf') projSel_conf.clear(); else projSel_men.clear();
+  renderProjMulti(ctx);renderViewAtual();
+}
+// Fecha dropdown ao clicar fora
+document.addEventListener('click',e=>{
+  if(!e.target.closest('[id^=proj-dropdown-]')&&!e.target.closest('[id^=proj-dropdown-btn-]')){
+    document.querySelectorAll('[id^=proj-dropdown-]').forEach(d=>d.style.display='none');
+  }
+});
 function toggleProj(ctx,proj,el){const sel=ctx==='conf'?projSel_conf:projSel_men;if(sel.has(proj))sel.delete(proj);else sel.add(proj);el.classList.toggle('sel');renderViewAtual();}
 
 function getHoras(ini,fim){return DB.horas.filter(h=>{if(ini&&h.data<ini)return false;if(fim&&h.data>fim)return false;return true;});}
@@ -552,13 +584,19 @@ function abrirDrillConf(profId){
   confDrillProf=p;
   document.getElementById('conf-list').classList.add('hidden');
   document.getElementById('conf-drill').classList.add('active');
+  // Esconde filtros e stats ao abrir drill
+  document.getElementById('conf-stats-row').style.display='none';
   document.getElementById('topbar-title').textContent=p.nome;
+  // Scroll para o topo
+  document.querySelector('.main-content').scrollTo({top:0,behavior:'smooth'});
   renderDrillConf(p);
 }
 function voltarConf(){
   confDrillProf=null;
   document.getElementById('conf-list').classList.remove('hidden');
   document.getElementById('conf-drill').classList.remove('active');
+  // Restaura stats
+  document.getElementById('conf-stats-row').style.display='';
   document.getElementById('topbar-title').textContent='Conferência Semanal';
   destroyCharts(['cd-proj','cd-pie']);
 }
