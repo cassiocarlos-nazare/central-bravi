@@ -84,6 +84,8 @@
 .spin{animation:spin 1s linear infinite;display:inline-block}
 .loading-box{display:flex;align-items:center;justify-content:center;gap:10px;padding:48px;color:var(--text-dim);font-size:13px}
 .table-wrap{overflow-x:auto;max-height:520px;overflow-y:auto}
+/* FIX LAYOUT — garante grid mesmo se bravi-ds.css não aplicar */
+.app-layout{display:grid!important;grid-template-columns:220px 1fr!important;height:100vh!important;overflow:hidden!important}
 </style>
 </head>
 <body>
@@ -91,7 +93,10 @@
 <aside class="sidebar">
   <div class="sidebar-brand">
     <div class="brand-icon">B</div>
-    <div><div class="brand-name">Central <span>Bravi</span></div><div class="brand-sub">Controle de Horas</div></div>
+    <div>
+      <div class="brand-name">Central <span>Bravi</span></div>
+      <div class="brand-sub">Controle de Horas</div>
+    </div>
   </div>
   <nav class="sidebar-nav">
     <div class="nav-section-label">Visão</div>
@@ -108,7 +113,7 @@
     <a href="index.html" class="nav-item"><i class="ti ti-arrow-left"></i> Voltar ao Hub</a>
   </div>
 </aside>
-<div class="main-content">
+<div class="main-content" style="min-width:0;overflow:hidden;flex:1">
   <div class="topbar">
     <div>
       <div class="topbar-title" id="topbar-title">Controle de Horas</div>
