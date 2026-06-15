@@ -170,6 +170,29 @@ tr:hover td { background: var(--bg3); }
 .horas-crit { color: var(--red); }
 .horas-zero { color: var(--text3); }
 
+/* ── FERIADO ──────────────────────────────────────────────── */
+.col-feriado { background: rgba(124,58,237,.08) !important; }
+.th-feriado  { background: rgba(124,58,237,.15) !important; color: var(--accent2) !important; }
+.feriado-tag { font-size: 9px; color: var(--accent2); font-weight: 700; display: block; letter-spacing:.04em; }
+
+/* ── PREVISTO vs LANÇADO ─────────────────────────────────── */
+.prev-row {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--text2); margin-top: 2px;
+}
+.prev-diff-pos { color: var(--green); font-weight: 600; }
+.prev-diff-neg { color: var(--red);   font-weight: 600; }
+.prev-diff-ok  { color: var(--text3); font-weight: 600; }
+
+/* ── INPUT DATE ──────────────────────────────────────────── */
+input[type=date] {
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text); border-radius: 6px; padding: 5px 8px;
+  font-size: 13px; outline: none;
+}
+input[type=date]:focus { border-color: var(--accent); }
+::-webkit-calendar-picker-indicator { filter: invert(0.7); cursor: pointer; }
+
 /* ── DRILL DOWN ──────────────────────────────────────────── */
 .drill {
   display: none; background: var(--bg3); border: 1px solid var(--border);
@@ -318,6 +341,12 @@ input[type=text].input-full { width: 100%; padding: 7px 10px; margin-bottom: 8px
       </select>
     </div>
     <div class="filter-group">
+      <span class="filter-label">Pessoa</span>
+      <select id="filtroPessoa" onchange="aplicarFiltros()">
+        <option value="">Todas</option>
+      </select>
+    </div>
+    <div class="filter-group">
       <span class="filter-label">Projeto</span>
       <select id="filtroProjeto" onchange="aplicarFiltros()">
         <option value="">Todos</option>
@@ -331,6 +360,18 @@ input[type=text].input-full { width: 100%; padding: 7px 10px; margin-bottom: 8px
         <option value="0">Inativos</option>
       </select>
     </div>
+    <div class="filters-sep"></div>
+    <div class="filter-group">
+      <span class="filter-label">De</span>
+      <input type="date" id="filtroDataIni" onchange="aplicarFiltros()">
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Até</span>
+      <input type="date" id="filtroDataFim" onchange="aplicarFiltros()">
+    </div>
+    <button class="btn btn-sm" onclick="limparDatas()" title="Limpar filtro de datas">✕ Datas</button>
+    <div class="filters-sep"></div>
+    <button class="btn btn-sm" onclick="abrirModalFeriados()" title="Gerenciar feriados">📅 Feriados</button>
   </div>
 </div>
 
@@ -430,6 +471,25 @@ input[type=text].input-full { width: 100%; padding: 7px 10px; margin-bottom: 8px
   </div>
 </div>
 
+<!-- MODAL FERIADOS -->
+<div class="modal-overlay" id="modalFeriados">
+  <div class="modal">
+    <div class="modal-title">📅 Feriados e Dias Não Úteis</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:12px">
+      Datas marcadas como feriado aparecem com destaque roxo na tabela e são excluídas do cálculo de horas previstas.
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
+      <input type="date" id="novoFeriadoData" style="flex:1">
+      <input type="text" id="novoFeriadoNome" placeholder="Nome (ex: Corpus Christi)" style="flex:2">
+      <button class="btn btn-primary btn-sm" onclick="adicionarFeriado()">+ Adicionar</button>
+    </div>
+    <div id="feriadosLista" style="max-height:320px;overflow-y:auto"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="fecharModalFeriados()">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
@@ -438,12 +498,20 @@ input[type=text].input-full { width: 100%; padding: 7px 10px; margin-bottom: 8px
 // CONFIG
 // ══════════════════════════════════════════════════════════════
 const API_URL = 'https://script.google.com/macros/s/AKfycbwflnR51V4sh7cc99AgHD9cJkfgE6BK38Xkcjaket0rfGy0HArMnTOHpQbGFhuwL6HD/exec';
-const LS_HORAS   = 'bravi_horas_drive';
-const LS_PESSOAS = 'bravi_pessoas_drive';
-const LS_EQUIPES = 'bravi_equipes_drive';
+const LS_HORAS    = 'bravi_horas_drive';
+const LS_PESSOAS  = 'bravi_pessoas_drive';
+const LS_EQUIPES  = 'bravi_equipes_drive';
+const LS_FERIADOS = 'bravi_feriados_drive';
 
-const FERIADOS = ['2026-01-01','2026-02-16','2026-02-17','2026-04-03','2026-04-21',
+const FERIADOS_BASE = ['2026-01-01','2026-02-16','2026-02-17','2026-04-03','2026-04-21',
   '2026-05-01','2026-06-04','2026-09-07','2026-10-12','2026-11-02','2026-11-15','2026-12-25'];
+
+const FERIADOS_NOMES_BASE = {
+  '2026-01-01':'Confraternização Universal','2026-02-16':'Carnaval','2026-02-17':'Carnaval',
+  '2026-04-03':'Sexta-feira Santa','2026-04-21':'Tiradentes','2026-05-01':'Dia do Trabalho',
+  '2026-06-04':'Corpus Christi','2026-09-07':'Independência','2026-10-12':'N.Sra. Aparecida',
+  '2026-11-02':'Finados','2026-11-15':'Proclamação da República','2026-12-25':'Natal'
+};
 
 const MESES_NOMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
   'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -452,9 +520,10 @@ const MESES_NOMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════
 let DB = {
-  horas:   [],   // todos os lançamentos do mês carregado
-  pessoas: [],   // profissionais da planilha
-  equipes: [],   // equipes (localStorage)
+  horas:    [],
+  pessoas:  [],
+  equipes:  [],
+  feriados: [], // [{data, nome}]
   mesAtual: new Date().getMonth() + 1,
   anoAtual: new Date().getFullYear(),
 };
@@ -469,7 +538,8 @@ let abaAtiva = 'dashboard';
 // ══════════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
   preencherFiltroMes();
-  DB.equipes = carregarEquipes();
+  DB.equipes  = carregarEquipes();
+  DB.feriados = carregarFeriados(); // {data: 'YYYY-MM-DD', nome: '...'}
   carregarTudo();
 });
 
@@ -540,6 +610,17 @@ function popularFiltros() {
   popularSelect('filtroLevel', [...new Set(DB.pessoas.map(p => p.level).filter(Boolean))].sort());
   // Projetos
   popularSelect('filtroProjeto', [...new Set(DB.horas.map(h => h.projeto).filter(Boolean))].sort());
+  // Pessoas
+  const selPessoa = document.getElementById('filtroPessoa');
+  const valPessoa = selPessoa.value;
+  selPessoa.innerHTML = '<option value="">Todas</option>';
+  DB.pessoas.filter(p => p.ativo).sort((a,b) => a.people.localeCompare(b.people)).forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.people;
+    opt.textContent = nomeFormatado(p.people);
+    if (p.people === valPessoa) opt.selected = true;
+    selPessoa.appendChild(opt);
+  });
   // Equipes
   const selEq = document.getElementById('filtroEquipe');
   selEq.innerHTML = '<option value="">Todas</option>';
@@ -564,11 +645,14 @@ function popularSelect(id, items) {
 }
 
 function aplicarFiltros() {
-  const role   = document.getElementById('filtroRole').value;
-  const level  = document.getElementById('filtroLevel').value;
-  const equipe = document.getElementById('filtroEquipe').value;
-  const proj   = document.getElementById('filtroProjeto').value;
-  const ativo  = document.getElementById('filtroAtivo').value;
+  const role    = document.getElementById('filtroRole').value;
+  const level   = document.getElementById('filtroLevel').value;
+  const equipe  = document.getElementById('filtroEquipe').value;
+  const pessoa  = document.getElementById('filtroPessoa').value;
+  const proj    = document.getElementById('filtroProjeto').value;
+  const ativo   = document.getElementById('filtroAtivo').value;
+  const dIni    = document.getElementById('filtroDataIni').value; // YYYY-MM-DD
+  const dFim    = document.getElementById('filtroDataFim').value;
 
   // Filtra pessoas
   let pessoas = DB.pessoas;
@@ -579,15 +663,24 @@ function aplicarFiltros() {
     const eq = DB.equipes.find(e => e.id === equipe);
     if (eq) pessoas = pessoas.filter(p => eq.membros.includes(p.people));
   }
+  if (pessoa) pessoas = pessoas.filter(p => p.people === pessoa);
   pessoasFiltradas = pessoas;
 
   // Filtra horas
   const userSet = new Set(pessoas.map(p => p.people));
   let horas = DB.horas.filter(h => userSet.has(h.user));
-  if (proj) horas = horas.filter(h => h.projeto === proj);
+  if (proj)  horas = horas.filter(h => h.projeto === proj);
+  if (dIni)  horas = horas.filter(h => h.data >= dIni);
+  if (dFim)  horas = horas.filter(h => h.data <= dFim);
   horasFiltradas = horas;
 
   renderizarAba();
+}
+
+function limparDatas() {
+  document.getElementById('filtroDataIni').value = '';
+  document.getElementById('filtroDataFim').value = '';
+  aplicarFiltros();
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -787,12 +880,19 @@ function periodoQuinzena(offset) {
 function renderTabConferencia(wrapId, ini, fim, metaHoras) {
   const wrap = document.getElementById(wrapId);
 
-  // Dias úteis no período
-  const dias = [];
+  // Set de feriados ativos
+  const feriadoSet  = getFeriadoSet();
+  const feriadoNome = getFeriadoNomes();
+
+  // Todos os dias do período (inclui feriados para mostrar na tabela)
+  const todosDias = [];
   for (let d = new Date(ini); d <= fim; d.setDate(d.getDate() + 1)) {
     const dow = d.getDay();
-    if (dow > 0 && dow < 6) dias.push(fmtISO(d));
+    if (dow > 0 && dow < 6) todosDias.push(fmtISO(d)); // seg-sex
   }
+
+  // Dias úteis (excluindo feriados) para cálculo de previsto
+  const diasUteis = todosDias.filter(d => !feriadoSet.has(d));
 
   // Horas por user × dia
   const iniISO = fmtISO(ini); const fimISO = fmtISO(fim);
@@ -811,26 +911,47 @@ function renderTabConferencia(wrapId, ini, fim, metaHoras) {
     return;
   }
 
-  // Cabeçalho
-  const thDias = dias.map(d => {
-    const dt = new Date(d + 'T12:00:00');
+  // Previsto por pessoa = dias úteis × 8h (descontando feriados)
+  const previstoPorPessoa = diasUteis.length * 8;
+
+  // Cabeçalho com destaque para feriados
+  const thDias = todosDias.map(d => {
+    const dt  = new Date(d + 'T12:00:00');
     const dow = ['Dom','Seg','Ter','Qua','Qui','Sex','Sab'][dt.getDay()];
-    return `<th style="text-align:center;min-width:52px">${dow}<br><span style="font-weight:400;color:var(--text3)">${dt.getDate()}</span></th>`;
+    const ehFeriado = feriadoSet.has(d);
+    const cls = ehFeriado ? 'th-feriado' : '';
+    const tag = ehFeriado ? `<span class="feriado-tag" title="${feriadoNome[d]||'Feriado'}">feriado</span>` : '';
+    return `<th style="text-align:center;min-width:60px" class="${cls}">${dow}<br><span style="font-weight:400;color:var(--text3)">${dt.getDate()}</span>${tag}</th>`;
   }).join('');
 
   // Linhas
   const linhas = pessoas.map(p => {
-    const userData = porUserDia[p.people] || {};
-    const totalH   = dias.reduce((a, d) => a + (userData[d] || 0), 0);
+    const userData  = porUserDia[p.people] || {};
+    const totalH    = todosDias.reduce((a, d) => a + (userData[d] || 0), 0);
+    const previsto  = previstoPorPessoa;
+    const diff      = totalH - previsto;
     const cor = totalH >= metaHoras ? 'horas-ok' : totalH >= metaHoras * 0.75 ? 'horas-warn' : totalH > 0 ? 'horas-crit' : 'horas-zero';
 
-    const celulas = dias.map(d => {
+    const celulas = todosDias.map(d => {
       const h = userData[d] || 0;
+      const ehFeriado = feriadoSet.has(d);
+      const bgCls = ehFeriado ? 'col-feriado' : '';
+      if (ehFeriado && h === 0) {
+        return `<td style="text-align:center" class="${bgCls}"><span style="color:var(--accent2);font-size:11px">—</span></td>`;
+      }
       const c = h >= 8 ? 'horas-ok' : h >= 4 ? 'horas-warn' : h > 0 ? 'horas-crit' : 'horas-zero';
-      return `<td style="text-align:center" class="${c}">${h > 0 ? fmtH1d(h) : '—'}</td>`;
+      return `<td style="text-align:center" class="${bgCls} ${c}">${h > 0 ? fmtH1d(h) : '—'}</td>`;
     }).join('');
 
     const nivel = p.level ? `<span class="chip chip-blue" style="font-size:10px;margin-left:4px">${p.level}</span>` : '';
+
+    // Diff previsto vs lançado
+    const diffCls  = diff > 0 ? 'prev-diff-pos' : diff < 0 ? 'prev-diff-neg' : 'prev-diff-ok';
+    const diffSinal = diff > 0 ? '+' : '';
+    const prevRow  = `<div class="prev-row">
+      <span>Prev: ${fmtH(previsto)}</span>
+      <span class="${diffCls}">${diffSinal}${fmtH(Math.abs(diff))}${diff >= 0 ? ' ↑' : ' ↓'}</span>
+    </div>`;
 
     return `<tr style="cursor:pointer" onclick="toggleDrill('${p.people}','${iniISO}','${fimISO}')">
       <td style="white-space:nowrap">
@@ -838,24 +959,54 @@ function renderTabConferencia(wrapId, ini, fim, metaHoras) {
         <div style="font-size:11px;color:var(--text3)">${p.role||''}</div>
       </td>
       ${celulas}
-      <td style="text-align:right" class="horas-cell ${cor}">${fmtH(totalH)}</td>
+      <td style="text-align:right;min-width:90px">
+        <span class="horas-cell ${cor}">${fmtH(totalH)}</span>
+        ${prevRow}
+      </td>
       <td style="text-align:center">${chipMeta(totalH, metaHoras)}</td>
     </tr>
-    <tr><td colspan="${dias.length + 3}" style="padding:0">
+    <tr><td colspan="${todosDias.length + 3}" style="padding:0">
       <div class="drill" id="drill-${p.people.replace(/\./g,'_')}">
         ${renderDrill(p, iniISO, fimISO)}
       </div>
     </td></tr>`;
   }).join('');
 
+  // Linha de totais
+  const totaisDia = todosDias.map(d => {
+    const tot = pessoas.reduce((a, p) => a + ((porUserDia[p.people]||{})[d]||0), 0);
+    const ehFeriado = feriadoSet.has(d);
+    return `<td style="text-align:center;font-weight:600;font-size:12px;border-top:2px solid var(--border)" class="${ehFeriado?'col-feriado':''}">${tot > 0 ? fmtH1d(tot) : '—'}</td>`;
+  }).join('');
+  const totalGeral = pessoas.reduce((a, p) => {
+    const ud = porUserDia[p.people] || {};
+    return a + todosDias.reduce((b, d) => b + (ud[d]||0), 0);
+  }, 0);
+  const totalPrevisto = pessoas.length * previstoPorPessoa;
+  const diffTotal = totalGeral - totalPrevisto;
+  const diffTotalCls = diffTotal >= 0 ? 'prev-diff-pos' : 'prev-diff-neg';
+
   wrap.innerHTML = `<div class="table-wrap"><table>
     <thead><tr>
       <th style="min-width:160px">Profissional</th>
       ${thDias}
-      <th style="text-align:right">Total</th>
+      <th style="text-align:right;min-width:90px">Total / Prev.</th>
       <th style="text-align:center">Meta</th>
     </tr></thead>
-    <tbody>${linhas}</tbody>
+    <tbody>${linhas}
+    <tr style="background:var(--bg3)">
+      <td style="font-weight:700;font-size:12px;border-top:2px solid var(--border)">
+        TOTAL EQUIPE
+        <div class="prev-row">
+          <span>Prev: ${fmtH(totalPrevisto)}</span>
+          <span class="${diffTotalCls}">${diffTotal>=0?'+':''}${fmtH(Math.abs(diffTotal))}</span>
+        </div>
+      </td>
+      ${totaisDia}
+      <td style="text-align:right;font-weight:700;border-top:2px solid var(--border)">${fmtH(totalGeral)}</td>
+      <td style="border-top:2px solid var(--border)"></td>
+    </tr>
+    </tbody>
   </table></div>`;
 }
 
@@ -1032,6 +1183,73 @@ function editarEquipe(idx) {
 }
 
 // ══════════════════════════════════════════════════════════════
+// FERIADOS
+// ══════════════════════════════════════════════════════════════
+function carregarFeriados() {
+  const salvo = localStorage.getItem(LS_FERIADOS);
+  if (salvo) return JSON.parse(salvo);
+  // Padrão: feriados base do ano
+  return FERIADOS_BASE.map(d => ({ data: d, nome: FERIADOS_NOMES_BASE[d] || 'Feriado', base: true }));
+}
+
+function salvarFeriados() {
+  localStorage.setItem(LS_FERIADOS, JSON.stringify(DB.feriados));
+}
+
+function getFeriadoSet() {
+  return new Set((DB.feriados || []).map(f => f.data));
+}
+
+function getFeriadoNomes() {
+  const m = {};
+  (DB.feriados || []).forEach(f => { m[f.data] = f.nome; });
+  return m;
+}
+
+function abrirModalFeriados() {
+  renderModalFeriados();
+  document.getElementById('modalFeriados').classList.add('open');
+}
+
+function fecharModalFeriados() {
+  document.getElementById('modalFeriados').classList.remove('open');
+}
+
+function renderModalFeriados() {
+  const lista = [...DB.feriados].sort((a,b) => a.data.localeCompare(b.data));
+  document.getElementById('feriadosLista').innerHTML = lista.map((f, idx) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;background:var(--bg3);border:1px solid var(--border);margin-bottom:4px">
+      <span style="font-size:12px;color:var(--accent2);font-weight:700;min-width:90px">${f.data}</span>
+      <span style="flex:1;font-size:13px">${f.nome}</span>
+      ${f.base ? '<span class="chip chip-gray" style="font-size:10px">base</span>' : ''}
+      <button class="btn btn-sm" onclick="removerFeriado(${idx})" style="color:var(--red);padding:2px 8px">✕</button>
+    </div>`).join('') || '<div style="color:var(--text2);padding:8px;font-size:13px">Nenhum feriado cadastrado.</div>';
+}
+
+function adicionarFeriado() {
+  const data = document.getElementById('novoFeriadoData').value;
+  const nome = document.getElementById('novoFeriadoNome').value.trim() || 'Feriado';
+  if (!data) { toast('Selecione uma data', 'warn'); return; }
+  if (DB.feriados.find(f => f.data === data)) { toast('Data já cadastrada', 'warn'); return; }
+  DB.feriados.push({ data, nome, base: false });
+  DB.feriados.sort((a,b) => a.data.localeCompare(b.data));
+  salvarFeriados();
+  document.getElementById('novoFeriadoData').value = '';
+  document.getElementById('novoFeriadoNome').value = '';
+  renderModalFeriados();
+  renderizarAba();
+  toast('✓ Feriado adicionado');
+}
+
+function removerFeriado(idx) {
+  DB.feriados.splice(idx, 1);
+  salvarFeriados();
+  renderModalFeriados();
+  renderizarAba();
+  toast('Feriado removido');
+}
+
+// ══════════════════════════════════════════════════════════════
 // HELPERS
 // ══════════════════════════════════════════════════════════════
 function fmtH(h) {
@@ -1039,7 +1257,7 @@ function fmtH(h) {
   const min  = Math.round((Math.abs(h) - hInt) * 60);
   return `${hInt}h${min > 0 ? String(min).padStart(2,'0')+'m' : ''}`;
 }
-function fmtH1d(h) { // compacto para célula de dia
+function fmtH1d(h) {
   if (h >= 10) return Math.round(h) + 'h';
   return h.toFixed(1).replace('.0','') + 'h';
 }
@@ -1061,12 +1279,13 @@ function semanaISO(dataStr) {
 }
 function diasUteisMes(ano, mes) {
   let n = 0;
+  const feriadoSet = getFeriadoSet();
   const fim = new Date(ano, mes, 0).getDate();
   for (let i = 1; i <= fim; i++) {
-    const d = new Date(ano, mes-1, i);
+    const d   = new Date(ano, mes-1, i);
     const dow = d.getDay();
     const iso = fmtISO(d);
-    if (dow > 0 && dow < 6 && !FERIADOS.includes(iso)) n++;
+    if (dow > 0 && dow < 6 && !feriadoSet.has(iso)) n++;
   }
   return n;
 }
