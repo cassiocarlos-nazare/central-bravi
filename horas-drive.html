@@ -1015,56 +1015,117 @@ function abrirConfigEquipe(idx) {
 
   const conteudo=eq.membros.map(people=>{
     const cfg=equipeEditConfig[people];
-    // null/undefined = ainda não configurado = default "todos"
-    const efetivo = cfg === undefined ? 'todos' : cfg;
+    // undefined/null = default "todos"; 'todos' = todos; [] ou array = lista específica
+    const efetivo = (cfg === undefined || cfg === null) ? 'todos' : cfg;
     const projSelecionados = efetivo==='todos' ? [] : (Array.isArray(efetivo) ? efetivo : []);
     const todoOn = efetivo==='todos';
+    const qtdSel = todoOn ? projetos.length : projSelecionados.length;
 
     const projs=projetos.map(p=>{
-      const on=todoOn || projSelecionados.includes(p);
+      const on = todoOn || projSelecionados.includes(p);
       return `<div class="proj-config-row">
         <span class="proj-config-nome">${p}</span>
         <button class="proj-toggle ${on?'on':''}" data-pessoa="${people}" data-proj="${p}" onclick="toggleProjConfig(this)"></button>
       </div>`;
     }).join('');
 
-    return `<div style="margin-bottom:16px;border:1px solid var(--border);border-radius:8px;padding:12px">
+    // Usar data-people no card para seletor robusto (sem depender de estilo inline)
+    return `<div class="eq-cfg-card" data-people="${people}" style="margin-bottom:12px;border:1px solid var(--border);border-radius:8px;padding:12px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <div style="font-weight:600;font-size:13px">${nomeF(people)}</div>
-        <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:11px;color:var(--text2)">${todoOn?'Todos os projetos':(projSelecionados.length+' projeto(s)')} selecionado(s)</span>
-          <button class="btn btn-sm ${todoOn?'active':''}" onclick="toggleTodosProjetos(this,'${people}')">${todoOn?'✓ Todos':'Selecionar todos'}</button>
+        <div>
+          <div style="font-weight:600;font-size:13px">${nomeF(people)}</div>
+          <div class="eq-cfg-label" style="font-size:11px;color:var(--text2);margin-top:2px">${todoOn?'Todos os projetos':qtdSel+' projeto(s) selecionado(s)'}</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm eq-todos-btn ${todoOn?'active':''}" data-people="${people}" onclick="toggleTodosProjetos(this)">${todoOn?'✓ Todos':'Selecionar todos'}</button>
+          <button class="btn btn-sm" data-people="${people}" onclick="limparProjetosPessoa(this)" title="Desmarcar todos">✕ Limpar</button>
         </div>
       </div>
-      <div style="max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:4px">${projs}</div>
+      <div style="max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:3px">${projs}</div>
     </div>`;
   }).join('');
 
-  document.getElementById('editEquipeConteudo').innerHTML=conteudo||'<div style="color:var(--text2);font-size:13px">Nenhum membro nesta equipe.</div>';
+  document.getElementById('editEquipeConteudo').innerHTML = conteudo ||
+    '<div style="color:var(--text2);font-size:13px">Nenhum membro nesta equipe.</div>';
   fecharModalEquipes();
   document.getElementById('modalEditarEquipe').classList.add('open');
 }
 
 function toggleProjConfig(btn) {
-  const people=btn.dataset.pessoa, proj=btn.dataset.proj;
+  const people = btn.dataset.pessoa;
+  const proj   = btn.dataset.proj;
+
+  // Se estava 'todos', converte para array com todos marcados antes de desmarcar um
+  if (!equipeEditConfig[people] || equipeEditConfig[people] === 'todos') {
+    // Pega todos os projetos visíveis no card deste membro
+    const card = document.querySelector(`.eq-cfg-card[data-people="${CSS.escape(people)}"]`);
+    const todosProj = card
+      ? [...card.querySelectorAll('.proj-toggle')].map(b => b.dataset.proj)
+      : [];
+    equipeEditConfig[people] = [...todosProj]; // começa com todos marcados
+  }
+
   btn.classList.toggle('on');
-  if(!equipeEditConfig[people]||equipeEditConfig[people]==='todos') equipeEditConfig[people]=[];
-  const arr=equipeEditConfig[people];
-  const idx=arr.indexOf(proj);
-  if(idx>=0) arr.splice(idx,1); else arr.push(proj);
-  // Atualiza botão "Todos"
-  const todosBtn=btn.closest('[style*="margin-bottom:16px"]').querySelector('.btn-sm');
-  if(todosBtn) { todosBtn.classList.remove('active'); todosBtn.textContent='Todos'; }
+  const arr = equipeEditConfig[people];
+  const i   = arr.indexOf(proj);
+  if (i >= 0) arr.splice(i, 1); else arr.push(proj);
+
+  // Atualiza label e botão "Todos" do card
+  _atualizarCardEquipe(people);
 }
 
-function toggleTodosProjetos(btn, people) {
-  const isTodos=btn.classList.contains('active');
-  if(isTodos) {
-    equipeEditConfig[people]=[]; btn.classList.remove('active'); btn.textContent='Todos';
-    btn.closest('[style*="margin-bottom:16px"]').querySelectorAll('.proj-toggle').forEach(t=>t.classList.remove('on'));
+function toggleTodosProjetos(btn) {
+  const people  = btn.dataset.people;
+  const isTodos = btn.classList.contains('active');
+
+  if (isTodos) {
+    // Desmarca todos → array vazio (nenhum projeto)
+    equipeEditConfig[people] = [];
   } else {
-    equipeEditConfig[people]='todos'; btn.classList.add('active'); btn.textContent='✓ Todos';
-    btn.closest('[style*="margin-bottom:16px"]').querySelectorAll('.proj-toggle').forEach(t=>t.classList.add('on'));
+    // Marca todos
+    equipeEditConfig[people] = 'todos';
+  }
+  _atualizarCardEquipe(people);
+}
+
+function limparProjetosPessoa(btn) {
+  const people = btn.dataset.people;
+  equipeEditConfig[people] = [];
+  _atualizarCardEquipe(people);
+}
+
+// Atualiza visuais do card de uma pessoa após mudança
+function _atualizarCardEquipe(people) {
+  const card = document.querySelector(`.eq-cfg-card[data-people="${CSS.escape(people)}"]`);
+  if (!card) return;
+
+  const cfg    = equipeEditConfig[people];
+  const todoOn = cfg === 'todos';
+  const arr    = todoOn ? [] : (Array.isArray(cfg) ? cfg : []);
+
+  // Atualiza toggles individuais
+  card.querySelectorAll('.proj-toggle').forEach(t => {
+    const on = todoOn || arr.includes(t.dataset.proj);
+    t.classList.toggle('on', on);
+  });
+
+  // Atualiza botão "Todos"
+  const todosBtn = card.querySelector('.eq-todos-btn');
+  if (todosBtn) {
+    todosBtn.classList.toggle('active', todoOn);
+    todosBtn.textContent = todoOn ? '✓ Todos' : 'Selecionar todos';
+  }
+
+  // Atualiza label
+  const label = card.querySelector('.eq-cfg-label');
+  if (label) {
+    const qtd = todoOn
+      ? card.querySelectorAll('.proj-toggle').length
+      : arr.length;
+    label.textContent = todoOn
+      ? 'Todos os projetos'
+      : (qtd === 0 ? '⚠ Nenhum projeto selecionado' : qtd + ' projeto(s) selecionado(s)');
+    label.style.color = (qtd === 0 && !todoOn) ? 'var(--red)' : 'var(--text2)';
   }
 }
 
@@ -1074,19 +1135,50 @@ function fecharModalEditarEquipe() {
 }
 
 function salvarConfigEquipe() {
-  if(equipeEditandoIdx===null) return;
-  // Normaliza: se todos os projetos selecionados = 'todos'
-  const projetos=[...new Set(DB.horas.map(h=>h.projeto).filter(Boolean))];
-  Object.keys(equipeEditConfig).forEach(people=>{
-    const cfg=equipeEditConfig[people];
-    if(Array.isArray(cfg)&&cfg.length===projetos.length) equipeEditConfig[people]='todos';
-    if(Array.isArray(cfg)&&cfg.length===0) equipeEditConfig[people]='todos';
+  if (equipeEditandoIdx === null) return;
+
+  const projetos = [...new Set(DB.horas.map(h=>h.projeto).filter(Boolean))];
+
+  // Avisa se algum membro ficou sem projetos
+  const semProjeto = Object.entries(equipeEditConfig)
+    .filter(([,cfg]) => Array.isArray(cfg) && cfg.length === 0)
+    .map(([people]) => nomeF(people));
+
+  if (semProjeto.length) {
+    const ok = confirm(
+      `Atenção: ${semProjeto.join(', ')} ficou(aram) sem nenhum projeto selecionado.
+` +
+      `As horas desse(s) membro(s) não aparecerão na equipe.
+
+` +
+      `Deseja salvar mesmo assim?`
+    );
+    if (!ok) return;
+  }
+
+  // Normaliza: se todos os projetos marcados individualmente = 'todos'
+  Object.keys(equipeEditConfig).forEach(people => {
+    const cfg = equipeEditConfig[people];
+    if (Array.isArray(cfg) && cfg.length === projetos.length && projetos.length > 0) {
+      equipeEditConfig[people] = 'todos';
+    }
   });
-  DB.equipes[equipeEditandoIdx].projConfig=equipeEditConfig;
-  salvarEquipes(); aplicarFiltros();
+
+  DB.equipes[equipeEditandoIdx].projConfig = equipeEditConfig;
+  salvarEquipes();
+  aplicarFiltros();
   document.getElementById('modalEditarEquipe').classList.remove('open');
-  toast('✓ Configuração salva');
-  equipeEditandoIdx=null;
+
+  // Feedback detalhado
+  const eq = DB.equipes[equipeEditandoIdx];
+  const resumo = eq.membros.map(people => {
+    const cfg = equipeEditConfig[people];
+    if (!cfg || cfg === 'todos') return `${nomeF(people)}: todos os projetos`;
+    if (Array.isArray(cfg) && cfg.length === 0) return `${nomeF(people)}: nenhum projeto`;
+    return `${nomeF(people)}: ${cfg.length} projeto(s)`;
+  }).join(' · ');
+  toast(`✓ Configuração salva — ${resumo}`);
+  equipeEditandoIdx = null;
 }
 
 // ══════════════════════════════════════════════════════
