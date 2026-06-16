@@ -18,10 +18,13 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 
 /* TOPBAR */
 .topbar{display:flex;align-items:center;gap:12px;padding:0 20px;height:52px;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
-.topbar-logo{font-size:13px;font-weight:700;color:var(--accent);letter-spacing:.05em}
+.topbar-logo{font-size:13px;font-weight:700;color:var(--accent);letter-spacing:.05em;text-decoration:none;transition:opacity .15s}
+.topbar-logo:hover{opacity:.75}
 .topbar-title{font-size:13px;color:var(--text2)}
 .topbar-sep{color:var(--text3)}
 .topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.topbar-back{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--text2);text-decoration:none;padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);transition:all .15s}
+.topbar-back:hover{color:var(--text);border-color:var(--accent)}
 
 /* TABS */
 .nav-tabs{display:flex;gap:2px;padding:0 20px;background:var(--bg2);border-bottom:1px solid var(--border)}
@@ -208,10 +211,11 @@ input[type=text].input-full{width:100%;padding:7px 10px;margin-bottom:8px}
 
 <!-- TOPBAR -->
 <div class="topbar">
-  <span class="topbar-logo">BRAVI</span>
+  <a href="index.html" class="topbar-logo" title="Central Bravi">BRAVI</a>
   <span class="topbar-sep">/</span>
   <span class="topbar-title">Controle de Horas · Drive</span>
   <div class="topbar-right">
+    <a href="index.html" class="topbar-back">← Central Bravi</a>
     <button class="btn btn-sm" onclick="abrirModalFeriados()">📅 Feriados</button>
     <button class="btn btn-sm" onclick="abrirModalEquipes()">⚙ Equipes</button>
     <button class="btn btn-sm btn-primary" id="btnSync" onclick="carregarTudo()">↻ Sincronizar</button>
