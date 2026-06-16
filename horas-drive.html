@@ -191,6 +191,12 @@ input[type=text].input-full{width:100%;padding:7px 10px;margin-bottom:8px}
 .rel-total-row td{font-weight:700;border-top:2px solid var(--border);background:var(--bg3) !important}
 .rel-pessoa-hd{font-size:13px;font-weight:700;margin:12px 0 6px;color:var(--accent)}
 
+/* ── PDF print styles ─────────────────────────────────────── */
+@media print {
+  body > *:not(#pdf-frame){ display:none !important }
+  #pdf-frame{ display:block !important; position:fixed; inset:0; background:#fff; z-index:9999; overflow:auto; padding:32px }
+}
+
 /* LOADING / EMPTY */
 .loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:48px;color:var(--text2);font-size:14px}
 .spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
@@ -415,9 +421,8 @@ input[type=text].input-full{width:100%;padding:7px 10px;margin-bottom:8px}
         <div style="font-size:12px;color:var(--text2);margin-top:2px" id="relSubtitulo"></div>
       </div>
       <div class="rel-actions">
-        <button class="btn btn-sm btn-primary" id="btnGerarDoc" onclick="gerarGoogleDoc()">
-          📄 Gerar Google Doc
-        </button>
+        <button class="btn btn-sm btn-primary" id="btnGerarDoc" onclick="gerarGoogleDoc()">📄 Google Doc</button>
+        <button class="btn btn-sm" id="btnGerarPDF" onclick="gerarPDF()">🖨 PDF</button>
         <button class="btn btn-sm" onclick="exportarRelatorioCSV()">⬇ CSV</button>
         <button class="btn btn-sm" onclick="fecharRelatorio()">✕ Fechar</button>
       </div>
@@ -1380,9 +1385,67 @@ function gerarHTMLRelatorio(horasPer, pessoas) {
 
 function fecharRelatorio() {
   document.getElementById('modalRelatorio').classList.remove('open');
-  // Limpa status do doc ao fechar
   const st = document.getElementById('relDocStatus');
   if (st) { st.className='rel-doc-status'; st.innerHTML=''; }
+}
+
+function gerarPDF() {
+  if (!_relDados) return;
+  const titulo  = document.getElementById('relTitulo').textContent;
+  const sub     = document.getElementById('relSubtitulo').textContent;
+  const conteudo= document.getElementById('relConteudo').innerHTML;
+  const btn     = document.getElementById('btnGerarPDF');
+  btn.disabled  = true;
+  btn.textContent = '⏳ Gerando...';
+
+  // Cria frame de impressão
+  let frame = document.getElementById('pdf-frame');
+  if (frame) document.body.removeChild(frame);
+  frame = document.createElement('div');
+  frame.id = 'pdf-frame';
+  frame.style.cssText = 'display:none;position:fixed;inset:0;background:#fff;z-index:9999;overflow:auto;padding:32px;font-family:Arial,sans-serif;font-size:12px;color:#111';
+  frame.innerHTML = `
+    <style>
+      #pdf-frame h1{font-size:20px;font-weight:700;color:#1A56DB;margin-bottom:4px;font-family:Arial}
+      #pdf-frame h2{font-size:13px;color:#6B7280;font-weight:400;margin-bottom:20px;font-family:Arial}
+      #pdf-frame .rel-section{margin-bottom:24px}
+      #pdf-frame .rel-section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6B7280;border-bottom:1px solid #E5E7EB;padding-bottom:5px;margin-bottom:10px}
+      #pdf-frame .rel-pessoa-hd{font-size:13px;font-weight:700;margin:12px 0 5px;color:#1A56DB}
+      #pdf-frame .rel-table{width:100%;border-collapse:collapse;margin-bottom:10px;font-size:11px}
+      #pdf-frame .rel-table th{padding:5px 8px;text-align:left;background:#F4F5F7;border-bottom:2px solid #E5E7EB;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6B7280}
+      #pdf-frame .rel-table td{padding:5px 8px;border-bottom:1px solid #F3F4F6;color:#111}
+      #pdf-frame .rel-table .td-horas{text-align:right;font-weight:600}
+      #pdf-frame .rel-table .td-dia{color:#6B7280;white-space:nowrap}
+      #pdf-frame .rel-table .td-proj{color:#9CA3AF;font-size:10px}
+      #pdf-frame .rel-table .td-desc{max-width:300px}
+      #pdf-frame .rel-total-row td{font-weight:700;background:#EBF0FF;border-top:2px solid #E5E7EB;color:#1A56DB}
+      #pdf-frame .rel-doc-status{display:none}
+      #pdf-frame .rodape{margin-top:24px;padding-top:12px;border-top:1px solid #E5E7EB;font-size:10px;color:#9CA3AF;font-style:italic}
+      @media print{
+        @page{margin:1.5cm;size:A4 portrait}
+        body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+        #pdf-frame .rel-table th{background:#F4F5F7 !important}
+        #pdf-frame .rel-total-row td{background:#EBF0FF !important}
+      }
+    </style>
+    <h1>${titulo}</h1>
+    <h2>${sub}</h2>
+    ${conteudo}
+    <div class="rodape">Bravi Software · Central Bravi · Gerado em ${new Date().toLocaleString('pt-BR')}</div>`;
+
+  document.body.appendChild(frame);
+  frame.style.display = 'block';
+
+  // Pequeno delay para renderizar antes de imprimir
+  setTimeout(() => {
+    window.print();
+    // Após impressão, remove o frame
+    setTimeout(() => {
+      frame.style.display = 'none';
+      btn.disabled = false;
+      btn.textContent = '🖨 PDF';
+    }, 1000);
+  }, 300);
 }
 
 function exportarRelatorioCSV() {
