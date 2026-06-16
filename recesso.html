@@ -328,6 +328,13 @@ sep{display:block;height:1px;background:var(--border);margin:16px 0}
         <div class="nav-item" onclick="nav('pg-regras')" id="ni-regras">
           <span class="ni-icon">⚙️</span> Regras
         </div>
+        <div class="nav-grp">Meu Recesso</div>
+        <div class="nav-item" onclick="nav('pg-meu-recesso')" id="ni-meu-pc">
+          <span class="ni-icon">🌴</span> Meu Saldo
+        </div>
+        <div class="nav-item" onclick="nav('pg-solicitar')" id="ni-sol-pc">
+          <span class="ni-icon">➕</span> Solicitar Recesso
+        </div>
       </div>
 
       <div id="nav-gp-section" style="display:none">
@@ -338,6 +345,13 @@ sep{display:block;height:1px;background:var(--border);margin:16px 0}
         </div>
         <div class="nav-item" onclick="nav('pg-profissionais')" id="ni-prof-gp">
           <span class="ni-icon">👥</span> Minha Equipe
+        </div>
+        <div class="nav-grp">Meu Recesso</div>
+        <div class="nav-item" onclick="nav('pg-meu-recesso')" id="ni-meu-gp">
+          <span class="ni-icon">🌴</span> Meu Saldo
+        </div>
+        <div class="nav-item" onclick="nav('pg-solicitar')" id="ni-sol-gp">
+          <span class="ni-icon">➕</span> Solicitar Recesso
         </div>
       </div>
 
@@ -492,7 +506,7 @@ sep{display:block;height:1px;background:var(--border);margin:16px 0}
         <div class="card">
           <div class="card-bd">
             <div class="table-wrap"><table>
-              <thead><tr><th>Profissional</th><th>Projeto</th><th>Admissão</th><th>Elegível</th><th>Período</th><th>Total</th><th>Usado</th><th>Saldo</th><th>Vence em</th><th></th></tr></thead>
+              <thead><tr><th>Profissional</th><th>Projeto</th><th>Contratação</th><th>Ini. Recesso</th><th>Elegível</th><th>Período</th><th>Total</th><th>Usado</th><th>Saldo</th><th>Vence em</th><th></th></tr></thead>
               <tbody id="prof-tbody"></tbody>
             </table></div>
           </div>
@@ -696,7 +710,8 @@ const LS_PESSOAS    = 'bravi_pessoas_drive';
 const LS_RECESSO    = 'bravi_recesso_solicitacoes';
 const LS_REGRAS     = 'bravi_recesso_regras';
 const LS_PROJ_GP    = 'bravi_recesso_proj_gp'; // {projeto: people}
-const LS_ANIV       = 'bravi_recesso_aniversario'; // {people: bool}
+const LS_ANIV       = 'bravi_recesso_aniversario'; // {people: ano_usado}
+const LS_PROF_CFG   = 'bravi_recesso_prof_cfg';   // {people: {dataIniRecesso, nasc}}
 
 const FERIADOS_BR = new Set(['2026-01-01','2026-02-16','2026-02-17','2026-04-03','2026-04-21',
   '2026-05-01','2026-06-04','2026-09-07','2026-10-12','2026-11-02','2026-11-15','2026-12-25']);
@@ -724,6 +739,7 @@ let DB = {
   regras: { meses:12, dias:10, add1:1, add2:2, antecedencia:30, minimo:1, anivJanela:7 },
   projGP: {},        // {projetoAtual: people}
   anivUsado: {},     // {people: ano(number) ou false}
+  profCfg: {},       // {people: {dataIniRecesso, nasc}}
 };
 
 // ══════════════════════════════════════════════════════════════
@@ -741,6 +757,7 @@ function loadLocal() {
   const s = ls(LS_RECESSO);  if (s) DB.solicitacoes = s;
   const g = ls(LS_PROJ_GP);  if (g) DB.projGP = g;
   const a = ls(LS_ANIV);     if (a) DB.anivUsado = a;
+  const c = ls(LS_PROF_CFG); if (c) DB.profCfg = c;
 }
 
 async function carregarPessoas() {
@@ -822,7 +839,7 @@ function iniciarApp() {
   // Mostra seções do nav por role
   document.getElementById('nav-pc-section').style.display  = u.role==='pc' ? '' : 'none';
   document.getElementById('nav-gp-section').style.display  = u.role==='gp' ? '' : 'none';
-  document.getElementById('nav-pro-section').style.display = u.role==='pro'? '' : 'none';
+  document.getElementById('nav-pro-section').style.display = 'none'; // sempre oculta — cada role tem seu próprio bloco Meu Recesso
 
   document.getElementById('login-page').style.display = 'none';
   document.getElementById('app').style.display = 'block';
@@ -873,13 +890,17 @@ function nav(pg) {
 // CÁLCULO DE RECESSO
 // ══════════════════════════════════════════════════════════════
 function calcRecessoInfo(pessoa) {
-  if (!pessoa || !pessoa.admissao) return null;
-  const entry = new Date(pessoa.admissao + 'T00:00:00');
+  if (!pessoa) return null;
+  // Usa dataIniRecesso se configurada, senão usa admissao
+  const cfg = DB.profCfg[pessoa.people] || {};
+  const dataBase = cfg.dataIniRecesso || pessoa.admissao;
+  if (!dataBase) return null;
+  const entry = new Date(dataBase + 'T00:00:00');
   const now   = new Date();
   const mesesEmpresa = (now - entry) / (1000*60*60*24*30.44);
-  if (mesesEmpresa < DB.regras.meses) return { inelegivel: true, mesesFaltando: Math.ceil(DB.regras.meses - mesesEmpresa) };
+  if (mesesEmpresa < DB.regras.meses) return { inelegivel: true, mesesFaltando: Math.ceil(DB.regras.meses - mesesEmpresa), dataBase };
 
-  // Período atual baseado na data de admissão
+  // Período atual baseado na dataIniRecesso
   let pStart = new Date(entry);
   while (addYears(pStart, 1) <= now) pStart = addYears(pStart, 1);
   let pEnd = new Date(addYears(pStart, 1));
@@ -897,7 +918,7 @@ function calcRecessoInfo(pessoa) {
   ).reduce((a,s)=>a+s.dias,0);
 
   const remaining = total - usadosSols;
-  return { periodStart: pStart, periodEnd: pEnd, total, used: usadosSols, remaining };
+  return { periodStart: pStart, periodEnd: pEnd, total, used: usadosSols, remaining, dataBase };
 }
 
 function diasUteisEntre(ini, fim) {
@@ -1052,17 +1073,40 @@ function renderMeuRecesso() {
   // Aniversário
   const hoje = new Date();
   const anivEl = document.getElementById('meu-aniversario');
-  if (pessoa && pessoa.admissao) {
-    const nasc = pessoa.admissao; // usamos admissão como proxy — idealmente teria data nascimento
+  const cfg = DB.profCfg[u.people] || {};
+  const nascStr = cfg.nasc || null;
+  if (nascStr) {
+    const nasc = new Date(nascStr + 'T00:00:00');
+    const anivMes = nasc.getMonth(); // 0-based
+    const anivDia = nasc.getDate();
     const anivUsado = (DB.anivUsado[u.people] === hoje.getFullYear());
+    // Janela: mês anterior, mês do aniversário, mês posterior
+    const janelaIni = new Date(hoje.getFullYear(), anivMes - 1, 1);
+    const janelaFim = new Date(hoje.getFullYear(), anivMes + 2, 0);
+    const dentroJanela = hoje >= janelaIni && hoje <= janelaFim;
+    const mesAniv = MESES[anivMes];
+    const corStatus = anivUsado ? 'gray' : dentroJanela ? 'green' : 'yellow';
+    const textoStatus = anivUsado ? 'Utilizado em ' + hoje.getFullYear()
+      : dentroJanela ? 'Disponível agora!'
+      : 'Disponível em ' + mesAniv;
     anivEl.innerHTML = `<div style="text-align:center;padding:8px 0">
-      <div style="font-size:28px;margin-bottom:8px">${anivUsado ? '✅' : '🎂'}</div>
-      <div style="font-weight:600;margin-bottom:4px">${anivUsado ? 'Day off utilizado este ano' : 'Day off disponível'}</div>
-      <div style="font-size:12px;color:var(--text2)">1 dia útil por ano aniversário</div>
-      ${!anivUsado ? `<button class="btn btn-brand btn-sm" style="margin-top:12px" onclick="solicitarAniversario()">🎂 Solicitar Day Off</button>` : ''}
+      <div style="font-size:28px;margin-bottom:8px">${anivUsado ? '✅' : dentroJanela ? '🎉' : '🎂'}</div>
+      <div style="font-weight:600;margin-bottom:4px">${textoStatus}</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:8px">
+        Aniversário: <strong>${String(anivDia).padStart(2,'0')}/${String(anivMes+1).padStart(2,'0')}</strong>
+        · Janela de uso: <strong>${MESES[anivMes > 0 ? anivMes-1 : 11]}</strong> → <strong>${MESES[(anivMes+1)%12]}</strong>
+      </div>
+      <div style="margin-bottom:10px">${badge(corStatus, '1 dia útil por ano')}</div>
+      ${!anivUsado ? `<button class="btn btn-brand btn-sm" onclick="solicitarAniversario()" ${!dentroJanela ? "title='Fora do período de uso'" : ''}>
+        🎂 Solicitar Day Off de Aniversário
+      </button>` : ''}
     </div>`;
   } else {
-    anivEl.innerHTML = `<div class="empty" style="padding:16px"><p>Dados de nascimento não encontrados.</p></div>`;
+    anivEl.innerHTML = `<div class="empty" style="padding:12px">
+      <div class="empty-icon">🎂</div>
+      <h3>Data de nascimento não informada</h3>
+      <p>Solicite ao People Care que cadastre sua data de nascimento.</p>
+    </div>`;
   }
 
   // Resumo período
@@ -1192,11 +1236,45 @@ function submitSolicitar(e) {
   // Simula envio de e-mail
   console.log(`[EMAIL] Solicitação enviada para ${u.email} e GP ${gp}@bravi.com.br`);
 
+  // Marca day off de aniversário como usado
+  if (just.includes('Day off de aniversário')) {
+    DB.anivUsado[u.people] = new Date().getFullYear();
+    lsSet(LS_ANIV, DB.anivUsado);
+  }
   openModal('modal-sucesso');
 }
 
 function solicitarAniversario() {
-  toast('Funcionalidade de day off de aniversário — entre em contato com o People Care.','info');
+  const u = STATE.currentUser;
+  const hoje = new Date();
+  const cfg = DB.profCfg[u.people] || {};
+  if (!cfg.nasc) { toast('Data de nascimento não informada. Solicite ao People Care.','error'); return; }
+
+  const nasc = new Date(cfg.nasc + 'T00:00:00');
+  const anivMes = nasc.getMonth();
+  const anivUsado = (DB.anivUsado[u.people] === hoje.getFullYear());
+  if (anivUsado) { toast('Day off de aniversário já utilizado este ano.','error'); return; }
+
+  // Calcula o próximo dia útil disponível dentro da janela
+  const janelaIni = new Date(hoje.getFullYear(), anivMes - 1, 1);
+  const janelaFim = new Date(hoje.getFullYear(), anivMes + 2, 0);
+  if (hoje < janelaIni || hoje > janelaFim) {
+    const mesAniv = MESES[anivMes];
+    toast(`Day off disponível apenas em: ${MESES[anivMes > 0 ? anivMes-1 : 11]}, ${mesAniv} ou ${MESES[(anivMes+1)%12]}.`,'error');
+    return;
+  }
+
+  // Pré-preenche a tela de solicitar com 1 dia
+  nav('pg-solicitar');
+  const amanha = new Date(hoje); amanha.setDate(hoje.getDate()+1);
+  // Avança até próximo dia útil
+  while (amanha.getDay()===0||amanha.getDay()===6) amanha.setDate(amanha.getDate()+1);
+  setTimeout(()=>{
+    document.getElementById('sol-ini').value = isoDate(amanha);
+    document.getElementById('sol-fim').value = isoDate(amanha);
+    document.getElementById('sol-just').value = '🎂 Day off de aniversário';
+    calcSolDias();
+  }, 100);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1401,7 +1479,8 @@ function renderProfTable() {
     if (!info) return `<tr>
       <td><div style="font-weight:600">${nomeF(p.people)}</div><div style="font-size:12px;color:var(--text2)">${p.role||''}</div></td>
       <td>${p.projetoAtual||'—'}</td>
-      <td>${p.admissao ? fmt(p.admissao) : '—'}</td>
+      <td>${fmt(p.admissao)||'—'}</td>
+      <td>${fmt((DB.profCfg[p.people]||{}).dataIniRecesso||p.admissao)||'—'}</td>
       <td>${badge('gray','Inelegível')}</td>
       <td colspan="5" style="color:var(--text3)">—</td>
       <td><button class="btn btn-ghost btn-xs" onclick="abrirHistProf('${p.people}')">Histórico</button></td>
@@ -1409,7 +1488,8 @@ function renderProfTable() {
     if (info.inelegivel) return `<tr>
       <td><div style="font-weight:600">${nomeF(p.people)}</div><div style="font-size:12px;color:var(--text2)">${p.role||''}</div></td>
       <td>${p.projetoAtual||'—'}</td>
-      <td>${p.admissao ? fmt(p.admissao) : '—'}</td>
+      <td>${fmt(p.admissao)||'—'}</td>
+      <td>${fmt((DB.profCfg[p.people]||{}).dataIniRecesso||p.admissao)||'—'}</td>
       <td>${badge('yellow','Faltam '+info.mesesFaltando+'m')}</td>
       <td colspan="5" style="color:var(--text3)">—</td>
       <td><button class="btn btn-ghost btn-xs" onclick="abrirHistProf('${p.people}')">Histórico</button></td>
@@ -1418,7 +1498,8 @@ function renderProfTable() {
     return `<tr>
       <td><div style="font-weight:600">${nomeF(p.people)}</div><div style="font-size:12px;color:var(--text2)">${p.role||''} · ${p.level||''}</div></td>
       <td><span style="font-size:12px">${p.projetoAtual||'—'}</span></td>
-      <td>${fmt(p.admissao)}</td>
+      <td>${fmt(p.admissao)||'—'}</td>
+      <td>${fmt((DB.profCfg[p.people]||{}).dataIniRecesso||p.admissao)||'—'}</td>
       <td>${badge('green','Elegível')}</td>
       <td style="font-size:12px">${fmt(isoDate(info.periodStart))} → ${fmt(isoDate(info.periodEnd))}</td>
       <td style="font-weight:600">${info.total}</td>
@@ -1434,11 +1515,40 @@ function abrirHistProf(people) {
   const p = DB.pessoas.find(x=>x.people===people);
   const nm = p ? nomeF(people) : people;
   const sols = DB.solicitacoes.filter(s=>s.profPeople===people);
+  const cfg = DB.profCfg[people] || {};
   document.getElementById('pd-title').textContent = `Histórico — ${nm}`;
   const el = document.getElementById('pd-body');
-  if (!sols.length) { el.innerHTML=emptyState('📋','Sem histórico','Nenhuma solicitação registrada.'); }
-  else {
-    el.innerHTML = `<div class="table-wrap"><table>
+  const info = p ? calcRecessoInfo(p) : null;
+
+  const cfgHtml = `
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px">
+      <div style="font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Configuração de Recesso</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Data de Contratação</div>
+          <div style="font-size:13px;font-weight:600">${fmt(p?.admissao)||'—'}</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Início para Recesso</div>
+          <input type="date" id="cfg-ini-rec" value="${cfg.dataIniRecesso||p?.admissao||''}"
+            style="padding:5px 8px;border:1.5px solid var(--border2);border-radius:6px;font-size:13px;font-family:var(--font);width:100%">
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Data de Nascimento</div>
+          <input type="date" id="cfg-nasc" value="${cfg.nasc||''}"
+            style="padding:5px 8px;border:1.5px solid var(--border2);border-radius:6px;font-size:13px;font-family:var(--font);width:100%">
+        </div>
+      </div>
+      <div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        ${info && !info.inelegivel ? `<span style="font-size:12px;color:var(--text2)">Período atual: ${fmt(isoDate(info.periodStart))} → ${fmt(isoDate(info.periodEnd))}</span>` : ''}
+        <button class="btn btn-brand btn-sm" onclick="salvarCfgProf('${people}')">💾 Salvar configuração</button>
+      </div>
+    </div>`;
+
+  if (!sols.length) {
+    el.innerHTML = cfgHtml + emptyState('📋','Sem histórico','Nenhuma solicitação registrada.');
+  } else {
+    el.innerHTML = cfgHtml + `<div class="table-wrap"><table>
       <thead><tr><th>Solicitado</th><th>Período</th><th>Dias</th><th>GP</th><th>PC</th><th>Status</th></tr></thead>
       <tbody>${sols.sort((a,b)=>b.dataSol.localeCompare(a.dataSol)).map(s=>`<tr>
         <td>${fmt(s.dataSol)}</td><td>${fmt(s.inicio)} → ${fmt(s.fim)}</td><td>${s.dias}</td>
@@ -1448,6 +1558,18 @@ function abrirHistProf(people) {
     </table></div>`;
   }
   openModal('modal-prof-detalhe');
+}
+
+function salvarCfgProf(people) {
+  const dataIni = document.getElementById('cfg-ini-rec')?.value || '';
+  const nasc    = document.getElementById('cfg-nasc')?.value    || '';
+  if (!DB.profCfg[people]) DB.profCfg[people] = {};
+  DB.profCfg[people].dataIniRecesso = dataIni || null;
+  DB.profCfg[people].nasc           = nasc    || null;
+  lsSet(LS_PROF_CFG, DB.profCfg);
+  toast('Configuração salva!','success');
+  closeModal('modal-prof-detalhe');
+  renderProfTable();
 }
 
 // ══════════════════════════════════════════════════════════════
