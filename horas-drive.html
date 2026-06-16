@@ -166,6 +166,11 @@ input[type=text].input-full{width:100%;padding:7px 10px;margin-bottom:8px}
 
 /* ── RELATÓRIO ─────────────────────────────────────────────── */
 .rel-modal{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:24px;width:820px;max-width:98vw;max-height:90vh;overflow-y:auto}
+.rel-doc-status{margin-top:12px;padding:12px 16px;border-radius:8px;font-size:13px;display:none}
+.rel-doc-status.loading{display:flex;align-items:center;gap:10px;background:var(--bg3);color:var(--text2)}
+.rel-doc-status.success{display:flex;align-items:center;gap:10px;background:rgba(34,197,94,.1);color:var(--green)}
+.rel-doc-status.error{display:flex;align-items:center;gap:10px;background:rgba(239,68,68,.1);color:var(--red)}
+.rel-doc-link{color:var(--accent);text-decoration:underline;cursor:pointer;font-weight:600}
 .rel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px}
 .rel-title{font-size:15px;font-weight:700}
 .rel-actions{display:flex;gap:8px}
@@ -406,11 +411,14 @@ input[type=text].input-full{width:100%;padding:7px 10px;margin-bottom:8px}
         <div style="font-size:12px;color:var(--text2);margin-top:2px" id="relSubtitulo"></div>
       </div>
       <div class="rel-actions">
+        <button class="btn btn-sm btn-primary" id="btnGerarDoc" onclick="gerarGoogleDoc()">
+          📄 Gerar Google Doc
+        </button>
         <button class="btn btn-sm" onclick="exportarRelatorioCSV()">⬇ CSV</button>
-        <button class="btn btn-sm" onclick="imprimirRelatorio()">🖨 Imprimir</button>
         <button class="btn btn-sm" onclick="fecharRelatorio()">✕ Fechar</button>
       </div>
     </div>
+    <div id="relDocStatus" class="rel-doc-status"></div>
     <div id="relConteudo"></div>
   </div>
 </div>
@@ -1368,6 +1376,9 @@ function gerarHTMLRelatorio(horasPer, pessoas) {
 
 function fecharRelatorio() {
   document.getElementById('modalRelatorio').classList.remove('open');
+  // Limpa status do doc ao fechar
+  const st = document.getElementById('relDocStatus');
+  if (st) { st.className='rel-doc-status'; st.innerHTML=''; }
 }
 
 function exportarRelatorioCSV() {
@@ -1424,34 +1435,130 @@ function exportarRelatorioCSV() {
   toast('✓ CSV exportado');
 }
 
-function imprimirRelatorio() {
-  const conteudo = document.getElementById('relConteudo').innerHTML;
-  const titulo   = document.getElementById('relTitulo').textContent;
-  const sub      = document.getElementById('relSubtitulo').textContent;
-  const w = window.open('','_blank');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
-    <title>${titulo}</title>
-    <style>
-      body{font-family:Arial,sans-serif;font-size:12px;color:#111;padding:20px}
-      h1{font-size:18px;margin-bottom:4px}
-      h2{font-size:13px;color:#555;font-weight:400;margin-bottom:20px}
-      .rel-section{margin-bottom:28px}
-      .rel-section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#888;border-bottom:1px solid #ddd;padding-bottom:5px;margin-bottom:10px}
-      .rel-pessoa-hd{font-size:13px;font-weight:700;margin:12px 0 5px;color:#1A56DB}
-      .rel-table{width:100%;border-collapse:collapse;margin-bottom:10px;font-size:11px}
-      .rel-table th{padding:5px 8px;text-align:left;background:#f4f5f7;border-bottom:2px solid #ddd;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
-      .rel-table td{padding:5px 8px;border-bottom:1px solid #eee}
-      .rel-table .td-horas{text-align:right;font-weight:600}
-      .rel-table .td-dia{color:#666;white-space:nowrap}
-      .rel-table .td-proj{color:#666;font-size:10px}
-      .rel-total-row td{font-weight:700;background:#f4f5f7;border-top:2px solid #ddd}
-      @media print{body{padding:0}}
-    </style></head><body>
-    <h1>${titulo}</h1><h2>${sub}</h2>
-    ${conteudo.replace(/class="rel-pessoa-hd"/g,'class="rel-pessoa-hd"').replace(/var\(--[^)]+\)/g,'inherit')}
-    </body></html>`);
-  w.document.close();
-  setTimeout(()=>w.print(), 400);
+async function gerarGoogleDoc() {
+  if (!_relDados) return;
+  const btn = document.getElementById('btnGerarDoc');
+  const statusEl = document.getElementById('relDocStatus');
+
+  // Estado: carregando
+  btn.disabled = true;
+  btn.textContent = '⏳ Gerando...';
+  statusEl.className = 'rel-doc-status loading';
+  statusEl.innerHTML = '<div class="spinner"></div> Criando Google Doc no Drive. Aguarde...';
+
+  try {
+    const payload = _montarPayloadRelatorio();
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'gerar-relatorio-horas', ...payload }),
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const data = await res.json();
+
+    if (data.ok && data.url) {
+      statusEl.className = 'rel-doc-status success';
+      statusEl.innerHTML = `✅ Documento criado: <span class="rel-doc-link" onclick="window.open('${data.url}','_blank')">${data.nome}</span>
+        <button class="btn btn-sm btn-primary" style="margin-left:8px" onclick="window.open('${data.url}','_blank')">
+          ↗ Abrir no Google Docs
+        </button>`;
+    } else {
+      throw new Error(data.erro || 'Resposta inválida do servidor');
+    }
+  } catch(e) {
+    statusEl.className = 'rel-doc-status error';
+    statusEl.innerHTML = `❌ Erro ao gerar documento: ${e.message}`;
+    console.error('Erro gerarGoogleDoc:', e);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '📄 Gerar Google Doc';
+  }
+}
+
+function _montarPayloadRelatorio() {
+  if (!_relDados) return {};
+  const { horasPer, pessoas, titulo, subtitulo } = _relDados;
+  const DIAS = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+
+  // Detecta equipe ativa
+  const equipeId = document.getElementById('filtroEquipe').value;
+  const equipeAtiva = equipeId ? DB.equipes.find(e=>e.id===equipeId) : null;
+
+  // Tipo e período para o nome do arquivo
+  const tipo = abaAtiva; // 'semanal' | 'quinzenal' | 'mensal'
+  let periodo;
+  if (tipo === 'mensal') {
+    periodo = DB.anoAtual + '-' + String(DB.mesAtual).padStart(2,'0');
+  } else {
+    // extrai datas do subtítulo "01/06/2026 — 15/06/2026"
+    const partes = subtitulo.split('—').map(s=>s.trim());
+    const toISO  = d => { const [dd,mm,aaaa]=d.split('/'); return `${aaaa}-${mm}-${dd}`; };
+    periodo = partes.length===2
+      ? toISO(partes[0]) + '_' + toISO(partes[1])
+      : DB.anoAtual+'-'+String(DB.mesAtual).padStart(2,'0');
+  }
+
+  // Monta seções por pessoa
+  const secoes = [];
+  for (const pessoa of pessoas) {
+    const horasP = horasPer.filter(h=>h.user===pessoa.people);
+    if (!horasP.length) continue;
+    const totalP = horasP.reduce((a,h)=>a+(h.horas||0),0);
+    const nm = nomeF(pessoa.people);
+
+    // Seção diária
+    const linhasDiarias = [...horasP]
+      .sort((a,b)=>a.data.localeCompare(b.data))
+      .map(h=>{
+        const dt  = new Date(h.data+'T12:00:00');
+        const dow = DIAS[dt.getDay()];
+        const desc = (h.taskText && h.taskText!=='Atividade não informada' && h.taskText!=='')
+          ? h.taskText
+          : (h.descricao ? h.descricao.replace(/\{[^}]+\}/g,'').trim() : '—');
+        return {
+          data:      fmtData(dt),
+          diaSemana: dow,
+          projeto:   h.projeto||'',
+          fase:      h.fase||'',
+          atividade: desc,
+          horas:     fmtH(h.horas||0)
+        };
+      });
+
+    secoes.push({ tipo:'diario', pessoa:nm, totalHoras:fmtH(totalP), linhas:linhasDiarias });
+
+    // Seção resumo
+    const porAtiv = {};
+    horasP.forEach(h=>{
+      const desc = (h.taskText && h.taskText!=='Atividade não informada' && h.taskText!=='')
+        ? h.taskText
+        : (h.descricao ? h.descricao.replace(/\{[^}]+\}/g,'').trim() : 'Atividade não descrita');
+      const key = (h.projeto||'')+'|||'+desc;
+      if (!porAtiv[key]) porAtiv[key] = { projeto:h.projeto||'', atividade:desc, horas:0 };
+      porAtiv[key].horas += (h.horas||0);
+    });
+    const linhasResumo = Object.values(porAtiv)
+      .sort((a,b)=>b.horas-a.horas)
+      .map(item=>({
+        projeto:   item.projeto,
+        atividade: item.atividade,
+        horas:     fmtH(item.horas),
+        pct:       (totalP>0 ? Math.round(item.horas/totalP*100) : 0)+'%'
+      }));
+
+    secoes.push({ tipo:'resumo', pessoa:nm, totalHoras:fmtH(totalP), linhas:linhasResumo });
+  }
+
+  const totalGeral = horasPer.reduce((a,h)=>a+(h.horas||0),0);
+
+  return {
+    titulo,
+    subtitulo,
+    equipe:     equipeAtiva ? equipeAtiva.nome : null,
+    tipo,
+    periodo,
+    secoes,
+    totalGeral: fmtH(totalGeral)
+  };
 }
 
 // ══════════════════════════════════════════════════════
