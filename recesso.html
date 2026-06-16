@@ -1,0 +1,1640 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recesso · Central Bravi</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#F2F4F8; --surface:#FFFFFF; --surface2:#F8F9FB;
+  --border:#E4E7EF; --border2:#D0D5E3;
+  --brand:#1A56DB; --brand-dark:#1E429F; --brand-light:#EBF0FF; --brand-mid:#3F72F8;
+  --green:#0BA44A; --green-bg:#ECFDF5;
+  --red:#E02424; --red-bg:#FEF2F2;
+  --yellow:#D97706; --yellow-bg:#FFFBEB;
+  --purple:#7C3AED; --purple-bg:#F5F3FF;
+  --text:#111827; --text2:#4B5563; --text3:#9CA3AF;
+  --nav:240px; --header:60px; --radius:10px;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 16px rgba(0,0,0,.10);
+  --shadow-lg:0 12px 32px rgba(0,0,0,.14);
+  --font:'Inter',system-ui,sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh;overflow-x:hidden}
+
+/* ── LOGIN ── */
+#login-page{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1A56DB,#1E429F 50%,#111827)}
+.login-box{background:#fff;border-radius:16px;padding:44px 40px;width:400px;max-width:95vw;box-shadow:var(--shadow-lg)}
+.login-logo{display:flex;align-items:center;gap:10px;margin-bottom:28px}
+.login-mark{width:38px;height:38px;background:var(--brand);border-radius:9px;display:grid;place-items:center;color:#fff;font-size:18px;font-weight:700}
+.login-name{font-size:20px;font-weight:700;color:var(--text)}
+.login-name span{color:var(--brand)}
+.login-title{font-size:22px;font-weight:700;margin-bottom:4px;letter-spacing:-.4px}
+.login-sub{font-size:13px;color:var(--text2);margin-bottom:24px}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.field label{font-size:12px;font-weight:500;color:var(--text2)}
+.field input,.field select,.field textarea{padding:9px 12px;border:1.5px solid var(--border2);border-radius:8px;font-family:var(--font);font-size:13px;color:var(--text);outline:none;transition:border-color .15s,box-shadow .15s;background:#fff}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(26,86,219,.1)}
+.field textarea{min-height:88px;resize:vertical}
+.req{color:var(--red);margin-left:2px}
+.login-btn{width:100%;padding:11px;background:var(--brand);color:#fff;border:none;border-radius:8px;font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;margin-top:6px;transition:background .15s}
+.login-btn:hover{background:var(--brand-dark)}
+.login-error{color:var(--red);font-size:12px;margin-top:8px;display:none}
+.login-shortcuts{margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
+.login-shortcuts p{font-size:11px;color:var(--text3);margin-bottom:8px;font-weight:500;text-transform:uppercase;letter-spacing:.06em}
+.shortcut-pills{display:flex;flex-wrap:wrap;gap:6px}
+.spill{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;border:1.5px solid var(--border);background:var(--surface2);color:var(--text2);transition:all .15s}
+.spill:hover,.spill.active{border-color:var(--brand);color:var(--brand);background:var(--brand-light)}
+
+/* ── APP SHELL ── */
+#app{display:none;min-height:100vh}
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--nav);background:#fff;border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100}
+.sb-logo{display:flex;align-items:center;gap:10px;padding:18px 18px 14px;border-bottom:1px solid var(--border)}
+.sb-mark{width:30px;height:30px;background:var(--brand);border-radius:7px;display:grid;place-items:center;color:#fff;font-size:13px;font-weight:700;flex-shrink:0}
+.sb-name{font-size:15px;font-weight:700}
+.sb-name span{color:var(--brand)}
+.sb-nav{flex:1;padding:10px 8px;overflow-y:auto}
+.nav-grp{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);padding:10px 10px 5px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:8px;color:var(--text2);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;margin-bottom:2px;user-select:none}
+.nav-item:hover{background:var(--bg);color:var(--text)}
+.nav-item.active{background:var(--brand-light);color:var(--brand)}
+.nav-item .ni-icon{font-size:15px;width:18px;text-align:center;flex-shrink:0}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:20px;min-width:18px;text-align:center}
+.sb-footer{padding:10px 8px;border-top:1px solid var(--border)}
+.user-pill{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:8px;cursor:pointer;transition:background .15s}
+.user-pill:hover{background:var(--bg)}
+.u-avatar{width:30px;height:30px;border-radius:50%;background:var(--brand-light);color:var(--brand);display:grid;place-items:center;font-size:11px;font-weight:700;flex-shrink:0}
+.u-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.u-role{font-size:11px;color:var(--text3)}
+
+/* ── MAIN ── */
+.main{margin-left:var(--nav);min-height:100vh;display:flex;flex-direction:column}
+.topbar{height:var(--header);background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:14px;position:sticky;top:0;z-index:50}
+.topbar-title{font-size:16px;font-weight:600;flex:1}
+.topbar-back{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text2);text-decoration:none;cursor:pointer;padding:6px 10px;border-radius:7px;transition:background .15s}
+.topbar-back:hover{background:var(--bg)}
+.content{padding:24px;flex:1}
+.page{display:none;animation:fadeIn .2s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── COMPONENTS ── */
+.ph{margin-bottom:22px}
+.ph h1{font-size:22px;font-weight:700;letter-spacing:-.4px}
+.ph p{font-size:13px;color:var(--text2);margin-top:2px}
+
+.card{background:#fff;border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow)}
+.card-hd{padding:15px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.card-hd h2{font-size:14px;font-weight:600}
+.card-bd{padding:20px}
+
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.stat-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;position:relative;overflow:hidden;transition:all .2s;cursor:pointer}
+.stat-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px);border-color:var(--brand)}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--radius) var(--radius) 0 0}
+.stat-card.blue::before{background:var(--brand)}
+.stat-card.green::before{background:var(--green)}
+.stat-card.yellow::before{background:var(--yellow)}
+.stat-card.red::before{background:var(--red)}
+.stat-card.purple::before{background:var(--purple)}
+.stat-icon{width:34px;height:34px;border-radius:8px;display:grid;place-items:center;font-size:15px;margin-bottom:10px}
+.stat-card.blue .stat-icon{background:var(--brand-light);color:var(--brand)}
+.stat-card.green .stat-icon{background:var(--green-bg);color:var(--green)}
+.stat-card.yellow .stat-icon{background:var(--yellow-bg);color:var(--yellow)}
+.stat-card.red .stat-icon{background:var(--red-bg);color:var(--red)}
+.stat-card.purple .stat-icon{background:var(--purple-bg);color:var(--purple)}
+.stat-val{font-size:30px;font-weight:700;line-height:1;margin-bottom:3px;font-variant-numeric:tabular-nums}
+.stat-lbl{font-size:12px;color:var(--text2);font-weight:500}
+
+/* TABLE */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+thead th{padding:10px 14px;text-align:left;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text3);background:var(--surface2);border-bottom:1px solid var(--border);white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--surface2)}
+tbody td{padding:11px 14px;font-size:13px;vertical-align:middle}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.badge.green{background:var(--green-bg);color:var(--green)}
+.badge.red{background:var(--red-bg);color:var(--red)}
+.badge.yellow{background:var(--yellow-bg);color:var(--yellow)}
+.badge.blue{background:var(--brand-light);color:var(--brand)}
+.badge.purple{background:var(--purple-bg);color:var(--purple)}
+.badge.gray{background:var(--bg);color:var(--text2)}
+.dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.dot.green{background:var(--green)}.dot.red{background:var(--red)}.dot.yellow{background:var(--yellow)}.dot.blue{background:var(--brand)}.dot.purple{background:var(--purple)}.dot.gray{background:var(--text3)}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:7px;font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;border:1.5px solid transparent;transition:all .15s;white-space:nowrap;text-decoration:none}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-brand{background:var(--brand);color:#fff;border-color:var(--brand)}.btn-brand:hover:not(:disabled){background:var(--brand-dark);border-color:var(--brand-dark)}
+.btn-outline{background:#fff;color:var(--text);border-color:var(--border2)}.btn-outline:hover:not(:disabled){border-color:var(--brand);color:var(--brand);background:var(--brand-light)}
+.btn-danger{background:var(--red-bg);color:var(--red);border-color:transparent}.btn-danger:hover:not(:disabled){background:var(--red);color:#fff}
+.btn-success{background:var(--green-bg);color:var(--green);border-color:transparent}.btn-success:hover:not(:disabled){background:var(--green);color:#fff}
+.btn-ghost{background:transparent;color:var(--text2);border-color:transparent;padding:7px 9px}.btn-ghost:hover{background:var(--bg);color:var(--text)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-xs{padding:3px 8px;font-size:11px}
+
+/* SALDO BANNER */
+.saldo-banner{background:linear-gradient(135deg,var(--brand) 0%,var(--brand-dark) 100%);border-radius:14px;padding:24px 28px;color:#fff;display:flex;align-items:center;gap:24px;margin-bottom:22px;position:relative;overflow:hidden}
+.saldo-banner::before{content:'🏖️';position:absolute;right:24px;font-size:60px;opacity:.15}
+.saldo-main{flex:1}
+.saldo-main h2{font-size:13px;font-weight:500;opacity:.75;margin-bottom:4px}
+.saldo-main .big{font-size:40px;font-weight:700;line-height:1;margin-bottom:6px}
+.saldo-main .sub{font-size:13px;opacity:.8}
+.saldo-stats{display:flex;gap:24px;flex-wrap:wrap}
+.saldo-stat{text-align:center}
+.saldo-stat .v{font-size:22px;font-weight:700;line-height:1}
+.saldo-stat .l{font-size:11px;opacity:.7;margin-top:2px}
+.saldo-bar{height:6px;background:rgba(255,255,255,.25);border-radius:3px;margin-top:10px;overflow:hidden;max-width:240px}
+.saldo-bar-fill{height:100%;background:#fff;border-radius:3px;transition:width .5s}
+
+/* CALENDÁRIO */
+.cal-wrap{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.cal-hd{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;background:#fff;border-bottom:1px solid var(--border)}
+.cal-hd h3{font-size:15px;font-weight:600}
+.cal-ghd{display:grid;grid-template-columns:repeat(7,1fr);background:var(--surface2);border-bottom:1px solid var(--border)}
+.cal-ghd div{padding:8px;text-align:center;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);background:#fff}
+.cal-day{border-right:1px solid var(--border);border-bottom:1px solid var(--border);min-height:82px;padding:6px;font-size:12px}
+.cal-day:nth-child(7n){border-right:none}
+.cal-day.inactive{background:var(--surface2)}
+.cal-day.today .cal-dn{background:var(--brand);color:#fff}
+.cal-dn{font-size:11px;font-weight:600;color:var(--text2);margin-bottom:3px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:50%}
+.cal-ev{font-size:10px;font-weight:600;padding:2px 5px;border-radius:4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:default}
+.cal-ev.a-realizar{background:var(--yellow-bg);color:var(--yellow)}
+.cal-ev.em-andamento{background:var(--brand-light);color:var(--brand)}
+.cal-ev.finalizado{background:var(--green-bg);color:var(--green)}
+.cal-ev.solicitado{background:var(--purple-bg);color:var(--purple)}
+.cal-ev.recusado{background:var(--red-bg);color:var(--red)}
+.cal-legend{display:flex;gap:14px;flex-wrap:wrap;padding:11px 18px;border-top:1px solid var(--border);background:#fff}
+.cal-legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)}
+
+/* PERFIL ROW */
+.profile-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.profile-row:last-child{border-bottom:none}
+.p-avatar{width:36px;height:36px;border-radius:50%;background:var(--brand-light);color:var(--brand);display:grid;place-items:center;font-size:13px;font-weight:700;flex-shrink:0}
+.p-name{font-size:13px;font-weight:600}
+.p-sub{font-size:12px;color:var(--text2)}
+
+/* APPROVAL STEPS */
+.aprov-steps{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.aprov-step{display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:20px;font-size:12px;font-weight:600}
+.aprov-step.wait{background:var(--yellow-bg);color:var(--yellow)}
+.aprov-step.ok{background:var(--green-bg);color:var(--green)}
+.aprov-step.no{background:var(--red-bg);color:var(--red)}
+.aprov-step.pending{background:var(--bg);color:var(--text3)}
+
+/* VALIDAÇÃO */
+.val-list{display:flex;flex-direction:column;gap:6px}
+.val-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;font-size:13px}
+.val-row.ok{background:var(--green-bg);color:var(--green)}
+.val-row.warn{background:var(--yellow-bg);color:var(--yellow)}
+.val-row.fail{background:var(--red-bg);color:var(--red)}
+.val-icon{font-size:15px;flex-shrink:0}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:500;padding:20px}
+.modal-overlay.open{display:flex}
+.modal-box{background:#fff;border-radius:14px;width:100%;max-width:520px;box-shadow:var(--shadow-lg);overflow:hidden;animation:mIn .2s ease}
+.modal-box.wide{max-width:660px}
+@keyframes mIn{from{opacity:0;transform:scale(.96) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal-hd{display:flex;align-items:center;justify-content:space-between;padding:17px 22px;border-bottom:1px solid var(--border)}
+.modal-hd h3{font-size:15px;font-weight:600}
+.modal-close{background:none;border:none;cursor:pointer;color:var(--text2);font-size:18px;padding:4px;border-radius:5px;line-height:1}
+.modal-close:hover{background:var(--bg)}
+.modal-bd{padding:22px}
+.modal-ft{display:flex;justify-content:flex-end;gap:10px;padding:15px 22px;border-top:1px solid var(--border)}
+
+/* INFO GRID */
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.info-item label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:3px}
+.info-item span{font-size:14px;font-weight:600;color:var(--text)}
+
+/* FORM GRID */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-grid.c3{grid-template-columns:1fr 1fr 1fr}
+.form-full{grid-column:1/-1}
+.form-actions{display:flex;gap:10px;justify-content:flex-end;padding-top:10px}
+
+/* FILTER BAR */
+.filter-bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:flex-end}
+.filter-bar .field{flex:1;min-width:140px;margin-bottom:0}
+
+/* TOGGLE */
+.toggle-wrap{display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 0}
+.toggle-wrap input[type=checkbox]{width:16px;height:16px;accent-color:var(--brand);cursor:pointer}
+.toggle-wrap label{font-size:13px;font-weight:500;cursor:pointer}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:12px 18px;font-size:13px;box-shadow:var(--shadow-md);opacity:0;transition:opacity .25s;pointer-events:none;z-index:999;display:flex;align-items:center;gap:10px;min-width:260px}
+.toast.show{opacity:1}
+.toast.success{border-left:3px solid var(--green)}
+.toast.error{border-left:3px solid var(--red)}
+.toast.info{border-left:3px solid var(--brand)}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:48px 24px;color:var(--text2)}
+.empty-icon{font-size:36px;margin-bottom:10px}
+.empty h3{font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px}
+.empty p{font-size:13px}
+
+/* TABS */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:20px}
+.tab-btn{padding:9px 16px;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;transition:all .15s;margin-bottom:-1px}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{color:var(--brand);border-bottom-color:var(--brand)}
+.tab-panel{display:none}.tab-panel.active{display:block}
+
+/* REGRAS */
+.rule-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:10px}
+.rule-card label{font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px}
+.rule-card input{width:80px;padding:7px 10px;border:1.5px solid var(--border2);border-radius:7px;font-family:var(--font);font-size:14px;font-weight:600;text-align:center;outline:none}
+.rule-card input:focus{border-color:var(--brand)}
+.rule-card .rule-desc{font-size:12px;color:var(--text3);margin-top:4px}
+.rules-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+
+/* PROGRESS BAR */
+.prog-wrap{margin-top:6px}
+.prog-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;transition:width .4s}
+.prog-fill.green{background:var(--green)}
+.prog-fill.yellow{background:var(--yellow)}
+.prog-fill.red{background:var(--red)}
+
+sep{display:block;height:1px;background:var(--border);margin:16px 0}
+</style>
+</head>
+<body>
+
+<!-- ─── LOGIN ─────────────────────────────────────────────── -->
+<div id="login-page">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-mark">B</div>
+      <span class="login-name">Central <span>Bravi</span></span>
+    </div>
+    <div class="login-title">Recesso & Ausências</div>
+    <div class="login-sub">Entre com seu e-mail Bravi para continuar</div>
+    <div class="field">
+      <label>E-mail Bravi</label>
+      <input type="email" id="login-email" placeholder="nome.sobrenome@bravi.com.br" autocomplete="email">
+    </div>
+    <div id="login-error" class="login-error">E-mail não encontrado na base de profissionais.</div>
+    <button class="login-btn" onclick="doLogin()">Entrar</button>
+    <div class="login-shortcuts">
+      <p>Acesso rápido (demo)</p>
+      <div class="shortcut-pills">
+        <span class="spill active" onclick="setDemo('andresa.rosa@bravi.com.br','People Care')">Andresa · PC</span>
+        <span class="spill" onclick="setDemo('cassio.nazare@bravi.com.br','GP')">Cássio · GP</span>
+        <span class="spill" onclick="setDemo('mateus.schmitz@bravi.com.br','Pro')">Mateus · Pro</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── APP ───────────────────────────────────────────────── -->
+<div id="app">
+  <div class="sidebar">
+    <div class="sb-logo">
+      <a href="index.html" class="sb-mark" title="Voltar à Central">B</a>
+      <span class="sb-name">Central <span>Bravi</span></span>
+    </div>
+    <nav class="sb-nav">
+      <div class="nav-grp">Geral</div>
+      <div class="nav-item active" onclick="nav('pg-dashboard')" id="ni-dashboard">
+        <span class="ni-icon">🏠</span> Dashboard
+      </div>
+      <div class="nav-item" onclick="nav('pg-calendario')" id="ni-calendario">
+        <span class="ni-icon">📅</span> Calendário
+      </div>
+
+      <div id="nav-pc-section" style="display:none">
+        <div class="nav-grp">People Care</div>
+        <div class="nav-item" onclick="nav('pg-profissionais')" id="ni-profissionais">
+          <span class="ni-icon">👥</span> Profissionais
+        </div>
+        <div class="nav-item" onclick="nav('pg-aprovacoes')" id="ni-aprovacoes">
+          <span class="ni-icon">✅</span> Aprovações
+          <span class="nav-badge" id="badge-aprov" style="display:none">0</span>
+        </div>
+        <div class="nav-item" onclick="nav('pg-projetos-gp')" id="ni-projetos-gp">
+          <span class="ni-icon">🗂️</span> Projetos & GPs
+        </div>
+        <div class="nav-item" onclick="nav('pg-regras')" id="ni-regras">
+          <span class="ni-icon">⚙️</span> Regras
+        </div>
+      </div>
+
+      <div id="nav-gp-section" style="display:none">
+        <div class="nav-grp">Gestor de Projetos</div>
+        <div class="nav-item" onclick="nav('pg-aprovacoes')" id="ni-aprov-gp">
+          <span class="ni-icon">✅</span> Aprovações
+          <span class="nav-badge" id="badge-aprov-gp" style="display:none">0</span>
+        </div>
+        <div class="nav-item" onclick="nav('pg-profissionais')" id="ni-prof-gp">
+          <span class="ni-icon">👥</span> Minha Equipe
+        </div>
+      </div>
+
+      <div id="nav-pro-section" style="display:none">
+        <div class="nav-grp">Meu Recesso</div>
+        <div class="nav-item" onclick="nav('pg-meu-recesso')" id="ni-meu">
+          <span class="ni-icon">🌴</span> Meu Saldo
+        </div>
+        <div class="nav-item" onclick="nav('pg-solicitar')" id="ni-solicitar">
+          <span class="ni-icon">➕</span> Solicitar Recesso
+        </div>
+      </div>
+    </nav>
+    <div class="sb-footer">
+      <div class="user-pill" onclick="doLogout()">
+        <div class="u-avatar" id="u-av">--</div>
+        <div class="u-info">
+          <div class="u-name" id="u-nm">—</div>
+          <div class="u-role" id="u-rl">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <a href="index.html" class="topbar-back">← Central Bravi</a>
+      <div class="topbar-title" id="topbar-title">Recesso & Ausências</div>
+      <div id="topbar-actions"></div>
+    </div>
+
+    <div class="content">
+
+      <!-- ── DASHBOARD (PC/GP) ── -->
+      <div id="pg-dashboard" class="page active">
+        <div class="ph"><h1>Dashboard</h1><p>Visão geral dos recessos da equipe</p></div>
+        <div class="stats-grid" id="dash-stats"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="card">
+            <div class="card-hd"><h2>🔔 Pendentes de Aprovação</h2></div>
+            <div class="card-bd" id="dash-pendentes"></div>
+          </div>
+          <div class="card">
+            <div class="card-hd"><h2>🌴 Recessos Próximos (30 dias)</h2></div>
+            <div class="card-bd" id="dash-proximos"></div>
+          </div>
+        </div>
+        <div style="margin-top:16px" class="card">
+          <div class="card-hd">
+            <h2>⚠️ Saldos a Vencer (próximos 90 dias)</h2>
+            <button class="btn btn-outline btn-sm" onclick="nav('pg-profissionais')">Ver todos</button>
+          </div>
+          <div class="card-bd" id="dash-vencer"></div>
+        </div>
+      </div>
+
+      <!-- ── MEU RECESSO (profissional) ── -->
+      <div id="pg-meu-recesso" class="page">
+        <div class="ph"><h1 id="meu-title">Meu Recesso</h1><p>Acompanhe seu saldo e solicitações</p></div>
+        <div id="meu-saldo-banner"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+          <div class="card">
+            <div class="card-hd"><h2>🎂 Day Off de Aniversário</h2></div>
+            <div class="card-bd" id="meu-aniversario"></div>
+          </div>
+          <div class="card">
+            <div class="card-hd"><h2>📊 Resumo do Período</h2></div>
+            <div class="card-bd" id="meu-resumo"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd">
+            <h2>Minhas Solicitações</h2>
+            <button class="btn btn-brand btn-sm" onclick="nav('pg-solicitar')">+ Nova Solicitação</button>
+          </div>
+          <div class="card-bd">
+            <div class="table-wrap"><table>
+              <thead><tr><th>Solicitado em</th><th>Período</th><th>Dias úteis</th><th>Aprovação GP</th><th>Aprovação PC</th><th>Status</th><th></th></tr></thead>
+              <tbody id="meu-tbody"></tbody>
+            </table></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SOLICITAR ── -->
+      <div id="pg-solicitar" class="page">
+        <div class="ph"><h1>Solicitar Recesso</h1><p>Escolha o período desejado</p></div>
+        <div class="card" style="max-width:560px">
+          <div class="card-hd"><h2>Nova Solicitação</h2></div>
+          <div class="card-bd">
+            <div id="sol-aviso" style="display:none;margin-bottom:16px"></div>
+            <form id="form-sol" onsubmit="submitSolicitar(event)">
+              <div class="form-grid" style="margin-bottom:14px">
+                <div class="field"><label>Data de Início <span class="req">*</span></label><input type="date" id="sol-ini" required onchange="calcSolDias()"></div>
+                <div class="field"><label>Data de Fim <span class="req">*</span></label><input type="date" id="sol-fim" required onchange="calcSolDias()"></div>
+              </div>
+              <div id="sol-preview" style="display:none;margin-bottom:14px"></div>
+              <div class="field" style="margin-bottom:14px">
+                <label>Justificativa / Observação</label>
+                <textarea id="sol-just" placeholder="Ex: Alinhado com o cliente, viagem de família, etc."></textarea>
+              </div>
+              <div class="toggle-wrap" style="margin-bottom:18px">
+                <input type="checkbox" id="sol-alinhado">
+                <label for="sol-alinhado">Já alinhado com o cliente / projeto</label>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn btn-outline" onclick="nav('pg-meu-recesso')">Cancelar</button>
+                <button type="submit" class="btn btn-brand">Enviar Solicitação</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── APROVAÇÕES ── -->
+      <div id="pg-aprovacoes" class="page">
+        <div class="ph"><h1>Aprovações de Recesso</h1><p>Solicitações aguardando sua revisão</p></div>
+        <div class="tabs">
+          <button class="tab-btn active" onclick="switchAprovTab('pendentes',this)">Pendentes</button>
+          <button class="tab-btn" onclick="switchAprovTab('historico',this)">Histórico</button>
+        </div>
+        <div class="tab-panel active" id="aprov-tab-pendentes">
+          <div class="card">
+            <div class="card-bd">
+              <div class="table-wrap"><table>
+                <thead><tr><th>Profissional</th><th>Projeto</th><th>Período</th><th>Dias</th><th>Status GP</th><th>Status PC</th><th>Justificativa</th><th>Ações</th></tr></thead>
+                <tbody id="aprov-tbody"></tbody>
+              </table></div>
+            </div>
+          </div>
+        </div>
+        <div class="tab-panel" id="aprov-tab-historico">
+          <div class="card">
+            <div class="card-bd">
+              <div class="table-wrap"><table>
+                <thead><tr><th>Profissional</th><th>Período</th><th>Dias</th><th>Aprovação GP</th><th>Aprovação PC</th><th>Status</th></tr></thead>
+                <tbody id="aprov-hist-tbody"></tbody>
+              </table></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PROFISSIONAIS (PC/GP view) ── -->
+      <div id="pg-profissionais" class="page">
+        <div class="ph"><h1>Profissionais</h1><p>Saldos e histórico de recesso</p></div>
+        <div class="filter-bar">
+          <div class="field"><label>Buscar</label><input type="text" id="prof-search" placeholder="Nome ou projeto..." oninput="renderProfTable()"></div>
+          <div class="field"><label>Projeto</label><select id="prof-proj-filter" onchange="renderProfTable()"><option value="">Todos</option></select></div>
+          <div class="field"><label>Status</label><select id="prof-status-filter" onchange="renderProfTable()"><option value="">Todos</option><option value="1">Ativos</option><option value="0">Inativos</option></select></div>
+        </div>
+        <div class="card">
+          <div class="card-bd">
+            <div class="table-wrap"><table>
+              <thead><tr><th>Profissional</th><th>Projeto</th><th>Admissão</th><th>Elegível</th><th>Período</th><th>Total</th><th>Usado</th><th>Saldo</th><th>Vence em</th><th></th></tr></thead>
+              <tbody id="prof-tbody"></tbody>
+            </table></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PROJETOS & GPs ── -->
+      <div id="pg-projetos-gp" class="page">
+        <div class="ph"><h1>Projetos & GPs</h1><p>Defina o GP responsável por cada projeto</p></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="card">
+            <div class="card-hd"><h2>Configuração de GPs por Projeto</h2></div>
+            <div class="card-bd" id="proj-gp-lista"></div>
+          </div>
+          <div class="card">
+            <div class="card-hd"><h2>Adicionar / Editar</h2></div>
+            <div class="card-bd">
+              <div class="field"><label>Projeto</label>
+                <select id="pgp-projeto"><option value="">— Selecionar —</option></select>
+              </div>
+              <div class="field"><label>GP Responsável</label>
+                <select id="pgp-gp"><option value="">— Selecionar GP —</option></select>
+              </div>
+              <div class="form-actions">
+                <button class="btn btn-brand" onclick="salvarProjetoGP()">Salvar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── CALENDÁRIO ── -->
+      <div id="pg-calendario" class="page">
+        <div class="ph"><h1>Calendário de Recessos</h1><p>Visualize ausências da equipe</p></div>
+        <div class="card">
+          <div class="cal-wrap">
+            <div class="cal-hd">
+              <button class="btn btn-ghost" id="cal-prev">◀</button>
+              <h3 id="cal-title"></h3>
+              <button class="btn btn-ghost" id="cal-next">▶</button>
+            </div>
+            <div class="cal-ghd"><div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div></div>
+            <div class="cal-grid" id="cal-grid"></div>
+            <div class="cal-legend">
+              <div class="cal-legend-item"><div class="cal-ev a-realizar" style="padding:2px 7px">Ex</div> A Realizar</div>
+              <div class="cal-legend-item"><div class="cal-ev em-andamento" style="padding:2px 7px">Ex</div> Em Andamento</div>
+              <div class="cal-legend-item"><div class="cal-ev finalizado" style="padding:2px 7px">Ex</div> Finalizado</div>
+              <div class="cal-legend-item"><div class="cal-ev solicitado" style="padding:2px 7px">Ex</div> Aguardando</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── REGRAS ── -->
+      <div id="pg-regras" class="page">
+        <div class="ph"><h1>Regras de Recesso</h1><p>Configure as políticas da empresa</p></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="card">
+            <div class="card-hd"><h2>Parâmetros</h2></div>
+            <div class="card-bd">
+              <div class="rules-grid">
+                <div class="rule-card">
+                  <label>Meses para elegibilidade</label>
+                  <input type="number" id="rule-meses" min="1" max="24">
+                  <div class="rule-desc">Tempo mínimo de empresa</div>
+                </div>
+                <div class="rule-card">
+                  <label>Dias totais de recesso</label>
+                  <input type="number" id="rule-dias" min="1" max="60">
+                  <div class="rule-desc">Dias úteis por período</div>
+                </div>
+                <div class="rule-card">
+                  <label>Bônus com 1+ ano (dias)</label>
+                  <input type="number" id="rule-add1" min="0" max="10">
+                  <div class="rule-desc">Dias extras após 1 ano</div>
+                </div>
+                <div class="rule-card">
+                  <label>Bônus com 2+ anos (dias)</label>
+                  <input type="number" id="rule-add2" min="0" max="10">
+                  <div class="rule-desc">Dias extras após 2 anos</div>
+                </div>
+                <div class="rule-card">
+                  <label>Antecedência mínima (dias)</label>
+                  <input type="number" id="rule-antec" min="1" max="90">
+                  <div class="rule-desc">Dias antes do início</div>
+                </div>
+                <div class="rule-card">
+                  <label>Mínimo de dias por solicitação</label>
+                  <input type="number" id="rule-minimo" min="1" max="30">
+                  <div class="rule-desc">Menor pedido permitido</div>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button class="btn btn-brand" onclick="salvarRegras()">💾 Salvar Regras</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-hd"><h2>Day Off de Aniversário</h2></div>
+            <div class="card-bd">
+              <div class="rule-card">
+                <label>Janela de uso (dias antes/depois)</label>
+                <input type="number" id="rule-aniv-janela" min="0" max="30" style="width:80px">
+                <div class="rule-desc">Ex: 7 = pode tirar 7 dias antes ou depois do aniversário</div>
+              </div>
+              <sep></sep>
+              <p style="font-size:13px;color:var(--text2);line-height:1.6">O day off de aniversário dá direito a <strong>1 dia útil</strong> por ano. O profissional pode tirar dentro da janela configurada. Não acumula para o ano seguinte.</p>
+              <div class="form-actions" style="padding-top:12px">
+                <button class="btn btn-brand" onclick="salvarRegras()">💾 Salvar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ─── MODAIS ─────────────────────────────────────────────── -->
+
+<!-- Modal: Revisar Solicitação (GP/PC) -->
+<div class="modal-overlay" id="modal-revisar">
+  <div class="modal-box wide">
+    <div class="modal-hd"><h3>Revisar Solicitação</h3><button class="modal-close" onclick="closeModal('modal-revisar')">✕</button></div>
+    <div class="modal-bd">
+      <div class="info-grid" id="rev-info" style="margin-bottom:20px"></div>
+      <sep></sep>
+      <h4 style="font-size:13px;font-weight:600;margin-bottom:10px">Validações automáticas</h4>
+      <div class="val-list" id="rev-validacoes"></div>
+      <div id="rev-just-wrap" style="display:none;margin-top:16px">
+        <h4 style="font-size:13px;font-weight:600;margin-bottom:6px">Justificativa do profissional</h4>
+        <p id="rev-just-text" style="font-size:13px;color:var(--text2);background:var(--surface2);padding:10px 14px;border-radius:8px"></p>
+      </div>
+      <div style="margin-top:14px" id="rev-alinhado-wrap"></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-danger" onclick="abrirRecusar()">✕ Recusar</button>
+      <button class="btn btn-success" id="btn-aprovar" onclick="aprovar()">✓ Aprovar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Recusar -->
+<div class="modal-overlay" id="modal-recusar">
+  <div class="modal-box">
+    <div class="modal-hd"><h3>Motivo da Recusa</h3><button class="modal-close" onclick="closeModal('modal-recusar')">✕</button></div>
+    <div class="modal-bd">
+      <div class="field"><label>Justificativa <span class="req">*</span></label>
+        <textarea id="recusar-motivo" placeholder="Explique o motivo para o profissional..."></textarea>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-outline" onclick="closeModal('modal-recusar')">Cancelar</button>
+      <button class="btn btn-danger" onclick="confirmarRecusa()">Confirmar Recusa</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Detalhes do profissional (saldo) -->
+<div class="modal-overlay" id="modal-prof-detalhe">
+  <div class="modal-box wide">
+    <div class="modal-hd"><h3 id="pd-title">Histórico</h3><button class="modal-close" onclick="closeModal('modal-prof-detalhe')">✕</button></div>
+    <div class="modal-bd" id="pd-body"></div>
+  </div>
+</div>
+
+<!-- Modal: Sucesso -->
+<div class="modal-overlay" id="modal-sucesso">
+  <div class="modal-box">
+    <div class="modal-bd" style="text-align:center;padding:36px 28px">
+      <div style="font-size:48px;margin-bottom:14px">🎉</div>
+      <h3 style="font-size:18px;font-weight:700;margin-bottom:8px">Solicitação enviada!</h3>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:22px">Sua solicitação foi registrada e está <strong>aguardando aprovação</strong> do GP e do People Care. Você receberá um e-mail de confirmação.</p>
+      <button class="btn btn-brand" style="width:100%" onclick="closeModal('modal-sucesso');nav('pg-meu-recesso')">Ver minhas solicitações</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Aprovação confirmada -->
+<div class="modal-overlay" id="modal-aprov-ok">
+  <div class="modal-box">
+    <div class="modal-bd" style="text-align:center;padding:36px 28px">
+      <div style="font-size:48px;margin-bottom:14px">✅</div>
+      <h3 style="font-size:18px;font-weight:700;margin-bottom:8px" id="aprov-ok-title">Aprovação registrada!</h3>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:22px" id="aprov-ok-msg"></p>
+      <button class="btn btn-brand" style="width:100%" onclick="closeModal('modal-aprov-ok')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ─── SCRIPT ─────────────────────────────────────────────── -->
+<script>
+// ══════════════════════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════════════════════
+const API_URL = 'https://script.google.com/macros/s/AKfycbwflnR51V4sh7cc99AgHD9cJkfgE6BK38Xkcjaket0rfGy0HArMnTOHpQbGFhuwL6HD/exec';
+const LS_PESSOAS    = 'bravi_pessoas_drive';
+const LS_RECESSO    = 'bravi_recesso_solicitacoes';
+const LS_REGRAS     = 'bravi_recesso_regras';
+const LS_PROJ_GP    = 'bravi_recesso_proj_gp'; // {projeto: people}
+const LS_ANIV       = 'bravi_recesso_aniversario'; // {people: bool}
+
+const FERIADOS_BR = new Set(['2026-01-01','2026-02-16','2026-02-17','2026-04-03','2026-04-21',
+  '2026-05-01','2026-06-04','2026-09-07','2026-10-12','2026-11-02','2026-11-15','2026-12-25']);
+
+const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+  'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+// Roles que têm acesso de aprovação
+const ROLES_GP = ['Project Manager','GOP','CEO','PPC'];
+const EMAIL_PC = 'andresa.rosa@bravi.com.br';
+
+// ══════════════════════════════════════════════════════════════
+// ESTADO
+// ══════════════════════════════════════════════════════════════
+let STATE = {
+  currentUser: null, // {people, nome, email, role, roleLabel}
+  currentPage: 'pg-dashboard',
+  calDate: new Date(),
+  revisandoId: null,
+};
+
+let DB = {
+  pessoas: [],       // da planilha
+  solicitacoes: [],  // [{id,profEmail,profPeople,inicio,fim,dias,dataSol,justificativa,alinhado,aprovGP,aprovPC,motivoRecusa,statusRecesso}]
+  regras: { meses:12, dias:10, add1:1, add2:2, antecedencia:30, minimo:1, anivJanela:7 },
+  projGP: {},        // {projetoAtual: people}
+  anivUsado: {},     // {people: ano(number) ou false}
+};
+
+// ══════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('login-email').value = 'andresa.rosa@bravi.com.br';
+  loadLocal();
+  // Tenta sincronizar pessoas do Drive em background
+  carregarPessoas();
+});
+
+function loadLocal() {
+  const r = ls(LS_REGRAS);   if (r) DB.regras = r;
+  const s = ls(LS_RECESSO);  if (s) DB.solicitacoes = s;
+  const g = ls(LS_PROJ_GP);  if (g) DB.projGP = g;
+  const a = ls(LS_ANIV);     if (a) DB.anivUsado = a;
+}
+
+async function carregarPessoas() {
+  // Primeiro tenta cache local
+  const cache = ls(LS_PESSOAS);
+  if (cache && cache.length) DB.pessoas = cache;
+
+  // Tenta buscar do Drive
+  try {
+    const r = await fetch(`${API_URL}?action=pessoas-drive&ano=2026`).then(x=>x.json());
+    if (r.ok && r.dados && r.dados.length) {
+      DB.pessoas = r.dados;
+      lsSet(LS_PESSOAS, DB.pessoas);
+    }
+  } catch(e) {}
+}
+
+// ══════════════════════════════════════════════════════════════
+// LOGIN
+// ══════════════════════════════════════════════════════════════
+function setDemo(email) {
+  document.getElementById('login-email').value = email;
+  document.querySelectorAll('.spill').forEach(s => s.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+function doLogin() {
+  const email = document.getElementById('login-email').value.trim().toLowerCase();
+  if (!email) { showLoginError('Informe o e-mail.'); return; }
+
+  // Aguarda pessoas carregadas
+  if (!DB.pessoas.length) {
+    const cache = ls(LS_PESSOAS);
+    if (cache) DB.pessoas = cache;
+  }
+
+  const pessoa = DB.pessoas.find(p => (p.email||'').toLowerCase() === email);
+
+  if (!pessoa) {
+    // Tenta criar usuário demo se email reconhecido
+    if (!email.endsWith('@bravi.com.br')) { showLoginError('Use seu e-mail @bravi.com.br.'); return; }
+    // Permite login mesmo sem dados (modo demo)
+    const parts = email.replace('@bravi.com.br','').split('.');
+    const nome = parts.map(p=>p.charAt(0).toUpperCase()+p.slice(1)).join(' ');
+    STATE.currentUser = { people: email.replace('@bravi.com.br',''), nome, email, role: determinarRole(null, email), roleLabel: 'Profissional' };
+  } else {
+    const role = determinarRole(pessoa, email);
+    STATE.currentUser = {
+      people: pessoa.people,
+      nome: pessoa.people.split('.').map(p=>p.charAt(0).toUpperCase()+p.slice(1)).join(' '),
+      email,
+      role,
+      roleLabel: role==='pc'?'People Care':role==='gp'?'Gestor de Projetos':'Profissional',
+      pessoa
+    };
+  }
+
+  document.getElementById('login-error').style.display = 'none';
+  iniciarApp();
+}
+
+function determinarRole(pessoa, email) {
+  if (email === EMAIL_PC) return 'pc';
+  if (pessoa && ROLES_GP.includes(pessoa.role)) return 'gp';
+  return 'pro';
+}
+
+function showLoginError(msg) {
+  const el = document.getElementById('login-error');
+  el.textContent = msg; el.style.display = 'block';
+}
+
+function iniciarApp() {
+  const u = STATE.currentUser;
+  document.getElementById('u-av').textContent = u.nome.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('u-nm').textContent = u.nome;
+  document.getElementById('u-rl').textContent = u.roleLabel;
+
+  // Mostra seções do nav por role
+  document.getElementById('nav-pc-section').style.display  = u.role==='pc' ? '' : 'none';
+  document.getElementById('nav-gp-section').style.display  = u.role==='gp' ? '' : 'none';
+  document.getElementById('nav-pro-section').style.display = u.role==='pro'? '' : 'none';
+
+  document.getElementById('login-page').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+
+  // Página inicial por role
+  if (u.role === 'pro') nav('pg-meu-recesso');
+  else nav('pg-dashboard');
+
+  atualizarBadges();
+  renderCalendar();
+}
+
+function doLogout() {
+  STATE.currentUser = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-page').style.display = 'flex';
+}
+
+// ══════════════════════════════════════════════════════════════
+// NAV
+// ══════════════════════════════════════════════════════════════
+function nav(pg) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const el = document.getElementById(pg);
+  if (el) el.classList.add('active');
+  STATE.currentPage = pg;
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+
+  const titleMap = {
+    'pg-dashboard':'Dashboard','pg-meu-recesso':'Meu Recesso','pg-solicitar':'Solicitar Recesso',
+    'pg-aprovacoes':'Aprovações','pg-profissionais':'Profissionais','pg-projetos-gp':'Projetos & GPs',
+    'pg-regras':'Regras','pg-calendario':'Calendário'
+  };
+  document.getElementById('topbar-title').textContent = titleMap[pg]||'';
+
+  // Renders por página
+  if (pg==='pg-dashboard')      renderDashboard();
+  if (pg==='pg-meu-recesso')    renderMeuRecesso();
+  if (pg==='pg-solicitar')      initSolicitar();
+  if (pg==='pg-aprovacoes')     renderAprovacoes();
+  if (pg==='pg-profissionais')  renderProfTable();
+  if (pg==='pg-projetos-gp')    renderProjetosGP();
+  if (pg==='pg-regras')         loadRegras();
+  if (pg==='pg-calendario')     renderCalendar();
+}
+
+// ══════════════════════════════════════════════════════════════
+// CÁLCULO DE RECESSO
+// ══════════════════════════════════════════════════════════════
+function calcRecessoInfo(pessoa) {
+  if (!pessoa || !pessoa.admissao) return null;
+  const entry = new Date(pessoa.admissao + 'T00:00:00');
+  const now   = new Date();
+  const mesesEmpresa = (now - entry) / (1000*60*60*24*30.44);
+  if (mesesEmpresa < DB.regras.meses) return { inelegivel: true, mesesFaltando: Math.ceil(DB.regras.meses - mesesEmpresa) };
+
+  // Período atual baseado na data de admissão
+  let pStart = new Date(entry);
+  while (addYears(pStart, 1) <= now) pStart = addYears(pStart, 1);
+  let pEnd = new Date(addYears(pStart, 1));
+  pEnd.setDate(pEnd.getDate() - 1);
+
+  const anos = (now - entry) / (1000*60*60*24*365.25);
+  let total = DB.regras.dias;
+  if (anos >= 2)    total += DB.regras.add2;
+  else if (anos >= 1) total += DB.regras.add1;
+
+  const usadosSols = DB.solicitacoes.filter(s =>
+    s.profPeople === pessoa.people &&
+    (s.aprovGP === 'Aprovado' || s.aprovPC === 'Aprovado') &&
+    s.inicio >= isoDate(pStart)
+  ).reduce((a,s)=>a+s.dias,0);
+
+  const remaining = total - usadosSols;
+  return { periodStart: pStart, periodEnd: pEnd, total, used: usadosSols, remaining };
+}
+
+function diasUteisEntre(ini, fim) {
+  let n = 0;
+  const d = new Date(ini + 'T12:00:00');
+  const f = new Date(fim + 'T12:00:00');
+  while (d <= f) {
+    const dow = d.getDay(), iso = isoDate(d);
+    if (dow > 0 && dow < 6 && !FERIADOS_BR.has(iso)) n++;
+    d.setDate(d.getDate() + 1);
+  }
+  return n;
+}
+
+function calcStatusRecesso(sol) {
+  const now = isoDate(new Date());
+  if (sol.aprovGP === 'Recusado' || sol.aprovPC === 'Recusado') return 'Recusado';
+  if (sol.aprovGP !== 'Aprovado' || sol.aprovPC !== 'Aprovado') return 'Aguardando';
+  if (sol.fim < now) return 'Finalizado';
+  if (sol.inicio <= now && sol.fim >= now) return 'Em Andamento';
+  return 'A Realizar';
+}
+
+function statusAprovacao(sol, tipo) {
+  // tipo: 'gp' ou 'pc'
+  const val = tipo === 'gp' ? sol.aprovGP : sol.aprovPC;
+  if (val === 'Aprovado') return badge('green', '✓ Aprovado');
+  if (val === 'Recusado') return badge('red', '✕ Recusado');
+  return badge('yellow', '⏳ Aguardando');
+}
+
+// ══════════════════════════════════════════════════════════════
+// DASHBOARD (PC / GP)
+// ══════════════════════════════════════════════════════════════
+function renderDashboard() {
+  const u = STATE.currentUser;
+  const pessoas = u.role === 'gp'
+    ? DB.pessoas.filter(p => p.projetoAtual && gpDoProjeto(p.projetoAtual) === u.people)
+    : DB.pessoas.filter(p => p.ativo);
+
+  const solAll = DB.solicitacoes;
+  const pendentes = solAll.filter(s => {
+    if (u.role === 'gp') return s.aprovGP === 'Aguardando';
+    if (u.role === 'pc') return s.aprovPC === 'Aguardando';
+    return false;
+  });
+
+  // Stats
+  const comSaldo = pessoas.filter(p => { const i = calcRecessoInfo(p); return i && !i.inelegivel && i.remaining > 0; }).length;
+  const hoje = isoDate(new Date());
+  const emRecesso = solAll.filter(s => calcStatusRecesso(s)==='Em Andamento').length;
+
+  document.getElementById('dash-stats').innerHTML = `
+    ${statCard('blue','👥',pessoas.length,'Profissionais')}
+    ${statCard('yellow','⏳',pendentes.length,'Pendentes de aprovação')}
+    ${statCard('green','🌴',emRecesso,'Em recesso agora')}
+    ${statCard('purple','📋',comSaldo,'Com saldo disponível')}
+  `;
+
+  // Pendentes
+  const dpEl = document.getElementById('dash-pendentes');
+  if (!pendentes.length) { dpEl.innerHTML=emptyState('✅','Nenhuma pendência','Tudo aprovado!'); }
+  else {
+    dpEl.innerHTML = pendentes.slice(0,5).map(s=>{
+      const p = DB.pessoas.find(x=>x.people===s.profPeople);
+      const nm = p ? nomeF(p.people) : s.profPeople;
+      return `<div class="profile-row">
+        <div class="p-avatar">${nm.split(' ').map(w=>w[0]).join('').slice(0,2)}</div>
+        <div><div class="p-name">${nm}</div><div class="p-sub">${fmt(s.inicio)} → ${fmt(s.fim)} · ${s.dias} dias</div></div>
+        <button class="btn btn-brand btn-xs" onclick="abrirRevisar('${s.id}')">Revisar</button>
+      </div>`;
+    }).join('');
+  }
+
+  // Próximos 30 dias
+  const in30 = new Date(); in30.setDate(in30.getDate()+30);
+  const proximos = solAll.filter(s => {
+    const status = calcStatusRecesso(s);
+    return status === 'A Realizar' && s.inicio <= isoDate(in30);
+  });
+  const dpxEl = document.getElementById('dash-proximos');
+  if (!proximos.length) { dpxEl.innerHTML=emptyState('📅','Nenhum recesso nos próximos 30 dias',''); }
+  else {
+    dpxEl.innerHTML = proximos.map(s=>{
+      const p = DB.pessoas.find(x=>x.people===s.profPeople);
+      const nm = p ? nomeF(p.people) : s.profPeople;
+      return `<div class="profile-row">
+        <div class="p-avatar">${nm.split(' ').map(w=>w[0]).join('').slice(0,2)}</div>
+        <div><div class="p-name">${nm}</div><div class="p-sub">${fmt(s.inicio)} → ${fmt(s.fim)}</div></div>
+        ${badge('blue',s.dias+' dias')}
+      </div>`;
+    }).join('');
+  }
+
+  // Vencimentos
+  const in90 = new Date(); in90.setDate(in90.getDate()+90);
+  const vencer = DB.pessoas.filter(p=>{
+    if (!p.ativo) return false;
+    const i = calcRecessoInfo(p);
+    return i && !i.inelegivel && i.remaining > 0 && i.periodEnd <= in90;
+  });
+  const dvEl = document.getElementById('dash-vencer');
+  if (!vencer.length) { dvEl.innerHTML=emptyState('✅','Nenhum recesso a vencer nos próximos 90 dias',''); }
+  else {
+    dvEl.innerHTML = `<div class="table-wrap"><table>
+      <thead><tr><th>Profissional</th><th>Vence em</th><th>Saldo restante</th></tr></thead>
+      <tbody>${vencer.map(p=>{
+        const i = calcRecessoInfo(p);
+        return `<tr><td>${nomeF(p.people)}</td><td>${fmt(isoDate(i.periodEnd))}</td><td>${badge('yellow',i.remaining+' dias')}</td></tr>`;
+      }).join('')}</tbody>
+    </table></div>`;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// MEU RECESSO (profissional)
+// ══════════════════════════════════════════════════════════════
+function renderMeuRecesso() {
+  const u = STATE.currentUser;
+  const pessoa = DB.pessoas.find(p => p.people === u.people) || u.pessoa;
+  document.getElementById('meu-title').textContent = `Olá, ${u.nome.split(' ')[0]}! 🌴`;
+
+  // Saldo
+  const info = pessoa ? calcRecessoInfo(pessoa) : null;
+  const bannerEl = document.getElementById('meu-saldo-banner');
+  if (!info) {
+    bannerEl.innerHTML = `<div class="card card-bd" style="margin-bottom:16px;text-align:center;padding:24px">
+      <div style="font-size:32px;margin-bottom:8px">⏳</div>
+      <div style="font-weight:600">Você ainda não é elegível para recesso.</div>
+      <div style="font-size:13px;color:var(--text2);margin-top:4px">
+        ${info && info.inelegivel ? `Faltam ${info.mesesFaltando} meses para completar o período mínimo.` : 'Admissão não encontrada.'}
+      </div>
+    </div>`;
+  } else {
+    const pct = Math.round(info.used / info.total * 100);
+    const corBarra = info.remaining === 0 ? 'red' : info.remaining <= 3 ? 'yellow' : 'green';
+    bannerEl.innerHTML = `<div class="saldo-banner" style="margin-bottom:16px">
+      <div class="saldo-main">
+        <h2>Saldo de Recesso</h2>
+        <div class="big">${info.remaining} <span style="font-size:22px;font-weight:400;opacity:.8">dias</span></div>
+        <div class="sub">Período: ${fmt(isoDate(info.periodStart))} → ${fmt(isoDate(info.periodEnd))}</div>
+        <div class="saldo-bar"><div class="saldo-bar-fill" style="width:${100-pct}%"></div></div>
+      </div>
+      <div class="saldo-stats">
+        <div class="saldo-stat"><div class="v">${info.total}</div><div class="l">Total</div></div>
+        <div class="saldo-stat"><div class="v">${info.used}</div><div class="l">Usado</div></div>
+        <div class="saldo-stat"><div class="v">${info.remaining}</div><div class="l">Restante</div></div>
+      </div>
+    </div>`;
+  }
+
+  // Aniversário
+  const hoje = new Date();
+  const anivEl = document.getElementById('meu-aniversario');
+  if (pessoa && pessoa.admissao) {
+    const nasc = pessoa.admissao; // usamos admissão como proxy — idealmente teria data nascimento
+    const anivUsado = (DB.anivUsado[u.people] === hoje.getFullYear());
+    anivEl.innerHTML = `<div style="text-align:center;padding:8px 0">
+      <div style="font-size:28px;margin-bottom:8px">${anivUsado ? '✅' : '🎂'}</div>
+      <div style="font-weight:600;margin-bottom:4px">${anivUsado ? 'Day off utilizado este ano' : 'Day off disponível'}</div>
+      <div style="font-size:12px;color:var(--text2)">1 dia útil por ano aniversário</div>
+      ${!anivUsado ? `<button class="btn btn-brand btn-sm" style="margin-top:12px" onclick="solicitarAniversario()">🎂 Solicitar Day Off</button>` : ''}
+    </div>`;
+  } else {
+    anivEl.innerHTML = `<div class="empty" style="padding:16px"><p>Dados de nascimento não encontrados.</p></div>`;
+  }
+
+  // Resumo período
+  const meuResEl = document.getElementById('meu-resumo');
+  const minhas = DB.solicitacoes.filter(s => s.profPeople === u.people);
+  const aprovadas = minhas.filter(s => calcStatusRecesso(s) !== 'Recusado' && calcStatusRecesso(s) !== 'Aguardando');
+  meuResEl.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border)">
+        <span style="color:var(--text2)">Solicitações totais</span><span style="font-weight:600">${minhas.length}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border)">
+        <span style="color:var(--text2)">Aprovadas</span><span style="font-weight:600;color:var(--green)">${aprovadas.length}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border)">
+        <span style="color:var(--text2)">Aguardando</span><span style="font-weight:600;color:var(--yellow)">${minhas.filter(s=>calcStatusRecesso(s)==='Aguardando').length}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0">
+        <span style="color:var(--text2)">Recusadas</span><span style="font-weight:600;color:var(--red)">${minhas.filter(s=>calcStatusRecesso(s)==='Recusado').length}</span>
+      </div>
+    </div>`;
+
+  // Tabela de solicitações
+  const tbody = document.getElementById('meu-tbody');
+  if (!minhas.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="empty-icon">🌴</div><h3>Nenhuma solicitação ainda</h3><p>Clique em "+ Nova Solicitação" para começar.</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = minhas.sort((a,b)=>b.dataSol.localeCompare(a.dataSol)).map(s => {
+    const status = calcStatusRecesso(s);
+    let actBtn = '';
+    if (status === 'Recusado') {
+      actBtn = `<button class="btn btn-ghost btn-xs" onclick="verMotivoRecusa('${s.id}')">Ver motivo</button>`;
+    }
+    return `<tr>
+      <td>${fmt(s.dataSol)}</td>
+      <td>${fmt(s.inicio)} → ${fmt(s.fim)}</td>
+      <td>${s.dias}</td>
+      <td>${statusAprovacao(s,'gp')}</td>
+      <td>${statusAprovacao(s,'pc')}</td>
+      <td>${statusBadge(status)}</td>
+      <td>${actBtn}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+// SOLICITAR
+// ══════════════════════════════════════════════════════════════
+function initSolicitar() {
+  document.getElementById('form-sol').reset();
+  document.getElementById('sol-preview').style.display = 'none';
+  document.getElementById('sol-aviso').style.display = 'none';
+  const u = STATE.currentUser;
+  const pessoa = DB.pessoas.find(p=>p.people===u.people);
+  const info = pessoa ? calcRecessoInfo(pessoa) : null;
+  if (info && info.inelegivel) {
+    const av = document.getElementById('sol-aviso');
+    av.innerHTML = `<div class="val-row warn"><span class="val-icon">⚠️</span> Você ainda não é elegível para recesso. Faltam ${info.mesesFaltando} meses.</div>`;
+    av.style.display = 'block';
+  }
+}
+
+function calcSolDias() {
+  const ini = document.getElementById('sol-ini').value;
+  const fim = document.getElementById('sol-fim').value;
+  const prev = document.getElementById('sol-preview');
+  if (!ini || !fim || ini > fim) { prev.style.display='none'; return; }
+  const dias = diasUteisEntre(ini, fim);
+  const u = STATE.currentUser;
+  const pessoa = DB.pessoas.find(p=>p.people===u.people);
+  const info = pessoa ? calcRecessoInfo(pessoa) : null;
+  const antec = diasUteisEntre(isoDate(new Date()), ini);
+  const ok = antec >= DB.regras.antecedencia;
+  const saldoOk = !info || info.inelegivel || dias <= info.remaining;
+  prev.style.display = 'block';
+  prev.innerHTML = `<div style="display:flex;gap:8px;flex-wrap:wrap">
+    ${badge('blue','📅 '+dias+' dias úteis')}
+    ${ok ? badge('green','✓ Antecedência OK') : badge('red','⚠ Antecedência insuficiente (min. '+DB.regras.antecedencia+' dias)')}
+    ${info && !info.inelegivel ? (saldoOk ? badge('green','✓ Saldo suficiente') : badge('red','⚠ Saldo insuficiente ('+info.remaining+' dias)')) : ''}
+  </div>`;
+}
+
+function submitSolicitar(e) {
+  e.preventDefault();
+  const ini = document.getElementById('sol-ini').value;
+  const fim = document.getElementById('sol-fim').value;
+  const just = document.getElementById('sol-just').value.trim();
+  const alin = document.getElementById('sol-alinhado').checked;
+  const u = STATE.currentUser;
+
+  if (!ini || !fim || ini > fim) { toast('Datas inválidas.','error'); return; }
+  const dias = diasUteisEntre(ini, fim);
+  if (dias < DB.regras.minimo) { toast(`Mínimo de ${DB.regras.minimo} dia(s) útil(eis) por solicitação.`,'error'); return; }
+
+  const pessoa = DB.pessoas.find(p=>p.people===u.people);
+  const info = pessoa ? calcRecessoInfo(pessoa) : null;
+  if (info && info.inelegivel) { toast('Você ainda não é elegível para recesso.','error'); return; }
+  if (info && dias > info.remaining) { toast('Dias solicitados excedem seu saldo disponível.','error'); return; }
+
+  const antec = diasUteisEntre(isoDate(new Date()), ini);
+  if (antec < DB.regras.antecedencia && !alin) {
+    if (!confirm(`A antecedência mínima é de ${DB.regras.antecedencia} dias. Deseja enviar mesmo assim?`)) return;
+  }
+
+  // GP do projeto
+  const gp = pessoa ? gpDoProjeto(pessoa.projetoAtual) : null;
+
+  const sol = {
+    id: 'sol_' + Date.now(),
+    profPeople: u.people,
+    profEmail: u.email,
+    inicio: ini, fim, dias,
+    dataSol: isoDate(new Date()),
+    justificativa: just,
+    alinhado: alin,
+    aprovGP: gp ? 'Aguardando' : 'N/A', // sem GP cadastrado, pula etapa
+    aprovPC: 'Aguardando',
+    gpPeople: gp || null,
+    motivoRecusa: '',
+  };
+
+  DB.solicitacoes.push(sol);
+  salvarSolicitacoes();
+  atualizarBadges();
+
+  // Simula envio de e-mail
+  console.log(`[EMAIL] Solicitação enviada para ${u.email} e GP ${gp}@bravi.com.br`);
+
+  openModal('modal-sucesso');
+}
+
+function solicitarAniversario() {
+  toast('Funcionalidade de day off de aniversário — entre em contato com o People Care.','info');
+}
+
+// ══════════════════════════════════════════════════════════════
+// APROVAÇÕES
+// ══════════════════════════════════════════════════════════════
+function renderAprovacoes() {
+  const u = STATE.currentUser;
+  renderAprovPendentes();
+  renderAprovHistorico();
+}
+
+function renderAprovPendentes() {
+  const u = STATE.currentUser;
+  const pendentes = DB.solicitacoes.filter(s => {
+    if (u.role === 'gp') return s.aprovGP === 'Aguardando' && s.gpPeople === u.people;
+    if (u.role === 'pc') return s.aprovPC === 'Aguardando';
+    return false;
+  });
+  const tbody = document.getElementById('aprov-tbody');
+  if (!pendentes.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty"><div class="empty-icon">✅</div><h3>Nenhuma pendência</h3><p>Todas as solicitações foram revisadas.</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = pendentes.sort((a,b)=>a.dataSol.localeCompare(b.dataSol)).map(s => {
+    const p = DB.pessoas.find(x=>x.people===s.profPeople);
+    const nm = p ? nomeF(p.people) : s.profPeople;
+    const proj = p ? (p.projetoAtual||'—') : '—';
+    return `<tr>
+      <td><div style="font-weight:600">${nm}</div></td>
+      <td><span style="font-size:12px">${proj}</span></td>
+      <td>${fmt(s.inicio)} → ${fmt(s.fim)}</td>
+      <td>${s.dias}</td>
+      <td>${statusAprovacao(s,'gp')}</td>
+      <td>${statusAprovacao(s,'pc')}</td>
+      <td style="max-width:200px;font-size:12px;color:var(--text2)">${s.justificativa||'—'}</td>
+      <td><button class="btn btn-brand btn-xs" onclick="abrirRevisar('${s.id}')">Revisar</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderAprovHistorico() {
+  const u = STATE.currentUser;
+  const hist = DB.solicitacoes.filter(s => {
+    const status = calcStatusRecesso(s);
+    if (u.role === 'gp') return s.gpPeople === u.people && s.aprovGP !== 'Aguardando';
+    return status !== 'Aguardando';
+  });
+  const tbody = document.getElementById('aprov-hist-tbody');
+  if (!hist.length) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><div class="empty-icon">📋</div><h3>Sem histórico</h3></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = hist.sort((a,b)=>b.dataSol.localeCompare(a.dataSol)).map(s=>{
+    const p = DB.pessoas.find(x=>x.people===s.profPeople);
+    const nm = p ? nomeF(p.people) : s.profPeople;
+    return `<tr>
+      <td><div style="font-weight:600">${nm}</div></td>
+      <td>${fmt(s.inicio)} → ${fmt(s.fim)}</td>
+      <td>${s.dias}</td>
+      <td>${statusAprovacao(s,'gp')}</td>
+      <td>${statusAprovacao(s,'pc')}</td>
+      <td>${statusBadge(calcStatusRecesso(s))}</td>
+    </tr>`;
+  }).join('');
+}
+
+function switchAprovTab(tab, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('#pg-aprovacoes .tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('aprov-tab-'+tab).classList.add('active');
+}
+
+function abrirRevisar(id) {
+  const sol = DB.solicitacoes.find(s=>s.id===id);
+  if (!sol) return;
+  STATE.revisandoId = id;
+  const p = DB.pessoas.find(x=>x.people===sol.profPeople);
+  const nm = p ? nomeF(p.people) : sol.profPeople;
+  const info = p ? calcRecessoInfo(p) : null;
+  const antec = diasUteisEntre(isoDate(new Date()), sol.inicio);
+
+  document.getElementById('rev-info').innerHTML = `
+    <div class="info-item"><label>Profissional</label><span>${nm}</span></div>
+    <div class="info-item"><label>Projeto</label><span>${p?.projetoAtual||'—'}</span></div>
+    <div class="info-item"><label>Período</label><span>${fmt(sol.inicio)} → ${fmt(sol.fim)}</span></div>
+    <div class="info-item"><label>Dias úteis</label><span>${sol.dias}</span></div>
+    <div class="info-item"><label>Solicitado em</label><span>${fmt(sol.dataSol)}</span></div>
+    <div class="info-item"><label>Saldo disponível</label><span>${info && !info.inelegivel ? info.remaining+' dias' : '—'}</span></div>
+  `;
+
+  // Validações
+  const vals = [];
+  if (antec >= DB.regras.antecedencia) vals.push({ok:true, txt:`Antecedência de ${antec} dias (mínimo ${DB.regras.antecedencia})`});
+  else vals.push({ok:false, txt:`Antecedência insuficiente: ${antec} dias (mínimo ${DB.regras.antecedencia})`});
+  if (sol.dias >= DB.regras.minimo) vals.push({ok:true, txt:`${sol.dias} dias (mínimo ${DB.regras.minimo})`});
+  else vals.push({ok:false, txt:`Menos que o mínimo de ${DB.regras.minimo} dias`});
+  if (info && !info.inelegivel) {
+    if (sol.dias <= info.remaining) vals.push({ok:true, txt:`Saldo suficiente (${info.remaining} dias disponíveis)`});
+    else vals.push({ok:false, txt:`Saldo insuficiente (${info.remaining} disponíveis, solicitados ${sol.dias})`});
+  }
+  if (sol.alinhado) vals.push({ok:true, txt:'Profissional confirmou alinhamento com o cliente'});
+
+  document.getElementById('rev-validacoes').innerHTML = vals.map(v=>
+    `<div class="val-row ${v.ok?'ok':'warn'}"><span class="val-icon">${v.ok?'✅':'⚠️'}</span>${v.txt}</div>`
+  ).join('');
+
+  const jw = document.getElementById('rev-just-wrap');
+  if (sol.justificativa) {
+    jw.style.display='block';
+    document.getElementById('rev-just-text').textContent = sol.justificativa;
+  } else jw.style.display='none';
+
+  openModal('modal-revisar');
+}
+
+function aprovar() {
+  const u = STATE.currentUser;
+  const sol = DB.solicitacoes.find(s=>s.id===STATE.revisandoId);
+  if (!sol) return;
+
+  if (u.role === 'gp' || (u.role === 'pc' && sol.aprovGP === 'N/A')) sol.aprovGP = 'Aprovado';
+  if (u.role === 'pc') sol.aprovPC = 'Aprovado';
+
+  salvarSolicitacoes(); atualizarBadges(); closeModal('modal-revisar');
+
+  const totalAprov = (sol.aprovGP === 'Aprovado' || sol.aprovGP === 'N/A') && sol.aprovPC === 'Aprovado';
+  const msg = totalAprov
+    ? 'Recesso aprovado por todos os aprovadores! O profissional foi notificado por e-mail para lançar as horas no Timeneye.'
+    : 'Sua aprovação foi registrada. Aguardando aprovação do outro responsável.';
+
+  document.getElementById('aprov-ok-title').textContent = totalAprov ? '🎉 Recesso aprovado!' : '✅ Aprovação registrada!';
+  document.getElementById('aprov-ok-msg').textContent = msg;
+  openModal('modal-aprov-ok');
+
+  console.log(`[EMAIL] Aprovação registrada: ${u.role} aprovou sol ${sol.id}`);
+  if (totalAprov) console.log(`[EMAIL] Recesso confirmado enviado para ${sol.profEmail}`);
+
+  renderAprovacoes();
+}
+
+function abrirRecusar() {
+  document.getElementById('recusar-motivo').value = '';
+  closeModal('modal-revisar');
+  openModal('modal-recusar');
+}
+
+function confirmarRecusa() {
+  const motivo = document.getElementById('recusar-motivo').value.trim();
+  if (!motivo) { toast('Informe o motivo da recusa.','error'); return; }
+  const u = STATE.currentUser;
+  const sol = DB.solicitacoes.find(s=>s.id===STATE.revisandoId);
+  if (!sol) return;
+
+  if (u.role === 'gp') sol.aprovGP = 'Recusado';
+  if (u.role === 'pc') sol.aprovPC = 'Recusado';
+  sol.motivoRecusa = motivo;
+
+  salvarSolicitacoes(); atualizarBadges();
+  closeModal('modal-recusar');
+  toast('Solicitação recusada. Profissional será notificado.','info');
+  console.log(`[EMAIL] Recusa enviada para ${sol.profEmail}: ${motivo}`);
+  renderAprovacoes();
+}
+
+function verMotivoRecusa(id) {
+  const sol = DB.solicitacoes.find(s=>s.id===id);
+  if (!sol) return;
+  document.getElementById('pd-title').textContent = 'Motivo da Recusa';
+  document.getElementById('pd-body').innerHTML = `<div class="val-row fail"><span class="val-icon">✕</span>${sol.motivoRecusa||'Não informado'}</div>`;
+  openModal('modal-prof-detalhe');
+}
+
+// ══════════════════════════════════════════════════════════════
+// PROFISSIONAIS (tabela PC/GP)
+// ══════════════════════════════════════════════════════════════
+function renderProfTable() {
+  const u = STATE.currentUser;
+  const search = (document.getElementById('prof-search')?.value||'').toLowerCase();
+  const projF  = document.getElementById('prof-proj-filter')?.value||'';
+  const statF  = document.getElementById('prof-status-filter')?.value||'';
+
+  let pessoas = DB.pessoas;
+  if (u.role === 'gp') pessoas = pessoas.filter(p => gpDoProjeto(p.projetoAtual) === u.people);
+  if (search) pessoas = pessoas.filter(p => nomeF(p.people).toLowerCase().includes(search) || (p.projetoAtual||'').toLowerCase().includes(search));
+  if (projF)  pessoas = pessoas.filter(p => p.projetoAtual === projF);
+  if (statF !== '') pessoas = pessoas.filter(p => String(p.ativo?'1':'0') === statF);
+
+  // Popula filtro de projetos
+  const pjs = [...new Set(DB.pessoas.map(p=>p.projetoAtual).filter(Boolean))].sort();
+  const pfEl = document.getElementById('prof-proj-filter');
+  if (pfEl) {
+    const cur = pfEl.value;
+    pfEl.innerHTML = '<option value="">Todos</option>' + pjs.map(p=>`<option value="${p}" ${p===cur?'selected':''}>${p}</option>`).join('');
+  }
+
+  const tbody = document.getElementById('prof-tbody');
+  if (!pessoas.length) { tbody.innerHTML=`<tr><td colspan="10"><div class="empty"><div class="empty-icon">👥</div><h3>Nenhum profissional encontrado</h3></div></td></tr>`; return; }
+
+  tbody.innerHTML = pessoas.map(p => {
+    const info = calcRecessoInfo(p);
+    if (!info) return `<tr>
+      <td><div style="font-weight:600">${nomeF(p.people)}</div><div style="font-size:12px;color:var(--text2)">${p.role||''}</div></td>
+      <td>${p.projetoAtual||'—'}</td>
+      <td>${p.admissao ? fmt(p.admissao) : '—'}</td>
+      <td>${badge('gray','Inelegível')}</td>
+      <td colspan="5" style="color:var(--text3)">—</td>
+      <td><button class="btn btn-ghost btn-xs" onclick="abrirHistProf('${p.people}')">Histórico</button></td>
+    </tr>`;
+    if (info.inelegivel) return `<tr>
+      <td><div style="font-weight:600">${nomeF(p.people)}</div><div style="font-size:12px;color:var(--text2)">${p.role||''}</div></td>
+      <td>${p.projetoAtual||'—'}</td>
+      <td>${p.admissao ? fmt(p.admissao) : '—'}</td>
+      <td>${badge('yellow','Faltam '+info.mesesFaltando+'m')}</td>
+      <td colspan="5" style="color:var(--text3)">—</td>
+      <td><button class="btn btn-ghost btn-xs" onclick="abrirHistProf('${p.people}')">Histórico</button></td>
+    </tr>`;
+    const corSaldo = info.remaining===0?'red':info.remaining<=3?'yellow':'green';
+    return `<tr>
+      <td><div style="font-weight:600">${nomeF(p.people)}</div><div style="font-size:12px;color:var(--text2)">${p.role||''} · ${p.level||''}</div></td>
+      <td><span style="font-size:12px">${p.projetoAtual||'—'}</span></td>
+      <td>${fmt(p.admissao)}</td>
+      <td>${badge('green','Elegível')}</td>
+      <td style="font-size:12px">${fmt(isoDate(info.periodStart))} → ${fmt(isoDate(info.periodEnd))}</td>
+      <td style="font-weight:600">${info.total}</td>
+      <td>${info.used}</td>
+      <td>${badge(corSaldo,info.remaining+' dias')}</td>
+      <td style="font-size:12px">${fmt(isoDate(info.periodEnd))}</td>
+      <td><button class="btn btn-ghost btn-xs" onclick="abrirHistProf('${p.people}')">Histórico</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function abrirHistProf(people) {
+  const p = DB.pessoas.find(x=>x.people===people);
+  const nm = p ? nomeF(people) : people;
+  const sols = DB.solicitacoes.filter(s=>s.profPeople===people);
+  document.getElementById('pd-title').textContent = `Histórico — ${nm}`;
+  const el = document.getElementById('pd-body');
+  if (!sols.length) { el.innerHTML=emptyState('📋','Sem histórico','Nenhuma solicitação registrada.'); }
+  else {
+    el.innerHTML = `<div class="table-wrap"><table>
+      <thead><tr><th>Solicitado</th><th>Período</th><th>Dias</th><th>GP</th><th>PC</th><th>Status</th></tr></thead>
+      <tbody>${sols.sort((a,b)=>b.dataSol.localeCompare(a.dataSol)).map(s=>`<tr>
+        <td>${fmt(s.dataSol)}</td><td>${fmt(s.inicio)} → ${fmt(s.fim)}</td><td>${s.dias}</td>
+        <td>${statusAprovacao(s,'gp')}</td><td>${statusAprovacao(s,'pc')}</td>
+        <td>${statusBadge(calcStatusRecesso(s))}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+  }
+  openModal('modal-prof-detalhe');
+}
+
+// ══════════════════════════════════════════════════════════════
+// PROJETOS & GPs
+// ══════════════════════════════════════════════════════════════
+function renderProjetosGP() {
+  // Popula selects
+  const projetos = [...new Set(DB.pessoas.map(p=>p.projetoAtual).filter(Boolean))].sort();
+  const gps = DB.pessoas.filter(p=>ROLES_GP.includes(p.role) && p.ativo);
+
+  const spj = document.getElementById('pgp-projeto');
+  spj.innerHTML = '<option value="">— Selecionar —</option>' + projetos.map(p=>`<option value="${p}">${p}</option>`).join('');
+
+  const sgp = document.getElementById('pgp-gp');
+  sgp.innerHTML = '<option value="">— Selecionar GP —</option>' + gps.map(g=>`<option value="${g.people}">${nomeF(g.people)} (${g.role})</option>`).join('');
+
+  // Lista configurada
+  const listaEl = document.getElementById('proj-gp-lista');
+  const linhas = projetos.map(proj => {
+    const gp = DB.projGP[proj];
+    const gpNome = gp ? nomeF(gp) : '—';
+    return `<div class="profile-row">
+      <div style="flex:1">
+        <div class="p-name" style="font-size:13px">${proj}</div>
+        <div class="p-sub">${gpNome}</div>
+      </div>
+      <button class="btn btn-ghost btn-xs" onclick="editarProjetoGP('${proj}')">✎</button>
+    </div>`;
+  });
+  listaEl.innerHTML = linhas.join('') || '<div class="empty" style="padding:20px">Nenhum projeto encontrado.</div>';
+}
+
+function editarProjetoGP(proj) {
+  document.getElementById('pgp-projeto').value = proj;
+  const gp = DB.projGP[proj];
+  if (gp) document.getElementById('pgp-gp').value = gp;
+}
+
+function salvarProjetoGP() {
+  const proj = document.getElementById('pgp-projeto').value;
+  const gp   = document.getElementById('pgp-gp').value;
+  if (!proj) { toast('Selecione um projeto.','error'); return; }
+  DB.projGP[proj] = gp || null;
+  lsSet(LS_PROJ_GP, DB.projGP);
+  toast('GP configurado com sucesso!','success');
+  renderProjetosGP();
+}
+
+function gpDoProjeto(projetoAtual) {
+  if (!projetoAtual) return null;
+  return DB.projGP[projetoAtual] || null;
+}
+
+// ══════════════════════════════════════════════════════════════
+// CALENDÁRIO
+// ══════════════════════════════════════════════════════════════
+function renderCalendar() {
+  const y = STATE.calDate.getFullYear(), m = STATE.calDate.getMonth();
+  document.getElementById('cal-title').textContent = `${MESES[m]} ${y}`;
+  const first = new Date(y,m,1), last = new Date(y,m+1,0);
+  const nowStr = isoDate(new Date());
+  const grid = document.getElementById('cal-grid');
+  const statusMap = {'Finalizado':'finalizado','Em Andamento':'em-andamento','A Realizar':'a-realizar','Aguardando':'solicitado','Recusado':'recusado'};
+  let html = '';
+  for (let i=0;i<first.getDay();i++) html+=`<div class="cal-day inactive"></div>`;
+  for (let d=1;d<=last.getDate();d++) {
+    const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday = ds===nowStr;
+    const evs = DB.solicitacoes.filter(s=>s.inicio<=ds&&s.fim>=ds&&calcStatusRecesso(s)!=='Recusado');
+    html+=`<div class="cal-day ${isToday?'today':''}">
+      <div class="cal-dn">${d}</div>
+      ${evs.map(s=>{
+        const p=DB.pessoas.find(x=>x.people===s.profPeople);
+        const nm=p?nomeF(p.people).split(' ')[0]:s.profPeople;
+        const cls=statusMap[calcStatusRecesso(s)]||'solicitado';
+        return `<div class="cal-ev ${cls}" title="${p?nomeF(p.people):s.profPeople}">${nm}</div>`;
+      }).join('')}
+    </div>`;
+  }
+  grid.innerHTML = html;
+}
+document.getElementById('cal-prev').addEventListener('click',()=>{STATE.calDate.setMonth(STATE.calDate.getMonth()-1);renderCalendar()});
+document.getElementById('cal-next').addEventListener('click',()=>{STATE.calDate.setMonth(STATE.calDate.getMonth()+1);renderCalendar()});
+
+// ══════════════════════════════════════════════════════════════
+// REGRAS
+// ══════════════════════════════════════════════════════════════
+function loadRegras() {
+  document.getElementById('rule-meses').value  = DB.regras.meses;
+  document.getElementById('rule-dias').value   = DB.regras.dias;
+  document.getElementById('rule-add1').value   = DB.regras.add1;
+  document.getElementById('rule-add2').value   = DB.regras.add2;
+  document.getElementById('rule-antec').value  = DB.regras.antecedencia;
+  document.getElementById('rule-minimo').value = DB.regras.minimo;
+  document.getElementById('rule-aniv-janela').value = DB.regras.anivJanela;
+}
+
+function salvarRegras() {
+  DB.regras = {
+    meses:       +document.getElementById('rule-meses').value,
+    dias:        +document.getElementById('rule-dias').value,
+    add1:        +document.getElementById('rule-add1').value,
+    add2:        +document.getElementById('rule-add2').value,
+    antecedencia:+document.getElementById('rule-antec').value,
+    minimo:      +document.getElementById('rule-minimo').value,
+    anivJanela:  +document.getElementById('rule-aniv-janela').value,
+  };
+  lsSet(LS_REGRAS, DB.regras);
+  toast('Regras salvas!','success');
+}
+
+// ══════════════════════════════════════════════════════════════
+// PERSISTÊNCIA
+// ══════════════════════════════════════════════════════════════
+function salvarSolicitacoes() {
+  lsSet(LS_RECESSO, DB.solicitacoes);
+  // Sincroniza com Drive em background
+  syncDrive();
+}
+
+async function syncDrive() {
+  try {
+    await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action:'salvar', tabela:'recesso', dados: DB.solicitacoes })
+    });
+  } catch(e) { console.warn('Sync Drive falhou, dados salvos localmente.'); }
+}
+
+// ══════════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════════
+function atualizarBadges() {
+  const u = STATE.currentUser;
+  if (!u) return;
+  const pendGP = DB.solicitacoes.filter(s=>s.aprovGP==='Aguardando'&&s.gpPeople===u.people).length;
+  const pendPC = DB.solicitacoes.filter(s=>s.aprovPC==='Aguardando').length;
+  const b1=document.getElementById('badge-aprov'), b2=document.getElementById('badge-aprov-gp');
+  if (b1) { b1.textContent=pendPC; b1.style.display=pendPC?'':'none'; }
+  if (b2) { b2.textContent=pendGP; b2.style.display=pendGP?'':'none'; }
+}
+
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function toast(msg, type='success') {
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.className='toast '+type+' show';
+  setTimeout(()=>el.classList.remove('show'),3200);
+}
+
+function badge(cor, txt) { return `<span class="badge ${cor}">${txt}</span>`; }
+
+function statusBadge(s) {
+  const m={'Aguardando':'yellow','Aprovado':'green','Recusado':'red','A Realizar':'purple','Em Andamento':'blue','Finalizado':'gray','N/A':'gray'};
+  const dot={'yellow':'⏳','green':'✓','red':'✕','purple':'','blue':'','gray':''};
+  const c=m[s]||'gray';
+  return `<span class="badge ${c}"><span class="dot ${c}"></span>${s}</span>`;
+}
+
+function statCard(cor,icon,val,lbl) {
+  return `<div class="stat-card ${cor}"><div class="stat-icon">${icon}</div><div class="stat-val">${val}</div><div class="stat-lbl">${lbl}</div></div>`;
+}
+
+function emptyState(icon,h3,p) {
+  return `<div class="empty"><div class="empty-icon">${icon}</div><h3>${h3}</h3>${p?`<p>${p}</p>`:''}</div>`;
+}
+
+function nomeF(u) {
+  if (!u) return '';
+  return u.split('.').map(p=>p.charAt(0).toUpperCase()+p.slice(1)).join(' ');
+}
+
+function isoDate(d) {
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+function fmt(d) {
+  if (!d) return '—';
+  const dt = new Date(d+'T00:00:00');
+  return String(dt.getDate()).padStart(2,'0')+'/'+String(dt.getMonth()+1).padStart(2,'0')+'/'+dt.getFullYear();
+}
+
+function addYears(d,y) { const r=new Date(d); r.setFullYear(r.getFullYear()+y); return r; }
+
+function ls(k)       { try{ const v=localStorage.getItem(k); return v?JSON.parse(v):null; }catch(e){return null;} }
+function lsSet(k,v)  { try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+</script>
+</body>
+</html>
