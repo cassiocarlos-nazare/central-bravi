@@ -1694,7 +1694,8 @@ async function syncDrive() {
   try {
     await fetch(API_URL, {
       method: 'POST',
-      body: JSON.stringify({ action:'salvar', tabela:'recesso', dados: DB.solicitacoes })
+      body: JSON.stringify({ action:'salvar', tabela:'recesso', dados: DB.solicitacoes }),
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }
     });
   } catch(e) { console.warn('Sync Drive falhou, dados salvos localmente.'); }
 }
