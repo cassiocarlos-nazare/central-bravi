@@ -5,289 +5,178 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Horas · Drive — Central Bravi</title>
 <style>
-/* ── TOKENS ─────────────────────────────────────────────── */
 :root {
-  --bg:        #0f1117;
-  --bg2:       #181c27;
-  --bg3:       #1e2334;
-  --border:    #2a3049;
-  --accent:    #4f8ef7;
-  --accent2:   #7c3aed;
-  --green:     #22c55e;
-  --yellow:    #f59e0b;
-  --red:       #ef4444;
-  --text:      #e8eaf0;
-  --text2:     #8892a4;
-  --text3:     #4f5a70;
-  --radius:    8px;
-  --shadow:    0 2px 12px rgba(0,0,0,.35);
+  --bg:#0f1117; --bg2:#181c27; --bg3:#1e2334; --border:#2a3049;
+  --accent:#4f8ef7; --accent2:#7c3aed; --green:#22c55e;
+  --yellow:#f59e0b; --red:#ef4444; --text:#e8eaf0;
+  --text2:#8892a4; --text3:#4f5a70; --radius:8px;
+  --shadow:0 2px 12px rgba(0,0,0,.35);
 }
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5}
+.app{display:flex;flex-direction:column;min-height:100vh}
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+/* TOPBAR */
+.topbar{display:flex;align-items:center;gap:12px;padding:0 20px;height:52px;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.topbar-logo{font-size:13px;font-weight:700;color:var(--accent);letter-spacing:.05em}
+.topbar-title{font-size:13px;color:var(--text2)}
+.topbar-sep{color:var(--text3)}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
 
-body {
-  font-family: 'Inter', system-ui, sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  font-size: 14px;
-  line-height: 1.5;
-}
+/* TABS */
+.nav-tabs{display:flex;gap:2px;padding:0 20px;background:var(--bg2);border-bottom:1px solid var(--border)}
+.nav-tab{padding:10px 16px;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;transition:all .15s}
+.nav-tab:hover{color:var(--text)}
+.nav-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
 
-/* ── LAYOUT ──────────────────────────────────────────────── */
-.app { display: flex; flex-direction: column; min-height: 100vh; }
+/* FILTROS */
+.filters-wrap{padding:10px 20px;background:var(--bg2);border-bottom:1px solid var(--border)}
+.filters-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.filter-group{display:flex;align-items:center;gap:6px}
+.filter-label{font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+select,input[type=text]{background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:5px 10px;font-size:13px;outline:none;transition:border-color .15s}
+select:focus,input[type=text]:focus{border-color:var(--accent)}
+input[type=date]{background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:5px 8px;font-size:13px;outline:none}
+input[type=date]:focus{border-color:var(--accent)}
+::-webkit-calendar-picker-indicator{filter:invert(.7);cursor:pointer}
+.filters-sep{width:1px;height:20px;background:var(--border)}
 
-.topbar {
-  display: flex; align-items: center; gap: 12px;
-  padding: 0 20px; height: 52px;
-  background: var(--bg2); border-bottom: 1px solid var(--border);
-  position: sticky; top: 0; z-index: 100;
-}
-.topbar-logo { font-size: 13px; font-weight: 700; color: var(--accent); letter-spacing: .05em; }
-.topbar-title { font-size: 13px; color: var(--text2); }
-.topbar-sep { color: var(--text3); }
-.topbar-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+/* MAIN */
+.main{flex:1;padding:20px;max-width:1400px;margin:0 auto;width:100%}
+.section{display:none}
+.section.active{display:block}
 
-.nav-tabs {
-  display: flex; gap: 2px;
-  padding: 0 20px;
-  background: var(--bg2); border-bottom: 1px solid var(--border);
-}
-.nav-tab {
-  padding: 10px 16px; font-size: 13px; font-weight: 500;
-  color: var(--text2); cursor: pointer; border: none; background: none;
-  border-bottom: 2px solid transparent; transition: all .15s;
-}
-.nav-tab:hover { color: var(--text); }
-.nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+/* CARDS */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px}
+.card-label{font-size:11px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.card-value{font-size:26px;font-weight:700;color:var(--text);line-height:1}
+.card-sub{font-size:12px;color:var(--text2);margin-top:4px}
+.card-bar{height:4px;border-radius:2px;background:var(--bg3);margin-top:10px;overflow:hidden}
+.card-bar-fill{height:100%;border-radius:2px;background:var(--accent);transition:width .4s}
+.card-bar-fill.green{background:var(--green)}
+.card-bar-fill.yellow{background:var(--yellow)}
+.card-bar-fill.red{background:var(--red)}
 
-.main { flex: 1; padding: 20px; max-width: 1400px; margin: 0 auto; width: 100%; }
+/* CHARTS */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+@media(max-width:900px){.charts-row{grid-template-columns:1fr}}
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px}
+.panel-title{font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px}
+.chart-bars{display:flex;flex-direction:column;gap:8px}
+.bar-row{display:flex;align-items:center;gap:8px}
+.bar-label{font-size:12px;color:var(--text2);width:80px;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{flex:1;height:18px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px;background:var(--accent);transition:width .5s;min-width:2px}
+.bar-fill.green{background:var(--green)}
+.bar-fill.yellow{background:var(--yellow)}
+.bar-fill.accent2{background:var(--accent2)}
+.bar-value{font-size:12px;color:var(--text2);width:60px;flex-shrink:0}
 
-/* ── FILTROS ─────────────────────────────────────────────── */
-.filters-bar {
-  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
-  background: var(--bg2); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 10px 14px; margin-bottom: 16px;
-}
-.filter-group { display: flex; align-items: center; gap: 6px; }
-.filter-label { font-size: 11px; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
-select, input[type=text] {
-  background: var(--bg3); border: 1px solid var(--border);
-  color: var(--text); border-radius: 6px; padding: 5px 10px;
-  font-size: 13px; outline: none; transition: border-color .15s;
-}
-select:focus, input[type=text]:focus { border-color: var(--accent); }
-.filters-sep { width: 1px; height: 20px; background: var(--border); }
+/* TABELA */
+.conf-controls{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.btn{padding:6px 14px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--bg3);color:var(--text2);transition:all .15s}
+.btn:hover{background:var(--bg2);color:var(--text)}
+.btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-icon{padding:6px 10px}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-primary:hover{opacity:.85}
+.btn-sm{padding:4px 10px;font-size:12px}
+.periodo-nav{display:flex;align-items:center;gap:6px}
+.periodo-label{font-size:13px;color:var(--text);font-weight:600;min-width:180px;text-align:center}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{padding:8px 10px;text-align:left;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);background:var(--bg2);position:sticky;top:0;z-index:1}
+td{padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg3)}
 
-/* ── CARDS ───────────────────────────────────────────────── */
-.cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 12px; margin-bottom: 20px;
-}
-.card {
-  background: var(--bg2); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 16px 18px;
-}
-.card-label { font-size: 11px; color: var(--text2); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
-.card-value { font-size: 26px; font-weight: 700; color: var(--text); line-height: 1; }
-.card-sub { font-size: 12px; color: var(--text2); margin-top: 4px; }
-.card-bar { height: 4px; border-radius: 2px; background: var(--bg3); margin-top: 10px; overflow: hidden; }
-.card-bar-fill { height: 100%; border-radius: 2px; background: var(--accent); transition: width .4s; }
-.card-bar-fill.green  { background: var(--green); }
-.card-bar-fill.yellow { background: var(--yellow); }
-.card-bar-fill.red    { background: var(--red); }
+/* CHIPS */
+.chip{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.chip-green{background:rgba(34,197,94,.15);color:var(--green)}
+.chip-yellow{background:rgba(245,158,11,.15);color:var(--yellow)}
+.chip-red{background:rgba(239,68,68,.15);color:var(--red)}
+.chip-blue{background:rgba(79,142,247,.15);color:var(--accent)}
+.chip-gray{background:rgba(255,255,255,.07);color:var(--text2)}
+.chip-purple{background:rgba(124,58,237,.15);color:var(--accent2)}
 
-/* ── CHARTS ROW ──────────────────────────────────────────── */
-.charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
-@media (max-width: 900px) { .charts-row { grid-template-columns: 1fr; } }
+/* HORAS */
+.horas-cell{font-weight:600}
+.horas-ok{color:var(--green)}
+.horas-warn{color:var(--yellow)}
+.horas-crit{color:var(--red)}
+.horas-zero{color:var(--text3)}
 
-.panel {
-  background: var(--bg2); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 16px 18px;
-}
-.panel-title {
-  font-size: 12px; font-weight: 700; color: var(--text2);
-  text-transform: uppercase; letter-spacing: .06em; margin-bottom: 14px;
-}
+/* FERIADO */
+.col-feriado{background:rgba(124,58,237,.08) !important}
+.th-feriado{background:rgba(124,58,237,.15) !important;color:var(--accent2) !important}
+.feriado-tag{font-size:9px;color:var(--accent2);font-weight:700;display:block;letter-spacing:.04em}
 
-/* Barras de gráfico customizadas */
-.chart-bars { display: flex; flex-direction: column; gap: 8px; }
-.bar-row { display: flex; align-items: center; gap: 8px; }
-.bar-label { font-size: 12px; color: var(--text2); width: 80px; text-align: right; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.bar-track { flex: 1; height: 18px; background: var(--bg3); border-radius: 3px; overflow: hidden; position: relative; }
-.bar-fill  { height: 100%; border-radius: 3px; background: var(--accent); transition: width .5s; min-width: 2px; }
-.bar-fill.green  { background: var(--green); }
-.bar-fill.yellow { background: var(--yellow); }
-.bar-fill.accent2{ background: var(--accent2); }
-.bar-value { font-size: 12px; color: var(--text2); width: 48px; flex-shrink: 0; }
+/* PREVISTO */
+.prev-row{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);margin-top:2px}
+.prev-diff-pos{color:var(--green);font-weight:600}
+.prev-diff-neg{color:var(--red);font-weight:600}
+.prev-diff-ok{color:var(--text3);font-weight:600}
 
-/* ── TABELA CONFERÊNCIA ──────────────────────────────────── */
-.conf-controls {
-  display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;
-}
-.btn {
-  padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500;
-  cursor: pointer; border: 1px solid var(--border); background: var(--bg3);
-  color: var(--text2); transition: all .15s;
-}
-.btn:hover { background: var(--bg2); color: var(--text); }
-.btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-.btn-icon { padding: 6px 10px; }
-.btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-.btn-primary:hover { opacity: .85; }
-.btn-sm { padding: 4px 10px; font-size: 12px; }
+/* DRILL */
+.drill{display:none;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);margin:4px 0 8px 0;padding:16px}
+.drill.open{display:block}
+.drill-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+@media(max-width:700px){.drill-grid{grid-template-columns:1fr}}
+.drill-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px}
 
-.periodo-nav { display: flex; align-items: center; gap: 6px; }
-.periodo-label { font-size: 13px; color: var(--text); font-weight: 600; min-width: 180px; text-align: center; }
+/* RANKING */
+.rank-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border)}
+.rank-row:last-child{border-bottom:none}
+.rank-num{font-size:12px;color:var(--text3);width:20px;text-align:right}
+.rank-bar{height:4px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.rank-bar-fill{height:100%;background:var(--accent);border-radius:2px}
 
-.table-wrap { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-th {
-  padding: 8px 10px; text-align: left;
-  font-size: 11px; font-weight: 600; color: var(--text2);
-  text-transform: uppercase; letter-spacing: .05em;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg2); position: sticky; top: 0; z-index: 1;
-}
-td { padding: 7px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
-tr:last-child td { border-bottom: none; }
-tr:hover td { background: var(--bg3); }
+/* MENSAL TABLE */
+.mensal-row{cursor:pointer}
+.mensal-row td{transition:background .1s}
+.mensal-detail{display:none;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);margin:4px 0 8px 0;padding:16px}
+.mensal-detail.open{display:block}
+.detail-tabs{display:flex;gap:4px;margin-bottom:12px}
+.detail-tab{padding:4px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--bg2);color:var(--text2);transition:all .15s}
+.detail-tab.active{background:var(--accent);border-color:var(--accent);color:#fff}
 
-.chip {
-  display: inline-block; padding: 2px 8px; border-radius: 20px;
-  font-size: 11px; font-weight: 600;
-}
-.chip-green  { background: rgba(34,197,94,.15);  color: var(--green); }
-.chip-yellow { background: rgba(245,158,11,.15); color: var(--yellow); }
-.chip-red    { background: rgba(239,68,68,.15);  color: var(--red); }
-.chip-blue   { background: rgba(79,142,247,.15); color: var(--accent); }
-.chip-gray   { background: rgba(255,255,255,.07); color: var(--text2); }
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:24px;width:560px;max-width:95vw;max-height:85vh;overflow-y:auto}
+.modal-title{font-size:15px;font-weight:700;margin-bottom:16px}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.equipe-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;margin-bottom:4px;background:var(--bg3);border:1px solid var(--border)}
+.equipe-nome{flex:1;font-size:13px;font-weight:600}
+.equipe-membros{font-size:12px;color:var(--text2)}
+input[type=text].input-full{width:100%;padding:7px 10px;margin-bottom:8px}
+.member-chips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
+.member-chip{display:flex;align-items:center;gap:4px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-size:12px}
+.member-chip button{background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;line-height:1}
+.member-chip button:hover{color:var(--red)}
 
-.horas-cell { font-weight: 600; }
-.horas-ok   { color: var(--green); }
-.horas-warn { color: var(--yellow); }
-.horas-crit { color: var(--red); }
-.horas-zero { color: var(--text3); }
+/* PROJ CONFIG */
+.proj-config-row{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;background:var(--bg2);border:1px solid var(--border);margin-bottom:4px;font-size:12px}
+.proj-config-nome{flex:1;color:var(--text2)}
+.proj-toggle{width:32px;height:18px;border-radius:9px;background:var(--border);border:none;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
+.proj-toggle.on{background:var(--accent)}
+.proj-toggle::after{content:'';position:absolute;top:3px;left:3px;width:12px;height:12px;border-radius:50%;background:#fff;transition:transform .2s}
+.proj-toggle.on::after{transform:translateX(14px)}
 
-/* ── FERIADO ──────────────────────────────────────────────── */
-.col-feriado { background: rgba(124,58,237,.08) !important; }
-.th-feriado  { background: rgba(124,58,237,.15) !important; color: var(--accent2) !important; }
-.feriado-tag { font-size: 9px; color: var(--accent2); font-weight: 700; display: block; letter-spacing:.04em; }
+/* LOADING / EMPTY */
+.loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:48px;color:var(--text2);font-size:14px}
+.spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:48px;color:var(--text2)}
 
-/* ── PREVISTO vs LANÇADO ─────────────────────────────────── */
-.prev-row {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 11px; color: var(--text2); margin-top: 2px;
-}
-.prev-diff-pos { color: var(--green); font-weight: 600; }
-.prev-diff-neg { color: var(--red);   font-weight: 600; }
-.prev-diff-ok  { color: var(--text3); font-weight: 600; }
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 16px;font-size:13px;color:var(--text);box-shadow:var(--shadow);opacity:0;transition:opacity .3s;pointer-events:none;z-index:999}
+.toast.show{opacity:1}
 
-/* ── INPUT DATE ──────────────────────────────────────────── */
-input[type=date] {
-  background: var(--bg3); border: 1px solid var(--border);
-  color: var(--text); border-radius: 6px; padding: 5px 8px;
-  font-size: 13px; outline: none;
-}
-input[type=date]:focus { border-color: var(--accent); }
-::-webkit-calendar-picker-indicator { filter: invert(0.7); cursor: pointer; }
-
-/* ── DRILL DOWN ──────────────────────────────────────────── */
-.drill {
-  display: none; background: var(--bg3); border: 1px solid var(--border);
-  border-radius: var(--radius); margin: 4px 0 8px 0; padding: 16px;
-}
-.drill.open { display: block; }
-.drill-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
-@media (max-width: 700px) { .drill-grid { grid-template-columns: 1fr; } }
-.drill-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
-
-/* ── RANKING TABLE ───────────────────────────────────────── */
-.rank-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--border); }
-.rank-row:last-child { border-bottom: none; }
-.rank-num  { font-size: 12px; color: var(--text3); width: 20px; text-align: right; }
-.rank-name { flex: 1; font-size: 13px; color: var(--text); }
-.rank-role { font-size: 11px; color: var(--text2); }
-.rank-hrs  { font-size: 13px; font-weight: 600; color: var(--accent); width: 60px; text-align: right; }
-.rank-bar-wrap { width: 80px; }
-.rank-bar  { height: 4px; background: var(--bg3); border-radius: 2px; overflow: hidden; }
-.rank-bar-fill { height: 100%; background: var(--accent); border-radius: 2px; }
-
-/* ── MODAL ───────────────────────────────────────────────── */
-.modal-overlay {
-  display: none; position: fixed; inset: 0;
-  background: rgba(0,0,0,.6); z-index: 500; align-items: center; justify-content: center;
-}
-.modal-overlay.open { display: flex; }
-.modal {
-  background: var(--bg2); border: 1px solid var(--border);
-  border-radius: 10px; padding: 24px; width: 520px; max-width: 95vw;
-  max-height: 85vh; overflow-y: auto;
-}
-.modal-title { font-size: 15px; font-weight: 700; margin-bottom: 16px; }
-.modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
-
-.equipe-item {
-  display: flex; align-items: center; gap: 8px;
-  padding: 8px 10px; border-radius: 6px; margin-bottom: 4px;
-  background: var(--bg3); border: 1px solid var(--border);
-}
-.equipe-nome { flex: 1; font-size: 13px; font-weight: 600; }
-.equipe-membros { font-size: 12px; color: var(--text2); }
-.equipe-actions { display: flex; gap: 4px; }
-
-input[type=text].input-full { width: 100%; padding: 7px 10px; margin-bottom: 8px; }
-.member-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
-.member-chip {
-  display: flex; align-items: center; gap: 4px;
-  background: var(--bg3); border: 1px solid var(--border);
-  border-radius: 20px; padding: 3px 10px; font-size: 12px;
-}
-.member-chip button { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 14px; line-height: 1; }
-.member-chip button:hover { color: var(--red); }
-
-/* ── LOADING / EMPTY ─────────────────────────────────────── */
-.loading {
-  display: flex; align-items: center; justify-content: center;
-  gap: 10px; padding: 48px; color: var(--text2); font-size: 14px;
-}
-.spinner {
-  width: 20px; height: 20px; border: 2px solid var(--border);
-  border-top-color: var(--accent); border-radius: 50%;
-  animation: spin .7s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-.empty { text-align: center; padding: 48px; color: var(--text2); }
-.empty-icon { font-size: 32px; margin-bottom: 8px; }
-
-.badge {
-  display: inline-flex; align-items: center; justify-content: center;
-  background: var(--accent); color: #fff; border-radius: 20px;
-  font-size: 10px; font-weight: 700; padding: 1px 6px; margin-left: 4px;
-}
-
-/* ── TOAST ───────────────────────────────────────────────── */
-.toast {
-  position: fixed; bottom: 20px; right: 20px;
-  background: var(--bg2); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 10px 16px;
-  font-size: 13px; color: var(--text); box-shadow: var(--shadow);
-  opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 999;
-}
-.toast.show { opacity: 1; }
-
-/* ── SEÇÃO VISÍVEL ───────────────────────────────────────── */
-.section { display: none; }
-.section.active { display: block; }
-
-.section-header {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 16px; flex-wrap: wrap; gap: 8px;
-}
-.section-title { font-size: 16px; font-weight: 700; }
-.section-sub   { font-size: 13px; color: var(--text2); margin-top: 2px; }
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px}
+.section-title{font-size:16px;font-weight:700}
+.section-sub{font-size:13px;color:var(--text2);margin-top:2px}
 </style>
 </head>
 <body>
@@ -299,58 +188,48 @@ input[type=text].input-full { width: 100%; padding: 7px 10px; margin-bottom: 8px
   <span class="topbar-sep">/</span>
   <span class="topbar-title">Controle de Horas · Drive</span>
   <div class="topbar-right">
-    <button class="btn btn-sm" id="btnEquipes" onclick="abrirModalEquipes()">⚙ Equipes</button>
+    <button class="btn btn-sm" onclick="abrirModalFeriados()">📅 Feriados</button>
+    <button class="btn btn-sm" onclick="abrirModalEquipes()">⚙ Equipes</button>
     <button class="btn btn-sm btn-primary" id="btnSync" onclick="carregarTudo()">↻ Sincronizar</button>
   </div>
 </div>
 
-<!-- ABAS -->
+<!-- TABS -->
 <div class="nav-tabs">
   <button class="nav-tab active" onclick="trocarAba('dashboard')">Dashboard</button>
+  <button class="nav-tab" onclick="trocarAba('mensal')">Conferência Mensal</button>
   <button class="nav-tab" onclick="trocarAba('semanal')">Conferência Semanal</button>
   <button class="nav-tab" onclick="trocarAba('quinzenal')">Conferência Quinzenal</button>
 </div>
 
-<!-- FILTROS GLOBAIS -->
-<div style="padding: 10px 20px; background: var(--bg2); border-bottom: 1px solid var(--border);">
-  <div class="filters-bar" style="margin-bottom:0">
+<!-- FILTROS -->
+<div class="filters-wrap">
+  <div class="filters-bar">
     <div class="filter-group">
       <span class="filter-label">Mês</span>
       <select id="filtroMes" onchange="onFiltroMudou()"></select>
-      <select id="filtroAno" onchange="onFiltroMudou()">
-        <option value="2026">2026</option>
-      </select>
+      <select id="filtroAno" onchange="onFiltroMudou()"><option value="2026">2026</option></select>
     </div>
     <div class="filters-sep"></div>
     <div class="filter-group">
       <span class="filter-label">Role</span>
-      <select id="filtroRole" onchange="aplicarFiltros()">
-        <option value="">Todos</option>
-      </select>
+      <select id="filtroRole" onchange="aplicarFiltros()"><option value="">Todos</option></select>
     </div>
     <div class="filter-group">
       <span class="filter-label">Level</span>
-      <select id="filtroLevel" onchange="aplicarFiltros()">
-        <option value="">Todos</option>
-      </select>
+      <select id="filtroLevel" onchange="aplicarFiltros()"><option value="">Todos</option></select>
     </div>
     <div class="filter-group">
       <span class="filter-label">Equipe</span>
-      <select id="filtroEquipe" onchange="aplicarFiltros()">
-        <option value="">Todas</option>
-      </select>
+      <select id="filtroEquipe" onchange="aplicarFiltros()"><option value="">Todas</option></select>
     </div>
     <div class="filter-group">
       <span class="filter-label">Pessoa</span>
-      <select id="filtroPessoa" onchange="aplicarFiltros()">
-        <option value="">Todas</option>
-      </select>
+      <select id="filtroPessoa" onchange="aplicarFiltros()"><option value="">Todas</option></select>
     </div>
     <div class="filter-group">
       <span class="filter-label">Projeto</span>
-      <select id="filtroProjeto" onchange="aplicarFiltros()">
-        <option value="">Todos</option>
-      </select>
+      <select id="filtroProjeto" onchange="aplicarFiltros()"><option value="">Todos</option></select>
     </div>
     <div class="filter-group">
       <span class="filter-label">Status</span>
@@ -369,51 +248,46 @@ input[type=text].input-full { width: 100%; padding: 7px 10px; margin-bottom: 8px
       <span class="filter-label">Até</span>
       <input type="date" id="filtroDataFim" onchange="aplicarFiltros()">
     </div>
-    <button class="btn btn-sm" onclick="limparDatas()" title="Limpar filtro de datas">✕ Datas</button>
-    <div class="filters-sep"></div>
-    <button class="btn btn-sm" onclick="abrirModalFeriados()" title="Gerenciar feriados">📅 Feriados</button>
+    <button class="btn btn-sm" onclick="limparDatas()">✕ Datas</button>
   </div>
 </div>
 
-<!-- CONTEÚDO PRINCIPAL -->
+<!-- CONTEÚDO -->
 <div class="main">
 
-  <!-- ══ DASHBOARD ══════════════════════════════════════════ -->
+  <!-- DASHBOARD -->
   <div id="sec-dashboard" class="section active">
     <div class="section-header">
       <div>
-        <div class="section-title" id="dashTitle">Dashboard — Junho 2026</div>
+        <div class="section-title" id="dashTitle">Dashboard</div>
         <div class="section-sub" id="dashSub">Carregando...</div>
       </div>
     </div>
-
     <div id="dashLoading" class="loading"><div class="spinner"></div> Carregando dados...</div>
-
     <div id="dashContent" style="display:none">
-      <!-- CARDS -->
       <div class="cards-grid" id="cardsGrid"></div>
-
-      <!-- GRÁFICOS -->
       <div class="charts-row">
-        <div class="panel">
-          <div class="panel-title">Horas por Semana</div>
-          <div class="chart-bars" id="chartSemanas"></div>
-        </div>
-        <div class="panel">
-          <div class="panel-title">Horas por Projeto (Top 10)</div>
-          <div class="chart-bars" id="chartProjetos"></div>
-        </div>
+        <div class="panel"><div class="panel-title">Horas por Semana</div><div class="chart-bars" id="chartSemanas"></div></div>
+        <div class="panel"><div class="panel-title">Horas por Projeto (Top 10)</div><div class="chart-bars" id="chartProjetos"></div></div>
       </div>
-
-      <!-- RANKING -->
-      <div class="panel">
-        <div class="panel-title">Ranking de Profissionais</div>
-        <div id="rankingLista"></div>
-      </div>
+      <div class="panel"><div class="panel-title">Ranking de Profissionais</div><div id="rankingLista"></div></div>
     </div>
   </div>
 
-  <!-- ══ SEMANAL ════════════════════════════════════════════ -->
+  <!-- MENSAL -->
+  <div id="sec-mensal" class="section">
+    <div class="section-header">
+      <div>
+        <div class="section-title" id="mensalTitle">Conferência Mensal</div>
+        <div class="section-sub" id="mensalSub"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div id="tabMensalWrap"><div class="loading"><div class="spinner"></div> Carregando...</div></div>
+    </div>
+  </div>
+
+  <!-- SEMANAL -->
   <div id="sec-semanal" class="section">
     <div class="conf-controls">
       <div class="periodo-nav">
@@ -425,13 +299,11 @@ input[type=text].input-full { width: 100%; padding: 7px 10px; margin-bottom: 8px
       <button class="btn" onclick="irSemanaAnterior()">Semana anterior</button>
     </div>
     <div class="panel">
-      <div id="tabSemanalWrap">
-        <div class="loading"><div class="spinner"></div> Carregando...</div>
-      </div>
+      <div id="tabSemanalWrap"><div class="loading"><div class="spinner"></div> Carregando...</div></div>
     </div>
   </div>
 
-  <!-- ══ QUINZENAL ══════════════════════════════════════════ -->
+  <!-- QUINZENAL -->
   <div id="sec-quinzenal" class="section">
     <div class="conf-controls">
       <div class="periodo-nav">
@@ -442,9 +314,7 @@ input[type=text].input-full { width: 100%; padding: 7px 10px; margin-bottom: 8px
       <button class="btn" onclick="irQuinzenaAtual()">Quinzena atual</button>
     </div>
     <div class="panel">
-      <div id="tabQuinzenalWrap">
-        <div class="loading"><div class="spinner"></div> Carregando...</div>
-      </div>
+      <div id="tabQuinzenalWrap"><div class="loading"><div class="spinner"></div> Carregando...</div></div>
     </div>
   </div>
 
@@ -471,12 +341,27 @@ input[type=text].input-full { width: 100%; padding: 7px 10px; margin-bottom: 8px
   </div>
 </div>
 
+<!-- MODAL EDITAR EQUIPE (projetos por pessoa) -->
+<div class="modal-overlay" id="modalEditarEquipe">
+  <div class="modal" style="width:640px">
+    <div class="modal-title" id="editEquipeTitulo">Configurar Equipe</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:12px">
+      Defina quais projetos contam para cada membro nesta equipe. "Todos" inclui todos os lançamentos do profissional.
+    </div>
+    <div id="editEquipeConteudo"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="fecharModalEditarEquipe()">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarConfigEquipe()">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL FERIADOS -->
 <div class="modal-overlay" id="modalFeriados">
   <div class="modal">
     <div class="modal-title">📅 Feriados e Dias Não Úteis</div>
     <div style="font-size:12px;color:var(--text2);margin-bottom:12px">
-      Datas marcadas como feriado aparecem com destaque roxo na tabela e são excluídas do cálculo de horas previstas.
+      Datas marcadas ficam destacadas em roxo na tabela e são excluídas do cálculo de horas previstas.
     </div>
     <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
       <input type="date" id="novoFeriadoData" style="flex:1">
@@ -484,824 +369,737 @@ input[type=text].input-full { width: 100%; padding: 7px 10px; margin-bottom: 8px
       <button class="btn btn-primary btn-sm" onclick="adicionarFeriado()">+ Adicionar</button>
     </div>
     <div id="feriadosLista" style="max-height:320px;overflow-y:auto"></div>
-    <div class="modal-footer">
-      <button class="btn" onclick="fecharModalFeriados()">Fechar</button>
-    </div>
+    <div class="modal-footer"><button class="btn" onclick="fecharModalFeriados()">Fechar</button></div>
   </div>
 </div>
 
-<!-- TOAST -->
 <div class="toast" id="toast"></div>
 
 <script>
-// ══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 // CONFIG
-// ══════════════════════════════════════════════════════════════
-const API_URL = 'https://script.google.com/macros/s/AKfycbwflnR51V4sh7cc99AgHD9cJkfgE6BK38Xkcjaket0rfGy0HArMnTOHpQbGFhuwL6HD/exec';
-const LS_HORAS    = 'bravi_horas_drive';
-const LS_PESSOAS  = 'bravi_pessoas_drive';
-const LS_EQUIPES  = 'bravi_equipes_drive';
-const LS_FERIADOS = 'bravi_feriados_drive';
+// ══════════════════════════════════════════════════════
+const API_URL    = 'https://script.google.com/macros/s/AKfycbwflnR51V4sh7cc99AgHD9cJkfgE6BK38Xkcjaket0rfGy0HArMnTOHpQbGFhuwL6HD/exec';
+const LS_HORAS   = 'bravi_horas_drive';
+const LS_PESSOAS = 'bravi_pessoas_drive';
+const LS_EQUIPES = 'bravi_equipes_drive';
+const LS_FERIADOS= 'bravi_feriados_drive';
 
 const FERIADOS_BASE = ['2026-01-01','2026-02-16','2026-02-17','2026-04-03','2026-04-21',
   '2026-05-01','2026-06-04','2026-09-07','2026-10-12','2026-11-02','2026-11-15','2026-12-25'];
-
 const FERIADOS_NOMES_BASE = {
   '2026-01-01':'Confraternização Universal','2026-02-16':'Carnaval','2026-02-17':'Carnaval',
   '2026-04-03':'Sexta-feira Santa','2026-04-21':'Tiradentes','2026-05-01':'Dia do Trabalho',
   '2026-06-04':'Corpus Christi','2026-09-07':'Independência','2026-10-12':'N.Sra. Aparecida',
   '2026-11-02':'Finados','2026-11-15':'Proclamação da República','2026-12-25':'Natal'
 };
-
-const MESES_NOMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
   'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
-// ══════════════════════════════════════════════════════════════
-// ESTADO GLOBAL
-// ══════════════════════════════════════════════════════════════
-let DB = {
-  horas:    [],
-  pessoas:  [],
-  equipes:  [],
-  feriados: [], // [{data, nome}]
-  mesAtual: new Date().getMonth() + 1,
-  anoAtual: new Date().getFullYear(),
-};
-let horasFiltradas = [];
-let pessoasFiltradas = [];
-let offsetSemana = 0;
-let offsetQuinzena = 0;
-let abaAtiva = 'dashboard';
+// ══════════════════════════════════════════════════════
+// ESTADO
+// ══════════════════════════════════════════════════════
+let DB = { horas:[], pessoas:[], equipes:[], feriados:[],
+  mesAtual: new Date().getMonth()+1, anoAtual: new Date().getFullYear() };
+let horasFiltradas = [], pessoasFiltradas = [];
+let offsetSemana = 0, offsetQuinzena = 0, abaAtiva = 'dashboard';
+let equipeEditandoIdx = null, equipeEditConfig = {};
 
-// ══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 // INIT
-// ══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
   preencherFiltroMes();
   DB.equipes  = carregarEquipes();
-  DB.feriados = carregarFeriados(); // {data: 'YYYY-MM-DD', nome: '...'}
+  DB.feriados = carregarFeriados();
   carregarTudo();
 });
 
 function preencherFiltroMes() {
   const sel = document.getElementById('filtroMes');
-  sel.innerHTML = '';
-  MESES_NOMES.forEach((nome, i) => {
-    const opt = document.createElement('option');
-    opt.value = i + 1;
-    opt.textContent = nome;
-    if (i + 1 === DB.mesAtual) opt.selected = true;
-    sel.appendChild(opt);
+  MESES.forEach((n,i) => {
+    const o = document.createElement('option');
+    o.value = i+1; o.textContent = n;
+    if (i+1 === DB.mesAtual) o.selected = true;
+    sel.appendChild(o);
   });
 }
 
-// ══════════════════════════════════════════════════════════════
-// CARGA DE DADOS
-// ══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
+// CARGA
+// ══════════════════════════════════════════════════════
 async function carregarTudo() {
   const btn = document.getElementById('btnSync');
-  btn.textContent = '↻ Sincronizando...';
-  btn.disabled = true;
-
+  btn.textContent = '↻ Sincronizando...'; btn.disabled = true;
   const mes = parseInt(document.getElementById('filtroMes').value);
   const ano = parseInt(document.getElementById('filtroAno').value);
   DB.mesAtual = mes; DB.anoAtual = ano;
-
   try {
-    // Carrega em paralelo
-    const [resHoras, resPessoas] = await Promise.all([
-      fetch(`${API_URL}?action=horas-drive&mes=${mes}&ano=${ano}&modo=mes`).then(r => r.json()),
-      fetch(`${API_URL}?action=pessoas-drive&ano=${ano}`).then(r => r.json())
+    const [rH, rP] = await Promise.all([
+      fetch(`${API_URL}?action=horas-drive&mes=${mes}&ano=${ano}&modo=mes`).then(r=>r.json()),
+      fetch(`${API_URL}?action=pessoas-drive&ano=${ano}`).then(r=>r.json())
     ]);
-
-    if (resHoras.ok)   { DB.horas   = resHoras.dados   || []; salvarLS(LS_HORAS,   DB.horas); }
-    else { DB.horas = carregarLS(LS_HORAS) || []; }
-
-    if (resPessoas.ok) { DB.pessoas = resPessoas.dados || []; salvarLS(LS_PESSOAS, DB.pessoas); }
-    else { DB.pessoas = carregarLS(LS_PESSOAS) || []; }
-
-    popularFiltros();
-    aplicarFiltros();
+    if (rH.ok) { DB.horas   = rH.dados||[]; salvarLS(LS_HORAS,   DB.horas); }
+    else        DB.horas   = carregarLS(LS_HORAS)||[];
+    if (rP.ok) { DB.pessoas = rP.dados||[]; salvarLS(LS_PESSOAS, DB.pessoas); }
+    else        DB.pessoas = carregarLS(LS_PESSOAS)||[];
+    popularFiltros(); aplicarFiltros();
     toast(`✓ ${DB.horas.length} lançamentos carregados`);
   } catch(e) {
-    // Fallback para cache
-    DB.horas   = carregarLS(LS_HORAS)   || [];
-    DB.pessoas = carregarLS(LS_PESSOAS) || [];
-    popularFiltros();
-    aplicarFiltros();
-    toast('⚠ Usando cache local', 'warn');
-  } finally {
-    btn.textContent = '↻ Sincronizar';
-    btn.disabled = false;
-  }
+    DB.horas   = carregarLS(LS_HORAS)||[];
+    DB.pessoas = carregarLS(LS_PESSOAS)||[];
+    popularFiltros(); aplicarFiltros();
+    toast('⚠ Usando cache local','warn');
+  } finally { btn.textContent='↻ Sincronizar'; btn.disabled=false; }
 }
+function onFiltroMudou() { carregarTudo(); }
 
-function onFiltroMudou() {
-  carregarTudo();
-}
-
-// ══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 // FILTROS
-// ══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 function popularFiltros() {
-  // Roles
-  popularSelect('filtroRole', [...new Set(DB.pessoas.map(p => p.role).filter(Boolean))].sort());
-  // Levels
-  popularSelect('filtroLevel', [...new Set(DB.pessoas.map(p => p.level).filter(Boolean))].sort());
-  // Projetos
-  popularSelect('filtroProjeto', [...new Set(DB.horas.map(h => h.projeto).filter(Boolean))].sort());
-  // Pessoas
-  const selPessoa = document.getElementById('filtroPessoa');
-  const valPessoa = selPessoa.value;
-  selPessoa.innerHTML = '<option value="">Todas</option>';
-  DB.pessoas.filter(p => p.ativo).sort((a,b) => a.people.localeCompare(b.people)).forEach(p => {
-    const opt = document.createElement('option');
-    opt.value = p.people;
-    opt.textContent = nomeFormatado(p.people);
-    if (p.people === valPessoa) opt.selected = true;
-    selPessoa.appendChild(opt);
+  popularSelect('filtroRole',  [...new Set(DB.pessoas.map(p=>p.role).filter(Boolean))].sort());
+  popularSelect('filtroLevel', [...new Set(DB.pessoas.map(p=>p.level).filter(Boolean))].sort());
+  popularSelect('filtroProjeto',[...new Set(DB.horas.map(h=>h.projeto).filter(Boolean))].sort());
+  const sp = document.getElementById('filtroPessoa');
+  const vp = sp.value; sp.innerHTML='<option value="">Todas</option>';
+  DB.pessoas.filter(p=>p.ativo).sort((a,b)=>a.people.localeCompare(b.people)).forEach(p=>{
+    const o=document.createElement('option'); o.value=p.people;
+    o.textContent=nomeF(p.people); if(p.people===vp) o.selected=true; sp.appendChild(o);
   });
-  // Equipes
-  const selEq = document.getElementById('filtroEquipe');
-  selEq.innerHTML = '<option value="">Todas</option>';
-  DB.equipes.forEach(eq => {
-    const opt = document.createElement('option');
-    opt.value = eq.id;
-    opt.textContent = eq.nome;
-    selEq.appendChild(opt);
-  });
+  const se=document.getElementById('filtroEquipe');
+  se.innerHTML='<option value="">Todas</option>';
+  DB.equipes.forEach(eq=>{ const o=document.createElement('option'); o.value=eq.id; o.textContent=eq.nome; se.appendChild(o); });
 }
 
 function popularSelect(id, items) {
-  const sel = document.getElementById(id);
-  const val = sel.value;
-  sel.innerHTML = '<option value="">Todos</option>';
-  items.forEach(item => {
-    const opt = document.createElement('option');
-    opt.value = item; opt.textContent = item;
-    if (item === val) opt.selected = true;
-    sel.appendChild(opt);
-  });
+  const sel=document.getElementById(id); const val=sel.value;
+  sel.innerHTML='<option value="">Todos</option>';
+  items.forEach(item=>{ const o=document.createElement('option'); o.value=item; o.textContent=item; if(item===val) o.selected=true; sel.appendChild(o); });
 }
 
 function aplicarFiltros() {
-  const role    = document.getElementById('filtroRole').value;
-  const level   = document.getElementById('filtroLevel').value;
-  const equipe  = document.getElementById('filtroEquipe').value;
-  const pessoa  = document.getElementById('filtroPessoa').value;
-  const proj    = document.getElementById('filtroProjeto').value;
-  const ativo   = document.getElementById('filtroAtivo').value;
-  const dIni    = document.getElementById('filtroDataIni').value; // YYYY-MM-DD
-  const dFim    = document.getElementById('filtroDataFim').value;
+  const role   = document.getElementById('filtroRole').value;
+  const level  = document.getElementById('filtroLevel').value;
+  const equipe = document.getElementById('filtroEquipe').value;
+  const pessoa = document.getElementById('filtroPessoa').value;
+  const proj   = document.getElementById('filtroProjeto').value;
+  const ativo  = document.getElementById('filtroAtivo').value;
+  const dIni   = document.getElementById('filtroDataIni').value;
+  const dFim   = document.getElementById('filtroDataFim').value;
 
-  // Filtra pessoas
   let pessoas = DB.pessoas;
-  if (role)   pessoas = pessoas.filter(p => p.role  === role);
-  if (level)  pessoas = pessoas.filter(p => p.level === level);
-  if (ativo !== '') pessoas = pessoas.filter(p => String(p.ativo ? '1' : '0') === ativo);
-  if (equipe) {
-    const eq = DB.equipes.find(e => e.id === equipe);
-    if (eq) pessoas = pessoas.filter(p => eq.membros.includes(p.people));
-  }
-  if (pessoa) pessoas = pessoas.filter(p => p.people === pessoa);
+  if (role)   pessoas = pessoas.filter(p=>p.role===role);
+  if (level)  pessoas = pessoas.filter(p=>p.level===level);
+  if (ativo!=='') pessoas = pessoas.filter(p=>String(p.ativo?'1':'0')===ativo);
+  if (equipe) { const eq=DB.equipes.find(e=>e.id===equipe); if(eq) pessoas=pessoas.filter(p=>eq.membros.includes(p.people)); }
+  if (pessoa) pessoas = pessoas.filter(p=>p.people===pessoa);
   pessoasFiltradas = pessoas;
 
-  // Filtra horas
-  const userSet = new Set(pessoas.map(p => p.people));
-  let horas = DB.horas.filter(h => userSet.has(h.user));
-  if (proj)  horas = horas.filter(h => h.projeto === proj);
-  if (dIni)  horas = horas.filter(h => h.data >= dIni);
-  if (dFim)  horas = horas.filter(h => h.data <= dFim);
-  horasFiltradas = horas;
+  const equipeAtiva = equipe ? DB.equipes.find(e=>e.id===equipe) : null;
+  const userSet = new Set(pessoas.map(p=>p.people));
+  let horas = DB.horas.filter(h=>userSet.has(h.user));
+  if (proj)  horas = horas.filter(h=>h.projeto===proj);
+  if (dIni)  horas = horas.filter(h=>h.data>=dIni);
+  if (dFim)  horas = horas.filter(h=>h.data<=dFim);
 
+  // Aplica filtro de projetos por pessoa da equipe
+  if (equipeAtiva && equipeAtiva.projConfig) {
+    horas = horas.filter(h => {
+      const cfg = equipeAtiva.projConfig[h.user];
+      if (!cfg) return true; // sem config = todos
+      if (cfg === 'todos') return true;
+      return cfg.includes(h.projeto);
+    });
+  }
+  horasFiltradas = horas;
   renderizarAba();
 }
 
 function limparDatas() {
-  document.getElementById('filtroDataIni').value = '';
-  document.getElementById('filtroDataFim').value = '';
+  document.getElementById('filtroDataIni').value='';
+  document.getElementById('filtroDataFim').value='';
   aplicarFiltros();
 }
 
-// ══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 // ABAS
-// ══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 function trocarAba(aba) {
   abaAtiva = aba;
-  document.querySelectorAll('.nav-tab').forEach((t,i) => {
-    t.classList.toggle('active', ['dashboard','semanal','quinzenal'][i] === aba);
-  });
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.getElementById('sec-' + aba).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach((t,i)=>
+    t.classList.toggle('active',['dashboard','mensal','semanal','quinzenal'][i]===aba));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('sec-'+aba).classList.add('active');
   renderizarAba();
 }
-
 function renderizarAba() {
-  if (abaAtiva === 'dashboard') renderDashboard();
-  if (abaAtiva === 'semanal')   renderSemanal();
-  if (abaAtiva === 'quinzenal') renderQuinzenal();
+  if (abaAtiva==='dashboard') renderDashboard();
+  if (abaAtiva==='mensal')    renderMensal();
+  if (abaAtiva==='semanal')   renderSemanal();
+  if (abaAtiva==='quinzenal') renderQuinzenal();
 }
 
-// ══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 // DASHBOARD
-// ══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 function renderDashboard() {
-  const loading = document.getElementById('dashLoading');
-  const content = document.getElementById('dashContent');
-  loading.style.display = 'none';
-  content.style.display = 'block';
+  document.getElementById('dashLoading').style.display='none';
+  document.getElementById('dashContent').style.display='block';
+  const mes=DB.mesAtual, ano=DB.anoAtual;
+  document.getElementById('dashTitle').textContent=`Dashboard — ${MESES[mes-1]} ${ano}`;
+  const totH   = horasFiltradas.reduce((a,h)=>a+(h.horas||0),0);
+  const totBil = horasFiltradas.reduce((a,h)=>a+(h.horasBilaveis||0),0);
+  const totInt = horasFiltradas.reduce((a,h)=>a+(h.horasInternas||0),0);
+  const totNB  = horasFiltradas.reduce((a,h)=>a+(h.horasNaoBil||0),0);
+  const duMes  = diasUteisMes(ano,mes);
+  const ativos = pessoasFiltradas.filter(p=>p.ativo).length;
+  const metaMes= ativos*duMes*8;
+  const pctMeta= metaMes>0?Math.round(totH/metaMes*100):0;
+  const pctBil = totH>0?Math.round(totBil/totH*100):0;
+  document.getElementById('dashSub').textContent=`${ativos} profissionais ativos · ${duMes} dias úteis · Meta: ${fmtH(metaMes)}`;
+  document.getElementById('cardsGrid').innerHTML=
+    card('Total de Horas',fmtH(totH),`Meta: ${fmtH(metaMes)}`,pctMeta,corPct(pctMeta))+
+    card('Horas Billáveis',fmtH(totBil),`${pctBil}% do total`,pctBil,'green')+
+    card('Horas Internas',fmtH(totInt),`${totH>0?Math.round(totInt/totH*100):0}% do total`,null,null)+
+    card('Horas Não Billáveis',fmtH(totNB),`${totH>0?Math.round(totNB/totH*100):0}% do total`,null,null)+
+    card('Meta Mensal',pctMeta+'%',`${fmtH(totH)} de ${fmtH(metaMes)}`,pctMeta,corPct(pctMeta))+
+    card('Profissionais',ativos,`${pessoasFiltradas.length} no filtro`,null,null);
 
-  const mes = DB.mesAtual; const ano = DB.anoAtual;
-  document.getElementById('dashTitle').textContent =
-    `Dashboard — ${MESES_NOMES[mes-1]} ${ano}`;
+  const porSem={};
+  horasFiltradas.forEach(h=>{ const s=h.semana||semanaISO(h.data); porSem[s]=(porSem[s]||0)+(h.horas||0); });
+  const sems=Object.entries(porSem).sort((a,b)=>a[0]-b[0]);
+  const maxSem=Math.max(...sems.map(s=>s[1]),1);
+  document.getElementById('chartSemanas').innerHTML=sems.map(([s,h])=>barRow(`Sem ${s}`,h,maxSem,'accent')).join('')||'<div class="empty">Sem dados</div>';
 
-  const totalHoras     = horasFiltradas.reduce((a,h) => a + (h.horas||0), 0);
-  const totalBilaveis  = horasFiltradas.reduce((a,h) => a + (h.horasBilaveis||0), 0);
-  const totalInternas  = horasFiltradas.reduce((a,h) => a + (h.horasInternas||0), 0);
-  const totalNaoBil    = horasFiltradas.reduce((a,h) => a + (h.horasNaoBil||0), 0);
-  const duMes          = diasUteisMes(ano, mes);
-  const metaMes        = pessoasFiltradas.filter(p => p.ativo).length * duMes * 8;
-  const pctMeta        = metaMes > 0 ? Math.round((totalHoras / metaMes) * 100) : 0;
-  const pctBil         = totalHoras > 0 ? Math.round((totalBilaveis / totalHoras) * 100) : 0;
+  const porProj={};
+  horasFiltradas.forEach(h=>{ if(!h.projeto) return; porProj[h.projeto]=(porProj[h.projeto]||0)+(h.horas||0); });
+  const projTop=Object.entries(porProj).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const maxProj=Math.max(...projTop.map(p=>p[1]),1);
+  document.getElementById('chartProjetos').innerHTML=projTop.map(([p,h])=>barRow(p.length>18?p.substring(0,18)+'…':p,h,maxProj,'accent2')).join('')||'<div class="empty">Sem dados</div>';
 
-  document.getElementById('dashSub').textContent =
-    `${pessoasFiltradas.filter(p=>p.ativo).length} profissionais ativos · ${duMes} dias úteis · Meta: ${fmtH(metaMes)}`;
-
-  // CARDS
-  document.getElementById('cardsGrid').innerHTML = `
-    ${card('Total de Horas', fmtH(totalHoras), `Meta: ${fmtH(metaMes)}`, pctMeta, corPct(pctMeta))}
-    ${card('Horas Billáveis', fmtH(totalBilaveis), `${pctBil}% do total`, pctBil, 'green')}
-    ${card('Horas Internas', fmtH(totalInternas), `${totalHoras>0?Math.round(totalInternas/totalHoras*100):0}% do total`, null, null)}
-    ${card('Horas Não Billáveis', fmtH(totalNaoBil), `${totalHoras>0?Math.round(totalNaoBil/totalHoras*100):0}% do total`, null, null)}
-    ${card('Meta Mensal', pctMeta + '%', `${fmtH(totalHoras)} de ${fmtH(metaMes)}`, pctMeta, corPct(pctMeta))}
-    ${card('Profissionais', pessoasFiltradas.filter(p=>p.ativo).length, `${pessoasFiltradas.length} no filtro`, null, null)}
-  `;
-
-  // GRÁFICO SEMANAS
-  const porSemana = {};
-  horasFiltradas.forEach(h => {
-    const s = h.semana || semanaISO(h.data);
-    if (!porSemana[s]) porSemana[s] = 0;
-    porSemana[s] += h.horas || 0;
-  });
-  const semanas = Object.entries(porSemana).sort((a,b) => a[0]-b[0]);
-  const maxSem  = Math.max(...semanas.map(s => s[1]), 1);
-  document.getElementById('chartSemanas').innerHTML = semanas.map(([s, h]) =>
-    barRow(`Sem ${s}`, h, maxSem, 'accent')
-  ).join('') || '<div class="empty">Sem dados</div>';
-
-  // GRÁFICO PROJETOS
-  const porProj = {};
-  horasFiltradas.forEach(h => {
-    if (!h.projeto) return;
-    porProj[h.projeto] = (porProj[h.projeto] || 0) + (h.horas || 0);
-  });
-  const projTop = Object.entries(porProj).sort((a,b) => b[1]-a[1]).slice(0,10);
-  const maxProj = Math.max(...projTop.map(p => p[1]), 1);
-  document.getElementById('chartProjetos').innerHTML = projTop.map(([p, h]) =>
-    barRow(p.length > 18 ? p.substring(0,18)+'…' : p, h, maxProj, 'accent2')
-  ).join('') || '<div class="empty">Sem dados</div>';
-
-  // RANKING
-  const porUser = {};
-  horasFiltradas.forEach(h => {
-    if (!h.user) return;
-    porUser[h.user] = (porUser[h.user] || 0) + (h.horas || 0);
-  });
-  const ranking = Object.entries(porUser).sort((a,b) => b[1]-a[1]);
-  const maxH = Math.max(...ranking.map(r => r[1]), 1);
-  document.getElementById('rankingLista').innerHTML = ranking.map(([user, h], i) => {
-    const pessoa = DB.pessoas.find(p => p.people === user);
-    const pct = Math.round(h / maxH * 100);
+  const porUser={};
+  horasFiltradas.forEach(h=>{ if(!h.user) return; porUser[h.user]=(porUser[h.user]||0)+(h.horas||0); });
+  const ranking=Object.entries(porUser).sort((a,b)=>b[1]-a[1]);
+  const maxH=Math.max(...ranking.map(r=>r[1]),1);
+  document.getElementById('rankingLista').innerHTML=ranking.map(([user,h],i)=>{
+    const p=DB.pessoas.find(x=>x.people===user);
     return `<div class="rank-row">
       <span class="rank-num">${i+1}</span>
       <div style="flex:1">
         <div style="display:flex;align-items:center;gap:8px">
-          <span class="rank-name">${nomeFormatado(user)}</span>
-          ${pessoa ? `<span class="chip chip-gray" style="font-size:10px">${pessoa.role||''}</span>` : ''}
-          ${pessoa ? `<span class="chip chip-blue" style="font-size:10px">${pessoa.level||''}</span>` : ''}
+          <span style="font-size:13px">${nomeF(user)}</span>
+          ${p?`<span class="chip chip-gray" style="font-size:10px">${p.role||''}</span>`:''}
+          ${p?`<span class="chip chip-blue" style="font-size:10px">${p.level||''}</span>`:''}
         </div>
-        <div class="rank-bar"><div class="rank-bar-fill" style="width:${pct}%"></div></div>
+        <div class="rank-bar"><div class="rank-bar-fill" style="width:${Math.round(h/maxH*100)}%"></div></div>
       </div>
-      <span class="rank-hrs">${fmtH(h)}</span>
+      <span style="font-size:13px;font-weight:600;color:var(--accent);width:80px;text-align:right">${fmtH(h)}</span>
     </div>`;
-  }).join('') || '<div class="empty">Sem dados</div>';
+  }).join('')||'<div class="empty">Sem dados</div>';
 }
 
-function card(label, value, sub, pct, cor) {
-  const barHtml = pct !== null ? `
-    <div class="card-bar">
-      <div class="card-bar-fill ${cor||''}" style="width:${Math.min(pct,100)}%"></div>
-    </div>` : '';
-  return `<div class="card">
-    <div class="card-label">${label}</div>
-    <div class="card-value">${value}</div>
-    <div class="card-sub">${sub}</div>
-    ${barHtml}
-  </div>`;
-}
-
-function barRow(label, valor, max, cor) {
-  const pct = max > 0 ? Math.round(valor / max * 100) : 0;
-  return `<div class="bar-row">
-    <span class="bar-label" title="${label}">${label}</span>
-    <div class="bar-track"><div class="bar-fill ${cor}" style="width:${pct}%"></div></div>
-    <span class="bar-value">${fmtH(valor)}</span>
-  </div>`;
-}
-
-// ══════════════════════════════════════════════════════════════
-// CONFERÊNCIA SEMANAL
-// ══════════════════════════════════════════════════════════════
-function renderSemanal() {
-  const { ini, fim } = periodoSemana(offsetSemana);
-  document.getElementById('labelSemana').textContent =
-    `${fmtData(ini)} — ${fmtData(fim)}`;
-  renderTabConferencia('tabSemanalWrap', ini, fim, 40);
-}
-
-function navSemana(d) { offsetSemana += d; renderSemanal(); }
-function irSemanaAtual()    { offsetSemana = 0; renderSemanal(); }
-function irSemanaAnterior() { offsetSemana = -1; renderSemanal(); }
-
-function periodoSemana(offset) {
-  const hoje = new Date();
-  const dow  = hoje.getDay() === 0 ? 7 : hoje.getDay();
-  const seg  = new Date(hoje); seg.setDate(hoje.getDate() - dow + 1 + offset * 7);
-  const sex  = new Date(seg);  sex.setDate(seg.getDate() + 4);
-  return { ini: seg, fim: sex };
-}
-
-// ══════════════════════════════════════════════════════════════
-// CONFERÊNCIA QUINZENAL
-// ══════════════════════════════════════════════════════════════
-function renderQuinzenal() {
-  const { ini, fim } = periodoQuinzena(offsetQuinzena);
-  document.getElementById('labelQuinzena').textContent =
-    `${fmtData(ini)} — ${fmtData(fim)}`;
-  renderTabConferencia('tabQuinzenalWrap', ini, fim, 80);
-}
-
-function navQuinzena(d) { offsetQuinzena += d; renderQuinzenal(); }
-function irQuinzenaAtual() { offsetQuinzena = 0; renderQuinzenal(); }
-
-function periodoQuinzena(offset) {
-  const hoje = new Date();
-  const ano  = hoje.getFullYear();
-  const mes  = hoje.getMonth();
-  // Quinzena 1: 1-15, Quinzena 2: 16-último
-  let q, m, a;
-  if (hoje.getDate() <= 15) {
-    q = 0; // primeira quinzena do mês atual
-  } else {
-    q = 1; // segunda quinzena do mês atual
-  }
-  q += offset;
-  // Normaliza
-  let qMes = mes + Math.floor(q / 2);
-  let qQ   = ((q % 2) + 2) % 2;
-  let qAno = ano + Math.floor(qMes / 12);
-  qMes = ((qMes % 12) + 12) % 12;
-
-  let ini, fim;
-  if (qQ === 0) {
-    ini = new Date(qAno, qMes, 1);
-    fim = new Date(qAno, qMes, 15);
-  } else {
-    ini = new Date(qAno, qMes, 16);
-    fim = new Date(qAno, qMes + 1, 0);
-  }
-  return { ini, fim };
-}
-
-// ══════════════════════════════════════════════════════════════
-// TABELA DE CONFERÊNCIA (compartilhada semanal/quinzenal)
-// ══════════════════════════════════════════════════════════════
-function renderTabConferencia(wrapId, ini, fim, metaHoras) {
-  const wrap = document.getElementById(wrapId);
-
-  // Set de feriados ativos
-  const feriadoSet  = getFeriadoSet();
-  const feriadoNome = getFeriadoNomes();
-
-  // Todos os dias do período (inclui feriados para mostrar na tabela)
-  const todosDias = [];
-  for (let d = new Date(ini); d <= fim; d.setDate(d.getDate() + 1)) {
-    const dow = d.getDay();
-    if (dow > 0 && dow < 6) todosDias.push(fmtISO(d)); // seg-sex
-  }
-
-  // Dias úteis (excluindo feriados) para cálculo de previsto
-  const diasUteis = todosDias.filter(d => !feriadoSet.has(d));
-
-  // Horas por user × dia
-  const iniISO = fmtISO(ini); const fimISO = fmtISO(fim);
-  const porUserDia = {};
-  horasFiltradas.forEach(h => {
-    if (!h.data || h.data < iniISO || h.data > fimISO) return;
-    if (!porUserDia[h.user]) porUserDia[h.user] = {};
-    porUserDia[h.user][h.data] = (porUserDia[h.user][h.data] || 0) + (h.horas || 0);
-  });
-
-  // Pessoas ativas filtradas
-  const pessoas = pessoasFiltradas.filter(p => p.ativo);
-
-  if (!pessoas.length) {
-    wrap.innerHTML = '<div class="empty"><div class="empty-icon">👥</div>Nenhum profissional no filtro</div>';
-    return;
-  }
-
-  // Previsto por pessoa = dias úteis × 8h (descontando feriados)
-  const previstoPorPessoa = diasUteis.length * 8;
-
-  // Cabeçalho com destaque para feriados
-  const thDias = todosDias.map(d => {
-    const dt  = new Date(d + 'T12:00:00');
-    const dow = ['Dom','Seg','Ter','Qua','Qui','Sex','Sab'][dt.getDay()];
-    const ehFeriado = feriadoSet.has(d);
-    const cls = ehFeriado ? 'th-feriado' : '';
-    const tag = ehFeriado ? `<span class="feriado-tag" title="${feriadoNome[d]||'Feriado'}">feriado</span>` : '';
-    return `<th style="text-align:center;min-width:60px" class="${cls}">${dow}<br><span style="font-weight:400;color:var(--text3)">${dt.getDate()}</span>${tag}</th>`;
-  }).join('');
-
-  // Linhas
-  const linhas = pessoas.map(p => {
-    const userData  = porUserDia[p.people] || {};
-    const totalH    = todosDias.reduce((a, d) => a + (userData[d] || 0), 0);
-    const previsto  = previstoPorPessoa;
-    const diff      = totalH - previsto;
-    const cor = totalH >= metaHoras ? 'horas-ok' : totalH >= metaHoras * 0.75 ? 'horas-warn' : totalH > 0 ? 'horas-crit' : 'horas-zero';
-
-    const celulas = todosDias.map(d => {
-      const h = userData[d] || 0;
-      const ehFeriado = feriadoSet.has(d);
-      const bgCls = ehFeriado ? 'col-feriado' : '';
-      if (ehFeriado && h === 0) {
-        return `<td style="text-align:center" class="${bgCls}"><span style="color:var(--accent2);font-size:11px">—</span></td>`;
-      }
-      const c = h >= 8 ? 'horas-ok' : h >= 4 ? 'horas-warn' : h > 0 ? 'horas-crit' : 'horas-zero';
-      return `<td style="text-align:center" class="${bgCls} ${c}">${h > 0 ? fmtH1d(h) : '—'}</td>`;
-    }).join('');
-
-    const nivel = p.level ? `<span class="chip chip-blue" style="font-size:10px;margin-left:4px">${p.level}</span>` : '';
-
-    // Diff previsto vs lançado
-    const diffCls  = diff > 0 ? 'prev-diff-pos' : diff < 0 ? 'prev-diff-neg' : 'prev-diff-ok';
-    const diffSinal = diff > 0 ? '+' : '';
-    const prevRow  = `<div class="prev-row">
-      <span>Prev: ${fmtH(previsto)}</span>
-      <span class="${diffCls}">${diffSinal}${fmtH(Math.abs(diff))}${diff >= 0 ? ' ↑' : ' ↓'}</span>
-    </div>`;
-
-    return `<tr style="cursor:pointer" onclick="toggleDrill('${p.people}','${iniISO}','${fimISO}')">
-      <td style="white-space:nowrap">
-        ${nomeFormatado(p.people)}${nivel}
-        <div style="font-size:11px;color:var(--text3)">${p.role||''}</div>
-      </td>
-      ${celulas}
-      <td style="text-align:right;min-width:90px">
-        <span class="horas-cell ${cor}">${fmtH(totalH)}</span>
-        ${prevRow}
-      </td>
-      <td style="text-align:center">${chipMeta(totalH, metaHoras)}</td>
+// ══════════════════════════════════════════════════════
+// CONFERÊNCIA MENSAL
+// ══════════════════════════════════════════════════════
+function renderMensal() {
+  const mes=DB.mesAtual, ano=DB.anoAtual;
+  const iniISO=`${ano}-${String(mes).padStart(2,'0')}-01`;
+  const fimDate=new Date(ano,mes,0);
+  const fimISO=fmtISO(fimDate);
+  document.getElementById('mensalTitle').textContent=`Conferência Mensal — ${MESES[mes-1]} ${ano}`;
+  const duMes=diasUteisMes(ano,mes);
+  document.getElementById('mensalSub').textContent=`${duMes} dias úteis · Meta: ${fmtH(duMes*8)} por profissional`;
+  const pessoas=pessoasFiltradas.filter(p=>p.ativo);
+  const wrap=document.getElementById('tabMensalWrap');
+  if (!pessoas.length) { wrap.innerHTML='<div class="empty">Nenhum profissional no filtro</div>'; return; }
+  const porUser={};
+  horasFiltradas.forEach(h=>{ if(h.data<iniISO||h.data>fimISO) return; porUser[h.user]=(porUser[h.user]||0)+(h.horas||0); });
+  const meta=duMes*8;
+  const linhas=pessoas.map(p=>{
+    const totH=porUser[p.people]||0;
+    const diff=totH-meta;
+    const cor=totH>=meta?'horas-ok':totH>=meta*.75?'horas-warn':totH>0?'horas-crit':'horas-zero';
+    const diffCls=diff>=0?'prev-diff-pos':'prev-diff-neg';
+    const nivel=p.level?`<span class="chip chip-blue" style="font-size:10px;margin-left:4px">${p.level}</span>`:'';
+    const drillId='mensal-drill-'+p.people.replace(/\./g,'_');
+    return `<tr class="mensal-row" onclick="toggleMensalDrill('${p.people}','${iniISO}','${fimISO}')">
+      <td style="white-space:nowrap">${nomeF(p.people)}${nivel}<div style="font-size:11px;color:var(--text3)">${p.role||''}</div></td>
+      <td style="text-align:right" class="horas-cell ${cor}">${fmtH(totH)}</td>
+      <td style="text-align:right;color:var(--text2)">${fmtH(meta)}</td>
+      <td style="text-align:right"><span class="${diffCls}">${diff>=0?'+':''}${fmtH(Math.abs(diff))}</span></td>
+      <td style="text-align:center">${chipMeta(totH,meta)}</td>
     </tr>
-    <tr><td colspan="${todosDias.length + 3}" style="padding:0">
-      <div class="drill" id="drill-${p.people.replace(/\./g,'_')}">
-        ${renderDrill(p, iniISO, fimISO)}
+    <tr><td colspan="5" style="padding:0">
+      <div class="mensal-detail" id="${drillId}">
+        ${renderMensalDrill(p,iniISO,fimISO)}
       </div>
     </td></tr>`;
   }).join('');
-
-  // Linha de totais
-  const totaisDia = todosDias.map(d => {
-    const tot = pessoas.reduce((a, p) => a + ((porUserDia[p.people]||{})[d]||0), 0);
-    const ehFeriado = feriadoSet.has(d);
-    return `<td style="text-align:center;font-weight:600;font-size:12px;border-top:2px solid var(--border)" class="${ehFeriado?'col-feriado':''}">${tot > 0 ? fmtH1d(tot) : '—'}</td>`;
-  }).join('');
-  const totalGeral = pessoas.reduce((a, p) => {
-    const ud = porUserDia[p.people] || {};
-    return a + todosDias.reduce((b, d) => b + (ud[d]||0), 0);
-  }, 0);
-  const totalPrevisto = pessoas.length * previstoPorPessoa;
-  const diffTotal = totalGeral - totalPrevisto;
-  const diffTotalCls = diffTotal >= 0 ? 'prev-diff-pos' : 'prev-diff-neg';
-
-  wrap.innerHTML = `<div class="table-wrap"><table>
+  const totGeral=pessoas.reduce((a,p)=>a+(porUser[p.people]||0),0);
+  const totMeta=pessoas.length*meta;
+  const totDiff=totGeral-totMeta;
+  wrap.innerHTML=`<div class="table-wrap"><table>
     <thead><tr>
-      <th style="min-width:160px">Profissional</th>
-      ${thDias}
-      <th style="text-align:right;min-width:90px">Total / Prev.</th>
-      <th style="text-align:center">Meta</th>
+      <th style="min-width:180px">Profissional</th>
+      <th style="text-align:right">Horas Registradas</th>
+      <th style="text-align:right">Expectativa</th>
+      <th style="text-align:right">Diferença</th>
+      <th style="text-align:center">Status</th>
     </tr></thead>
     <tbody>${linhas}
     <tr style="background:var(--bg3)">
-      <td style="font-weight:700;font-size:12px;border-top:2px solid var(--border)">
-        TOTAL EQUIPE
-        <div class="prev-row">
-          <span>Prev: ${fmtH(totalPrevisto)}</span>
-          <span class="${diffTotalCls}">${diffTotal>=0?'+':''}${fmtH(Math.abs(diffTotal))}</span>
-        </div>
-      </td>
-      ${totaisDia}
-      <td style="text-align:right;font-weight:700;border-top:2px solid var(--border)">${fmtH(totalGeral)}</td>
+      <td style="font-weight:700;border-top:2px solid var(--border)">TOTAL</td>
+      <td style="text-align:right;font-weight:700;border-top:2px solid var(--border)">${fmtH(totGeral)}</td>
+      <td style="text-align:right;color:var(--text2);border-top:2px solid var(--border)">${fmtH(totMeta)}</td>
+      <td style="text-align:right;border-top:2px solid var(--border)"><span class="${totDiff>=0?'prev-diff-pos':'prev-diff-neg'}">${totDiff>=0?'+':''}${fmtH(Math.abs(totDiff))}</span></td>
       <td style="border-top:2px solid var(--border)"></td>
     </tr>
     </tbody>
   </table></div>`;
 }
 
-function toggleDrill(people, ini, fim) {
-  const id = 'drill-' + people.replace(/\./g,'_');
-  const el = document.getElementById(id);
+function toggleMensalDrill(people, ini, fim) {
+  const id='mensal-drill-'+people.replace(/\./g,'_');
+  const el=document.getElementById(id);
   if (el) el.classList.toggle('open');
 }
 
-function renderDrill(pessoa, ini, fim) {
-  const horasPessoa = horasFiltradas.filter(h => h.user === pessoa.people && h.data >= ini && h.data <= fim);
-  const totalH = horasPessoa.reduce((a,h) => a + (h.horas||0), 0);
-
+function renderMensalDrill(pessoa, ini, fim) {
+  const horasP=horasFiltradas.filter(h=>h.user===pessoa.people&&h.data>=ini&&h.data<=fim);
+  const totH=horasP.reduce((a,h)=>a+(h.horas||0),0);
   // Por projeto
-  const porProj = {};
-  horasPessoa.forEach(h => {
-    porProj[h.projeto] = (porProj[h.projeto]||0) + (h.horas||0);
-  });
-  const projRows = Object.entries(porProj).sort((a,b)=>b[1]-a[1])
-    .map(([p,h]) => `<div class="bar-row">
-      <span class="bar-label" title="${p}" style="width:120px">${p.length>18?p.substring(0,18)+'…':p}</span>
-      <div class="bar-track"><div class="bar-fill accent" style="width:${Math.round(h/totalH*100)}%"></div></div>
+  const porProj={};
+  horasP.forEach(h=>{ porProj[h.projeto]=(porProj[h.projeto]||0)+(h.horas||0); });
+  const projRows=Object.entries(porProj).sort((a,b)=>b[1]-a[1])
+    .map(([p,h])=>`<div class="bar-row">
+      <span class="bar-label" title="${p}" style="width:140px">${p.length>20?p.substring(0,20)+'…':p}</span>
+      <div class="bar-track"><div class="bar-fill accent" style="width:${totH>0?Math.round(h/totH*100):0}%"></div></div>
       <span class="bar-value">${fmtH(h)}</span>
     </div>`).join('');
-
   // Por fase
-  const porFase = {};
-  horasPessoa.forEach(h => {
-    if (h.fase) porFase[h.fase] = (porFase[h.fase]||0) + (h.horas||0);
-  });
-  const faseRows = Object.entries(porFase).sort((a,b)=>b[1]-a[1]).slice(0,6)
-    .map(([f,h]) => `<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px;border-bottom:1px solid var(--border)">
-      <span style="color:var(--text2)">${f}</span>
-      <span style="font-weight:600">${fmtH(h)}</span>
+  const porFase={};
+  horasP.forEach(h=>{ if(h.fase) porFase[h.fase]=(porFase[h.fase]||0)+(h.horas||0); });
+  const faseRows=Object.entries(porFase).sort((a,b)=>b[1]-a[1]).slice(0,8)
+    .map(([f,h])=>`<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid var(--border)">
+      <span style="color:var(--text2)">${f}</span><span style="font-weight:600">${fmtH(h)}</span>
     </div>`).join('');
-
-  return `<div class="drill-title">▸ ${nomeFormatado(pessoa.people)} · ${fmtH(totalH)} no período</div>
-  <div class="drill-grid">
-    <div>
-      <div class="panel-title" style="margin-bottom:8px">Por Projeto</div>
-      <div class="chart-bars">${projRows || '<span style="color:var(--text3);font-size:12px">Sem dados</span>'}</div>
+  // Lançamentos dia a dia
+  const porDia={};
+  horasP.forEach(h=>{ porDia[h.data]=(porDia[h.data]||0)+(h.horas||0); });
+  const diasRows=Object.entries(porDia).sort((a,b)=>a[0].localeCompare(b[0]))
+    .map(([d,h])=>{
+      const dt=new Date(d+'T12:00:00');
+      const dow=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][dt.getDay()];
+      const cor=h>=8?'horas-ok':h>=4?'horas-warn':'horas-crit';
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:12px;border-bottom:1px solid var(--border)">
+        <span style="color:var(--text2);min-width:90px">${dow} ${fmtData(dt)}</span>
+        <span class="${cor}" style="font-weight:600">${fmtH(h)}</span>
+      </div>`;
+    }).join('');
+  return `<div class="drill-title" style="display:flex;align-items:center;justify-content:space-between">
+    <span>▸ ${nomeF(pessoa.people)} · ${fmtH(totH)} em ${MESES[DB.mesAtual-1]}</span>
+  </div>
+  <div class="detail-tabs">
+    <button class="detail-tab active" onclick="trocarDetalhe(this,'resumo-${pessoa.people.replace(/\./g,'_')}')">Resumo</button>
+    <button class="detail-tab" onclick="trocarDetalhe(this,'detalhe-${pessoa.people.replace(/\./g,'_')}')">Lançamentos</button>
+  </div>
+  <div id="resumo-${pessoa.people.replace(/\./g,'_')}">
+    <div class="drill-grid">
+      <div><div class="panel-title" style="margin-bottom:8px">Por Projeto</div>
+        <div class="chart-bars">${projRows||'<span style="color:var(--text3);font-size:12px">Sem dados</span>'}</div>
+      </div>
+      <div><div class="panel-title" style="margin-bottom:8px">Por Fase</div>
+        ${faseRows||'<span style="color:var(--text3);font-size:12px">Sem dados</span>'}
+      </div>
     </div>
-    <div>
-      <div class="panel-title" style="margin-bottom:8px">Por Fase</div>
-      ${faseRows || '<span style="color:var(--text3);font-size:12px">Sem dados</span>'}
-    </div>
+  </div>
+  <div id="detalhe-${pessoa.people.replace(/\./g,'_')}" style="display:none">
+    <div style="max-height:300px;overflow-y:auto">${diasRows||'<span style="color:var(--text3);font-size:12px">Sem dados</span>'}</div>
   </div>`;
 }
 
-function chipMeta(h, meta) {
-  if (h >= meta)        return '<span class="chip chip-green">✓ OK</span>';
-  if (h >= meta * 0.75) return '<span class="chip chip-yellow">Parcial</span>';
-  if (h > 0)            return '<span class="chip chip-red">Baixo</span>';
+function trocarDetalhe(btn, showId) {
+  const parent=btn.closest('.mensal-detail')||btn.closest('.drill');
+  parent.querySelectorAll('.detail-tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  const targets=parent.querySelectorAll('[id^="resumo-"],[id^="detalhe-"]');
+  targets.forEach(el=>el.style.display='none');
+  const target=parent.querySelector('#'+showId);
+  if (target) target.style.display='block';
+}
+
+// ══════════════════════════════════════════════════════
+// SEMANAL
+// ══════════════════════════════════════════════════════
+function renderSemanal() {
+  const {ini,fim}=periodoSemana(offsetSemana);
+  document.getElementById('labelSemana').textContent=`${fmtData(ini)} — ${fmtData(fim)}`;
+  renderTabConferencia('tabSemanalWrap',ini,fim,40);
+}
+function navSemana(d){offsetSemana+=d;renderSemanal()}
+function irSemanaAtual(){offsetSemana=0;renderSemanal()}
+function irSemanaAnterior(){offsetSemana=-1;renderSemanal()}
+function periodoSemana(off) {
+  const hoje=new Date(), dow=hoje.getDay()===0?7:hoje.getDay();
+  const seg=new Date(hoje); seg.setDate(hoje.getDate()-dow+1+off*7);
+  const sex=new Date(seg);  sex.setDate(seg.getDate()+4);
+  return {ini:seg,fim:sex};
+}
+
+// ══════════════════════════════════════════════════════
+// QUINZENAL
+// ══════════════════════════════════════════════════════
+function renderQuinzenal() {
+  const {ini,fim}=periodoQuinzena(offsetQuinzena);
+  document.getElementById('labelQuinzena').textContent=`${fmtData(ini)} — ${fmtData(fim)}`;
+  renderTabConferencia('tabQuinzenalWrap',ini,fim,80);
+}
+function navQuinzena(d){offsetQuinzena+=d;renderQuinzenal()}
+function irQuinzenaAtual(){offsetQuinzena=0;renderQuinzenal()}
+function periodoQuinzena(off) {
+  const hoje=new Date(), ano=hoje.getFullYear(), mes=hoje.getMonth();
+  let q=hoje.getDate()<=15?0:1; q+=off;
+  let qMes=mes+Math.floor(q/2), qQ=((q%2)+2)%2;
+  let qAno=ano+Math.floor(qMes/12); qMes=((qMes%12)+12)%12;
+  if (qQ===0) return {ini:new Date(qAno,qMes,1),fim:new Date(qAno,qMes,15)};
+  return {ini:new Date(qAno,qMes,16),fim:new Date(qAno,qMes+1,0)};
+}
+
+// ══════════════════════════════════════════════════════
+// TABELA CONFERÊNCIA (semanal + quinzenal)
+// ══════════════════════════════════════════════════════
+function renderTabConferencia(wrapId, ini, fim, metaHoras) {
+  const wrap=document.getElementById(wrapId);
+  const feriadoSet=getFeriadoSet(), feriadoNome=getFeriadoNomes();
+  const todosDias=[];
+  for (let d=new Date(ini); d<=fim; d.setDate(d.getDate()+1)) {
+    const dow=d.getDay(); if(dow>0&&dow<6) todosDias.push(fmtISO(d));
+  }
+  const diasUteis=todosDias.filter(d=>!feriadoSet.has(d));
+  const iniISO=fmtISO(ini), fimISO=fmtISO(fim);
+  const porUserDia={};
+  horasFiltradas.forEach(h=>{
+    if(!h.data||h.data<iniISO||h.data>fimISO) return;
+    if(!porUserDia[h.user]) porUserDia[h.user]={};
+    porUserDia[h.user][h.data]=(porUserDia[h.user][h.data]||0)+(h.horas||0);
+  });
+  const pessoas=pessoasFiltradas.filter(p=>p.ativo);
+  if (!pessoas.length) { wrap.innerHTML='<div class="empty">Nenhum profissional no filtro</div>'; return; }
+  const prevPessoa=diasUteis.length*8;
+  const thDias=todosDias.map(d=>{
+    const dt=new Date(d+'T12:00:00');
+    const dow=['Dom','Seg','Ter','Qua','Qui','Sex','Sab'][dt.getDay()];
+    const eF=feriadoSet.has(d);
+    return `<th style="text-align:center;min-width:60px" class="${eF?'th-feriado':''}">${dow}<br><span style="font-weight:400;color:var(--text3)">${dt.getDate()}</span>${eF?`<span class="feriado-tag" title="${feriadoNome[d]||'Feriado'}">feriado</span>`:''}</th>`;
+  }).join('');
+  const drillPrefix=wrapId==='tabSemanalWrap'?'sem':'qui';
+  const linhas=pessoas.map(p=>{
+    const ud=porUserDia[p.people]||{};
+    const totH=todosDias.reduce((a,d)=>a+(ud[d]||0),0);
+    const diff=totH-prevPessoa;
+    const cor=totH>=metaHoras?'horas-ok':totH>=metaHoras*.75?'horas-warn':totH>0?'horas-crit':'horas-zero';
+    const celulas=todosDias.map(d=>{
+      const h=ud[d]||0, eF=feriadoSet.has(d);
+      const bg=eF?'col-feriado':'';
+      if(eF&&h===0) return `<td style="text-align:center" class="${bg}"><span style="color:var(--accent2);font-size:11px">—</span></td>`;
+      const c=h>=8?'horas-ok':h>=4?'horas-warn':h>0?'horas-crit':'horas-zero';
+      return `<td style="text-align:center" class="${bg} ${c}">${h>0?fmtH(h):'—'}</td>`;
+    }).join('');
+    const nivel=p.level?`<span class="chip chip-blue" style="font-size:10px;margin-left:4px">${p.level}</span>`:'';
+    const diffCls=diff>=0?'prev-diff-pos':'prev-diff-neg';
+    const drillId=`drill-${drillPrefix}-${p.people.replace(/\./g,'_')}`;
+    return `<tr style="cursor:pointer" onclick="toggleDrill('${drillId}')">
+      <td style="white-space:nowrap">${nomeF(p.people)}${nivel}<div style="font-size:11px;color:var(--text3)">${p.role||''}</div></td>
+      ${celulas}
+      <td style="text-align:right;min-width:90px">
+        <span class="horas-cell ${cor}">${fmtH(totH)}</span>
+        <div class="prev-row"><span>Prev: ${fmtH(prevPessoa)}</span><span class="${diffCls}">${diff>=0?'+':''}${fmtH(Math.abs(diff))} ${diff>=0?'↑':'↓'}</span></div>
+      </td>
+      <td style="text-align:center">${chipMeta(totH,metaHoras)}</td>
+    </tr>
+    <tr><td colspan="${todosDias.length+3}" style="padding:0">
+      <div class="drill" id="${drillId}">${renderDrill(p,iniISO,fimISO)}</div>
+    </td></tr>`;
+  }).join('');
+  // Linha total
+  const totDia=todosDias.map(d=>{
+    const tot=pessoas.reduce((a,p)=>a+((porUserDia[p.people]||{})[d]||0),0);
+    const eF=feriadoSet.has(d);
+    return `<td style="text-align:center;font-weight:600;font-size:12px;border-top:2px solid var(--border)" class="${eF?'col-feriado':''}">${tot>0?fmtH(tot):'—'}</td>`;
+  }).join('');
+  const totGeral=pessoas.reduce((a,p)=>{const ud=porUserDia[p.people]||{}; return a+todosDias.reduce((b,d)=>b+(ud[d]||0),0);},0);
+  const totPrev=pessoas.length*prevPessoa;
+  const totDiff=totGeral-totPrev;
+  wrap.innerHTML=`<div class="table-wrap"><table>
+    <thead><tr><th style="min-width:160px">Profissional</th>${thDias}<th style="text-align:right;min-width:100px">Total / Prev.</th><th style="text-align:center">Meta</th></tr></thead>
+    <tbody>${linhas}
+    <tr style="background:var(--bg3)">
+      <td style="font-weight:700;font-size:12px;border-top:2px solid var(--border)">TOTAL EQUIPE
+        <div class="prev-row"><span>Prev: ${fmtH(totPrev)}</span><span class="${totDiff>=0?'prev-diff-pos':'prev-diff-neg'}">${totDiff>=0?'+':''}${fmtH(Math.abs(totDiff))}</span></div>
+      </td>
+      ${totDia}
+      <td style="text-align:right;font-weight:700;border-top:2px solid var(--border)">${fmtH(totGeral)}</td>
+      <td style="border-top:2px solid var(--border)"></td>
+    </tr></tbody>
+  </table></div>`;
+}
+
+function toggleDrill(id) {
+  const el=document.getElementById(id); if(el) el.classList.toggle('open');
+}
+
+function renderDrill(pessoa, ini, fim) {
+  const horasP=horasFiltradas.filter(h=>h.user===pessoa.people&&h.data>=ini&&h.data<=fim);
+  const totH=horasP.reduce((a,h)=>a+(h.horas||0),0);
+  const porProj={};
+  horasP.forEach(h=>{ porProj[h.projeto]=(porProj[h.projeto]||0)+(h.horas||0); });
+  const projRows=Object.entries(porProj).sort((a,b)=>b[1]-a[1])
+    .map(([p,h])=>`<div class="bar-row"><span class="bar-label" title="${p}" style="width:120px">${p.length>18?p.substring(0,18)+'…':p}</span><div class="bar-track"><div class="bar-fill accent" style="width:${totH>0?Math.round(h/totH*100):0}%"></div></div><span class="bar-value">${fmtH(h)}</span></div>`).join('');
+  const porFase={};
+  horasP.forEach(h=>{ if(h.fase) porFase[h.fase]=(porFase[h.fase]||0)+(h.horas||0); });
+  const faseRows=Object.entries(porFase).sort((a,b)=>b[1]-a[1]).slice(0,6)
+    .map(([f,h])=>`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px;border-bottom:1px solid var(--border)"><span style="color:var(--text2)">${f}</span><span style="font-weight:600">${fmtH(h)}</span></div>`).join('');
+  return `<div class="drill-title">▸ ${nomeF(pessoa.people)} · ${fmtH(totH)} no período</div>
+  <div class="drill-grid">
+    <div><div class="panel-title" style="margin-bottom:8px">Por Projeto</div><div class="chart-bars">${projRows||'<span style="color:var(--text3);font-size:12px">Sem dados</span>'}</div></div>
+    <div><div class="panel-title" style="margin-bottom:8px">Por Fase</div>${faseRows||'<span style="color:var(--text3);font-size:12px">Sem dados</span>'}</div>
+  </div>`;
+}
+
+function chipMeta(h,meta) {
+  if(h>=meta) return '<span class="chip chip-green">✓ OK</span>';
+  if(h>=meta*.75) return '<span class="chip chip-yellow">Parcial</span>';
+  if(h>0) return '<span class="chip chip-red">Baixo</span>';
   return '<span class="chip chip-gray">—</span>';
 }
 
-// ══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 // EQUIPES
-// ══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 function carregarEquipes() {
-  const salvas = localStorage.getItem(LS_EQUIPES);
-  if (salvas) return JSON.parse(salvas);
-  // Gera equipes padrão por Role a partir das pessoas carregadas
+  const s=localStorage.getItem(LS_EQUIPES);
+  if(s) return JSON.parse(s);
   return gerarEquipesPadrao();
 }
-
 function gerarEquipesPadrao() {
-  const pessoas = carregarLS(LS_PESSOAS) || [];
-  const porRole = {};
-  pessoas.filter(p => p.ativo).forEach(p => {
-    if (!p.role) return;
-    if (!porRole[p.role]) porRole[p.role] = [];
-    porRole[p.role].push(p.people);
-  });
-  return Object.entries(porRole).map(([role, membros]) => ({
-    id:      'eq_' + role.toLowerCase().replace(/\s+/g,'_'),
-    nome:    role,
-    membros,
-    padrao:  true
-  }));
+  const pessoas=carregarLS(LS_PESSOAS)||[];
+  const porRole={};
+  pessoas.filter(p=>p.ativo).forEach(p=>{ if(!p.role) return; if(!porRole[p.role]) porRole[p.role]=[]; porRole[p.role].push(p.people); });
+  return Object.entries(porRole).map(([role,membros])=>({id:'eq_'+role.toLowerCase().replace(/\s+/g,'_'),nome:role,membros,padrao:true,projConfig:{}}));
 }
-
-function salvarEquipes() {
-  localStorage.setItem(LS_EQUIPES, JSON.stringify(DB.equipes));
-}
+function salvarEquipes() { localStorage.setItem(LS_EQUIPES,JSON.stringify(DB.equipes)); }
 
 function abrirModalEquipes() {
-  // Garante equipes atualizadas com pessoas do DB
-  if (!DB.equipes.length) DB.equipes = gerarEquipesPadrao();
+  if(!DB.equipes.length) DB.equipes=gerarEquipesPadrao();
   renderModalEquipes();
   document.getElementById('modalEquipes').classList.add('open');
 }
-
-function fecharModalEquipes() {
-  document.getElementById('modalEquipes').classList.remove('open');
-}
+function fecharModalEquipes() { document.getElementById('modalEquipes').classList.remove('open'); }
 
 function renderModalEquipes() {
-  // Popula select de pessoas
-  const sel = document.getElementById('novaEquipePessoaSelect');
-  sel.innerHTML = '<option value="">— Adicionar pessoa —</option>';
-  DB.pessoas.filter(p => p.ativo).sort((a,b) => a.people.localeCompare(b.people)).forEach(p => {
-    const opt = document.createElement('option');
-    opt.value = p.people;
-    opt.textContent = nomeFormatado(p.people) + (p.role ? ` (${p.role})` : '');
-    sel.appendChild(opt);
+  const sel=document.getElementById('novaEquipePessoaSelect');
+  sel.innerHTML='<option value="">— Adicionar pessoa —</option>';
+  DB.pessoas.filter(p=>p.ativo).sort((a,b)=>a.people.localeCompare(b.people)).forEach(p=>{
+    const o=document.createElement('option'); o.value=p.people;
+    o.textContent=nomeF(p.people)+(p.role?` (${p.role})`:''); sel.appendChild(o);
   });
-
-  document.getElementById('equipesLista').innerHTML = DB.equipes.map((eq, idx) => `
+  document.getElementById('equipesLista').innerHTML=DB.equipes.map((eq,idx)=>`
     <div class="equipe-item">
       <div style="flex:1">
-        <div class="equipe-nome">${eq.nome} ${eq.padrao ? '<span class="chip chip-gray" style="font-size:10px">padrão</span>' : ''}</div>
-        <div class="equipe-membros">${eq.membros.length} membros: ${eq.membros.slice(0,3).map(nomeFormatado).join(', ')}${eq.membros.length>3?' …':''}</div>
+        <div class="equipe-nome">${eq.nome} ${eq.padrao?'<span class="chip chip-gray" style="font-size:10px">padrão</span>':''}</div>
+        <div class="equipe-membros">${eq.membros.length} membros: ${eq.membros.slice(0,3).map(nomeF).join(', ')}${eq.membros.length>3?' …':''}</div>
       </div>
-      <div class="equipe-actions">
+      <div style="display:flex;gap:4px">
+        <button class="btn btn-sm" onclick="abrirConfigEquipe(${idx})" title="Configurar projetos">⚙</button>
         <button class="btn btn-sm" onclick="editarEquipe(${idx})">✎</button>
         <button class="btn btn-sm" onclick="excluirEquipe(${idx})" style="color:var(--red)">✕</button>
       </div>
-    </div>`).join('') || '<div style="color:var(--text2);font-size:13px;padding:8px">Nenhuma equipe criada.</div>';
+    </div>`).join('')||'<div style="color:var(--text2);font-size:13px;padding:8px">Nenhuma equipe criada.</div>';
 }
 
-let novaEquipeMembros = [];
+let novaEquipeMembros=[];
 function adicionarMembroNova() {
-  const sel = document.getElementById('novaEquipePessoaSelect');
-  const val = sel.value;
-  if (!val || novaEquipeMembros.includes(val)) { sel.value = ''; return; }
-  novaEquipeMembros.push(val);
-  sel.value = '';
-  atualizarChipsNova();
+  const sel=document.getElementById('novaEquipePessoaSelect'), val=sel.value;
+  if(!val||novaEquipeMembros.includes(val)){sel.value='';return}
+  novaEquipeMembros.push(val); sel.value=''; atualizarChipsNova();
 }
-
-function removerMembroNova(people) {
-  novaEquipeMembros = novaEquipeMembros.filter(m => m !== people);
-  atualizarChipsNova();
-}
-
+function removerMembroNova(p) { novaEquipeMembros=novaEquipeMembros.filter(m=>m!==p); atualizarChipsNova(); }
 function atualizarChipsNova() {
-  document.getElementById('novaEquipeMembros').innerHTML = novaEquipeMembros.map(m =>
-    `<span class="member-chip">${nomeFormatado(m)}<button onclick="removerMembroNova('${m}')">×</button></span>`
-  ).join('');
+  document.getElementById('novaEquipeMembros').innerHTML=novaEquipeMembros.map(m=>
+    `<span class="member-chip">${nomeF(m)}<button onclick="removerMembroNova('${m}')">×</button></span>`).join('');
 }
-
 function salvarNovaEquipe() {
-  const nome = document.getElementById('novaEquipeNome').value.trim();
-  if (!nome) { toast('Informe o nome da equipe', 'warn'); return; }
-  if (!novaEquipeMembros.length) { toast('Adicione pelo menos um membro', 'warn'); return; }
-  DB.equipes.push({ id: 'eq_' + Date.now(), nome, membros: [...novaEquipeMembros], padrao: false });
-  salvarEquipes();
-  novaEquipeMembros = [];
-  document.getElementById('novaEquipeNome').value = '';
-  atualizarChipsNova();
-  popularFiltros();
-  renderModalEquipes();
-  toast('✓ Equipe criada');
+  const nome=document.getElementById('novaEquipeNome').value.trim();
+  if(!nome){toast('Informe o nome','warn');return}
+  if(!novaEquipeMembros.length){toast('Adicione membros','warn');return}
+  DB.equipes.push({id:'eq_'+Date.now(),nome,membros:[...novaEquipeMembros],padrao:false,projConfig:{}});
+  salvarEquipes(); novaEquipeMembros=[];
+  document.getElementById('novaEquipeNome').value=''; atualizarChipsNova();
+  popularFiltros(); renderModalEquipes(); toast('✓ Equipe criada');
 }
-
 function excluirEquipe(idx) {
-  if (!confirm('Excluir equipe "' + DB.equipes[idx].nome + '"?')) return;
-  DB.equipes.splice(idx, 1);
-  salvarEquipes();
-  popularFiltros();
-  renderModalEquipes();
+  if(!confirm('Excluir "'+DB.equipes[idx].nome+'"?')) return;
+  DB.equipes.splice(idx,1); salvarEquipes(); popularFiltros(); renderModalEquipes();
 }
-
 function editarEquipe(idx) {
-  const eq = DB.equipes[idx];
-  document.getElementById('novaEquipeNome').value = eq.nome;
-  novaEquipeMembros = [...eq.membros];
-  atualizarChipsNova();
-  DB.equipes.splice(idx, 1);
-  salvarEquipes();
-  renderModalEquipes();
+  const eq=DB.equipes[idx];
+  document.getElementById('novaEquipeNome').value=eq.nome;
+  novaEquipeMembros=[...eq.membros]; atualizarChipsNova();
+  DB.equipes.splice(idx,1); salvarEquipes(); renderModalEquipes();
   toast('Edite e clique em "Criar Equipe" para salvar');
 }
 
-// ══════════════════════════════════════════════════════════════
+// ── CONFIG DE PROJETOS POR PESSOA NA EQUIPE ──────────
+function abrirConfigEquipe(idx) {
+  equipeEditandoIdx=idx;
+  const eq=DB.equipes[idx];
+  equipeEditConfig=JSON.parse(JSON.stringify(eq.projConfig||{}));
+  document.getElementById('editEquipeTitulo').textContent=`⚙ Projetos — ${eq.nome}`;
+  const projetos=[...new Set(DB.horas.map(h=>h.projeto).filter(Boolean))].sort();
+  const conteudo=eq.membros.map(people=>{
+    const cfg=equipeEditConfig[people]||'todos';
+    const projSelecionados=cfg==='todos'?[]:cfg;
+    const projs=projetos.map(p=>{
+      const on=cfg==='todos'||projSelecionados.includes(p);
+      return `<div class="proj-config-row">
+        <span class="proj-config-nome">${p}</span>
+        <button class="proj-toggle ${on?'on':''}" data-pessoa="${people}" data-proj="${p}" onclick="toggleProjConfig(this)"></button>
+      </div>`;
+    }).join('');
+    const todoOn=cfg==='todos';
+    return `<div style="margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div style="font-weight:600;font-size:13px">${nomeF(people)}</div>
+        <button class="btn btn-sm ${todoOn?'active':''}" onclick="toggleTodosProjetos(this,'${people}')">${todoOn?'✓ Todos':'Todos'}</button>
+      </div>
+      <div style="max-height:180px;overflow-y:auto">${projs}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('editEquipeConteudo').innerHTML=conteudo||'<div style="color:var(--text2);font-size:13px">Nenhum membro nesta equipe.</div>';
+  fecharModalEquipes();
+  document.getElementById('modalEditarEquipe').classList.add('open');
+}
+
+function toggleProjConfig(btn) {
+  const people=btn.dataset.pessoa, proj=btn.dataset.proj;
+  btn.classList.toggle('on');
+  if(!equipeEditConfig[people]||equipeEditConfig[people]==='todos') equipeEditConfig[people]=[];
+  const arr=equipeEditConfig[people];
+  const idx=arr.indexOf(proj);
+  if(idx>=0) arr.splice(idx,1); else arr.push(proj);
+  // Atualiza botão "Todos"
+  const todosBtn=btn.closest('[style*="margin-bottom:16px"]').querySelector('.btn-sm');
+  if(todosBtn) { todosBtn.classList.remove('active'); todosBtn.textContent='Todos'; }
+}
+
+function toggleTodosProjetos(btn, people) {
+  const isTodos=btn.classList.contains('active');
+  if(isTodos) {
+    equipeEditConfig[people]=[]; btn.classList.remove('active'); btn.textContent='Todos';
+    btn.closest('[style*="margin-bottom:16px"]').querySelectorAll('.proj-toggle').forEach(t=>t.classList.remove('on'));
+  } else {
+    equipeEditConfig[people]='todos'; btn.classList.add('active'); btn.textContent='✓ Todos';
+    btn.closest('[style*="margin-bottom:16px"]').querySelectorAll('.proj-toggle').forEach(t=>t.classList.add('on'));
+  }
+}
+
+function fecharModalEditarEquipe() {
+  document.getElementById('modalEditarEquipe').classList.remove('open');
+  abrirModalEquipes();
+}
+
+function salvarConfigEquipe() {
+  if(equipeEditandoIdx===null) return;
+  // Normaliza: se todos os projetos selecionados = 'todos'
+  const projetos=[...new Set(DB.horas.map(h=>h.projeto).filter(Boolean))];
+  Object.keys(equipeEditConfig).forEach(people=>{
+    const cfg=equipeEditConfig[people];
+    if(Array.isArray(cfg)&&cfg.length===projetos.length) equipeEditConfig[people]='todos';
+    if(Array.isArray(cfg)&&cfg.length===0) equipeEditConfig[people]='todos';
+  });
+  DB.equipes[equipeEditandoIdx].projConfig=equipeEditConfig;
+  salvarEquipes(); aplicarFiltros();
+  document.getElementById('modalEditarEquipe').classList.remove('open');
+  toast('✓ Configuração salva');
+  equipeEditandoIdx=null;
+}
+
+// ══════════════════════════════════════════════════════
 // FERIADOS
-// ══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 function carregarFeriados() {
-  const salvo = localStorage.getItem(LS_FERIADOS);
-  if (salvo) return JSON.parse(salvo);
-  // Padrão: feriados base do ano
-  return FERIADOS_BASE.map(d => ({ data: d, nome: FERIADOS_NOMES_BASE[d] || 'Feriado', base: true }));
+  const s=localStorage.getItem(LS_FERIADOS);
+  if(s) return JSON.parse(s);
+  return FERIADOS_BASE.map(d=>({data:d,nome:FERIADOS_NOMES_BASE[d]||'Feriado',base:true}));
 }
-
-function salvarFeriados() {
-  localStorage.setItem(LS_FERIADOS, JSON.stringify(DB.feriados));
-}
-
-function getFeriadoSet() {
-  return new Set((DB.feriados || []).map(f => f.data));
-}
-
-function getFeriadoNomes() {
-  const m = {};
-  (DB.feriados || []).forEach(f => { m[f.data] = f.nome; });
-  return m;
-}
-
-function abrirModalFeriados() {
-  renderModalFeriados();
-  document.getElementById('modalFeriados').classList.add('open');
-}
-
-function fecharModalFeriados() {
-  document.getElementById('modalFeriados').classList.remove('open');
-}
-
+function salvarFeriados() { localStorage.setItem(LS_FERIADOS,JSON.stringify(DB.feriados)); }
+function getFeriadoSet() { return new Set((DB.feriados||[]).map(f=>f.data)); }
+function getFeriadoNomes() { const m={}; (DB.feriados||[]).forEach(f=>{m[f.data]=f.nome}); return m; }
+function abrirModalFeriados() { renderModalFeriados(); document.getElementById('modalFeriados').classList.add('open'); }
+function fecharModalFeriados() { document.getElementById('modalFeriados').classList.remove('open'); }
 function renderModalFeriados() {
-  const lista = [...DB.feriados].sort((a,b) => a.data.localeCompare(b.data));
-  document.getElementById('feriadosLista').innerHTML = lista.map((f, idx) => `
+  const lista=[...DB.feriados].sort((a,b)=>a.data.localeCompare(b.data));
+  document.getElementById('feriadosLista').innerHTML=lista.map((f,idx)=>`
     <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;background:var(--bg3);border:1px solid var(--border);margin-bottom:4px">
       <span style="font-size:12px;color:var(--accent2);font-weight:700;min-width:90px">${f.data}</span>
       <span style="flex:1;font-size:13px">${f.nome}</span>
-      ${f.base ? '<span class="chip chip-gray" style="font-size:10px">base</span>' : ''}
-      <button class="btn btn-sm" onclick="removerFeriado(${idx})" style="color:var(--red);padding:2px 8px">✕</button>
-    </div>`).join('') || '<div style="color:var(--text2);padding:8px;font-size:13px">Nenhum feriado cadastrado.</div>';
+      ${f.base?'<span class="chip chip-gray" style="font-size:10px">base</span>':''}
+      <button class="btn btn-sm" onclick="removerFeriado(${idx})" style="color:var(--red)">✕</button>
+    </div>`).join('')||'<div style="color:var(--text2);padding:8px;font-size:13px">Nenhum feriado.</div>';
 }
-
 function adicionarFeriado() {
-  const data = document.getElementById('novoFeriadoData').value;
-  const nome = document.getElementById('novoFeriadoNome').value.trim() || 'Feriado';
-  if (!data) { toast('Selecione uma data', 'warn'); return; }
-  if (DB.feriados.find(f => f.data === data)) { toast('Data já cadastrada', 'warn'); return; }
-  DB.feriados.push({ data, nome, base: false });
-  DB.feriados.sort((a,b) => a.data.localeCompare(b.data));
+  const data=document.getElementById('novoFeriadoData').value;
+  const nome=document.getElementById('novoFeriadoNome').value.trim()||'Feriado';
+  if(!data){toast('Selecione uma data','warn');return}
+  if(DB.feriados.find(f=>f.data===data)){toast('Data já cadastrada','warn');return}
+  DB.feriados.push({data,nome,base:false}); DB.feriados.sort((a,b)=>a.data.localeCompare(b.data));
   salvarFeriados();
-  document.getElementById('novoFeriadoData').value = '';
-  document.getElementById('novoFeriadoNome').value = '';
-  renderModalFeriados();
-  renderizarAba();
-  toast('✓ Feriado adicionado');
+  document.getElementById('novoFeriadoData').value=''; document.getElementById('novoFeriadoNome').value='';
+  renderModalFeriados(); renderizarAba(); toast('✓ Feriado adicionado');
 }
+function removerFeriado(idx) { DB.feriados.splice(idx,1); salvarFeriados(); renderModalFeriados(); renderizarAba(); }
 
-function removerFeriado(idx) {
-  DB.feriados.splice(idx, 1);
-  salvarFeriados();
-  renderModalFeriados();
-  renderizarAba();
-  toast('Feriado removido');
-}
-
-// ══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 // HELPERS
-// ══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 function fmtH(h) {
-  const hInt = Math.floor(Math.abs(h));
-  const min  = Math.round((Math.abs(h) - hInt) * 60);
-  return `${hInt}h${min > 0 ? String(min).padStart(2,'0')+'m' : ''}`;
-}
-function fmtH1d(h) {
-  if (h >= 10) return Math.round(h) + 'h';
-  return h.toFixed(1).replace('.0','') + 'h';
+  const hi=Math.floor(Math.abs(h)), min=Math.round((Math.abs(h)-hi)*60);
+  return `${hi}h${min>0?String(min).padStart(2,'0')+'m':''}`;
 }
 function fmtISO(d) {
-  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 function fmtData(d) {
-  return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear();
+  return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
 }
-function nomeFormatado(user) {
-  if (!user) return '';
-  return user.split('.').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+function nomeF(u) {
+  if(!u) return ''; return u.split('.').map(p=>p.charAt(0).toUpperCase()+p.slice(1)).join(' ');
 }
-function semanaISO(dataStr) {
-  if (!dataStr) return 0;
-  const d = new Date(dataStr + 'T12:00:00');
-  const jan1 = new Date(d.getFullYear(), 0, 1);
-  return Math.ceil(((d - jan1) / 86400000 + jan1.getDay() + 1) / 7);
+function semanaISO(ds) {
+  if(!ds) return 0; const d=new Date(ds+'T12:00:00'), j=new Date(d.getFullYear(),0,1);
+  return Math.ceil(((d-j)/86400000+j.getDay()+1)/7);
 }
-function diasUteisMes(ano, mes) {
-  let n = 0;
-  const feriadoSet = getFeriadoSet();
-  const fim = new Date(ano, mes, 0).getDate();
-  for (let i = 1; i <= fim; i++) {
-    const d   = new Date(ano, mes-1, i);
-    const dow = d.getDay();
-    const iso = fmtISO(d);
-    if (dow > 0 && dow < 6 && !feriadoSet.has(iso)) n++;
-  }
+function diasUteisMes(ano,mes) {
+  let n=0; const fs=getFeriadoSet(), fim=new Date(ano,mes,0).getDate();
+  for(let i=1;i<=fim;i++){const d=new Date(ano,mes-1,i),dow=d.getDay(),iso=fmtISO(d);if(dow>0&&dow<6&&!fs.has(iso))n++;}
   return n;
 }
-function corPct(pct) {
-  if (pct >= 90) return 'green';
-  if (pct >= 70) return 'yellow';
-  return 'red';
+function corPct(p){return p>=90?'green':p>=70?'yellow':'red'}
+function card(label,value,sub,pct,cor){
+  const bar=pct!==null?`<div class="card-bar"><div class="card-bar-fill ${cor||''}" style="width:${Math.min(pct,100)}%"></div></div>`:'';
+  return `<div class="card"><div class="card-label">${label}</div><div class="card-value">${value}</div><div class="card-sub">${sub}</div>${bar}</div>`;
 }
-function salvarLS(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch(e){} }
-function carregarLS(key)    { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; } catch(e){ return null; } }
-function toast(msg, tipo) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.style.borderColor = tipo === 'warn' ? 'var(--yellow)' : 'var(--border)';
-  el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 3000);
+function barRow(label,val,max,cor){
+  const pct=max>0?Math.round(val/max*100):0;
+  return `<div class="bar-row"><span class="bar-label" title="${label}">${label}</span><div class="bar-track"><div class="bar-fill ${cor}" style="width:${pct}%"></div></div><span class="bar-value">${fmtH(val)}</span></div>`;
+}
+function salvarLS(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+function carregarLS(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return null}}
+function toast(msg,tipo){
+  const el=document.getElementById('toast'); el.textContent=msg;
+  el.style.borderColor=tipo==='warn'?'var(--yellow)':'var(--border)';
+  el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),3000);
 }
 </script>
 </body>
