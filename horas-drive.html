@@ -164,6 +164,25 @@ input[type=text].input-full{width:100%;padding:7px 10px;margin-bottom:8px}
 .proj-toggle::after{content:'';position:absolute;top:3px;left:3px;width:12px;height:12px;border-radius:50%;background:#fff;transition:transform .2s}
 .proj-toggle.on::after{transform:translateX(14px)}
 
+/* ── RELATÓRIO ─────────────────────────────────────────────── */
+.rel-modal{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:24px;width:820px;max-width:98vw;max-height:90vh;overflow-y:auto}
+.rel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px}
+.rel-title{font-size:15px;font-weight:700}
+.rel-actions{display:flex;gap:8px}
+.rel-section{margin-bottom:24px}
+.rel-section-title{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.rel-table{width:100%;border-collapse:collapse;font-size:12px}
+.rel-table th{padding:7px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);background:var(--bg3);white-space:nowrap}
+.rel-table td{padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+.rel-table tr:last-child td{border-bottom:none}
+.rel-table tr:hover td{background:var(--bg3)}
+.rel-table .td-dia{color:var(--text2);white-space:nowrap}
+.rel-table .td-horas{text-align:right;font-weight:600;white-space:nowrap}
+.rel-table .td-desc{max-width:340px;color:var(--text)}
+.rel-table .td-proj{color:var(--text2);font-size:11px}
+.rel-total-row td{font-weight:700;border-top:2px solid var(--border);background:var(--bg3) !important}
+.rel-pessoa-hd{font-size:13px;font-weight:700;margin:12px 0 6px;color:var(--accent)}
+
 /* LOADING / EMPTY */
 .loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:48px;color:var(--text2);font-size:14px}
 .spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
@@ -281,6 +300,7 @@ input[type=text].input-full{width:100%;padding:7px 10px;margin-bottom:8px}
         <div class="section-title" id="mensalTitle">Conferência Mensal</div>
         <div class="section-sub" id="mensalSub"></div>
       </div>
+      <button class="btn btn-sm" onclick="abrirRelatorio('mensal')">📄 Relatório</button>
     </div>
     <div class="panel">
       <div id="tabMensalWrap"><div class="loading"><div class="spinner"></div> Carregando...</div></div>
@@ -297,6 +317,7 @@ input[type=text].input-full{width:100%;padding:7px 10px;margin-bottom:8px}
       </div>
       <button class="btn" onclick="irSemanaAtual()">Semana atual</button>
       <button class="btn" onclick="irSemanaAnterior()">Semana anterior</button>
+      <button class="btn btn-sm" style="margin-left:auto" onclick="abrirRelatorio('semanal')">📄 Relatório</button>
     </div>
     <div class="panel">
       <div id="tabSemanalWrap"><div class="loading"><div class="spinner"></div> Carregando...</div></div>
@@ -312,6 +333,7 @@ input[type=text].input-full{width:100%;padding:7px 10px;margin-bottom:8px}
         <button class="btn btn-icon" onclick="navQuinzena(1)">›</button>
       </div>
       <button class="btn" onclick="irQuinzenaAtual()">Quinzena atual</button>
+      <button class="btn btn-sm" style="margin-left:auto" onclick="abrirRelatorio('quinzenal')">📄 Relatório</button>
     </div>
     <div class="panel">
       <div id="tabQuinzenalWrap"><div class="loading"><div class="spinner"></div> Carregando...</div></div>
@@ -374,6 +396,24 @@ input[type=text].input-full{width:100%;padding:7px 10px;margin-bottom:8px}
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- MODAL RELATÓRIO -->
+<div class="modal-overlay" id="modalRelatorio">
+  <div class="rel-modal">
+    <div class="rel-header">
+      <div>
+        <div class="rel-title" id="relTitulo">Relatório de Horas</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px" id="relSubtitulo"></div>
+      </div>
+      <div class="rel-actions">
+        <button class="btn btn-sm" onclick="exportarRelatorioCSV()">⬇ CSV</button>
+        <button class="btn btn-sm" onclick="imprimirRelatorio()">🖨 Imprimir</button>
+        <button class="btn btn-sm" onclick="fecharRelatorio()">✕ Fechar</button>
+      </div>
+    </div>
+    <div id="relConteudo"></div>
+  </div>
+</div>
 
 <script>
 // ══════════════════════════════════════════════════════
@@ -956,26 +996,50 @@ function abrirConfigEquipe(idx) {
   const eq=DB.equipes[idx];
   equipeEditConfig=JSON.parse(JSON.stringify(eq.projConfig||{}));
   document.getElementById('editEquipeTitulo').textContent=`⚙ Projetos — ${eq.nome}`;
-  const projetos=[...new Set(DB.horas.map(h=>h.projeto).filter(Boolean))].sort();
+
+  // Busca projetos: prioriza DB.horas, fallback para DB.pessoas (projetoAtual)
+  let projetos=[...new Set(DB.horas.map(h=>h.projeto).filter(Boolean))].sort();
+  if (!projetos.length) {
+    projetos=[...new Set(DB.pessoas.map(p=>p.projetoAtual).filter(Boolean))].sort();
+  }
+
+  if (!projetos.length) {
+    document.getElementById('editEquipeConteudo').innerHTML=
+      `<div style="color:var(--text2);font-size:13px;padding:12px 0">
+        Nenhum projeto encontrado. Sincronize os dados primeiro (botão ↻ Sincronizar).
+      </div>`;
+    fecharModalEquipes();
+    document.getElementById('modalEditarEquipe').classList.add('open');
+    return;
+  }
+
   const conteudo=eq.membros.map(people=>{
-    const cfg=equipeEditConfig[people]||'todos';
-    const projSelecionados=cfg==='todos'?[]:cfg;
+    const cfg=equipeEditConfig[people];
+    // null/undefined = ainda não configurado = default "todos"
+    const efetivo = cfg === undefined ? 'todos' : cfg;
+    const projSelecionados = efetivo==='todos' ? [] : (Array.isArray(efetivo) ? efetivo : []);
+    const todoOn = efetivo==='todos';
+
     const projs=projetos.map(p=>{
-      const on=cfg==='todos'||projSelecionados.includes(p);
+      const on=todoOn || projSelecionados.includes(p);
       return `<div class="proj-config-row">
         <span class="proj-config-nome">${p}</span>
         <button class="proj-toggle ${on?'on':''}" data-pessoa="${people}" data-proj="${p}" onclick="toggleProjConfig(this)"></button>
       </div>`;
     }).join('');
-    const todoOn=cfg==='todos';
-    return `<div style="margin-bottom:16px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+
+    return `<div style="margin-bottom:16px;border:1px solid var(--border);border-radius:8px;padding:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <div style="font-weight:600;font-size:13px">${nomeF(people)}</div>
-        <button class="btn btn-sm ${todoOn?'active':''}" onclick="toggleTodosProjetos(this,'${people}')">${todoOn?'✓ Todos':'Todos'}</button>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:11px;color:var(--text2)">${todoOn?'Todos os projetos':(projSelecionados.length+' projeto(s)')} selecionado(s)</span>
+          <button class="btn btn-sm ${todoOn?'active':''}" onclick="toggleTodosProjetos(this,'${people}')">${todoOn?'✓ Todos':'Selecionar todos'}</button>
+        </div>
       </div>
-      <div style="max-height:180px;overflow-y:auto">${projs}</div>
+      <div style="max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:4px">${projs}</div>
     </div>`;
   }).join('');
+
   document.getElementById('editEquipeConteudo').innerHTML=conteudo||'<div style="color:var(--text2);font-size:13px">Nenhum membro nesta equipe.</div>';
   fecharModalEquipes();
   document.getElementById('modalEditarEquipe').classList.add('open');
@@ -1023,6 +1087,279 @@ function salvarConfigEquipe() {
   document.getElementById('modalEditarEquipe').classList.remove('open');
   toast('✓ Configuração salva');
   equipeEditandoIdx=null;
+}
+
+// ══════════════════════════════════════════════════════
+// RELATÓRIO
+// ══════════════════════════════════════════════════════
+
+let _relDados = null; // cache para export CSV
+
+function abrirRelatorio(tipo) {
+  let ini, fim, titulo, subtitulo;
+  if (tipo === 'semanal') {
+    const p = periodoSemana(offsetSemana);
+    ini = fmtISO(p.ini); fim = fmtISO(p.fim);
+    titulo = 'Relatório Semanal';
+    subtitulo = fmtData(p.ini) + ' — ' + fmtData(p.fim);
+  } else if (tipo === 'quinzenal') {
+    const p = periodoQuinzena(offsetQuinzena);
+    ini = fmtISO(p.ini); fim = fmtISO(p.fim);
+    titulo = 'Relatório Quinzenal';
+    subtitulo = fmtData(p.ini) + ' — ' + fmtData(p.fim);
+  } else {
+    const mes = DB.mesAtual, ano = DB.anoAtual;
+    ini = `${ano}-${String(mes).padStart(2,'0')}-01`;
+    fim = fmtISO(new Date(ano, mes, 0));
+    titulo = 'Relatório Mensal';
+    subtitulo = MESES[mes-1] + ' ' + ano;
+  }
+
+  // Filtro de equipe ativo?
+  const equipeId = document.getElementById('filtroEquipe').value;
+  const equipeAtiva = equipeId ? DB.equipes.find(e=>e.id===equipeId) : null;
+  const filtroEquipeLabel = equipeAtiva ? ` · Equipe: ${equipeAtiva.nome}` : '';
+
+  document.getElementById('relTitulo').textContent = titulo;
+  document.getElementById('relSubtitulo').textContent = subtitulo + filtroEquipeLabel;
+
+  // Horas do período filtradas (já respeita projConfig via horasFiltradas)
+  const horasPer = horasFiltradas.filter(h => h.data >= ini && h.data <= fim);
+  const pessoas  = pessoasFiltradas.filter(p => p.ativo);
+
+  _relDados = { horasPer, pessoas, ini, fim, titulo, subtitulo };
+
+  document.getElementById('relConteudo').innerHTML = gerarHTMLRelatorio(horasPer, pessoas);
+  document.getElementById('modalRelatorio').classList.add('open');
+}
+
+function gerarHTMLRelatorio(horasPer, pessoas) {
+  const DIAS_SEMANA = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  let html = '';
+
+  // ── TABELA 1: Lançamentos diários ─────────────────────
+  html += `<div class="rel-section">
+    <div class="rel-section-title">📅 Registros de Horas Diárias</div>`;
+
+  if (!pessoas.length || !horasPer.length) {
+    html += `<div style="color:var(--text2);font-size:13px;padding:12px 0">Nenhum registro no período.</div>`;
+  } else {
+    // Agrupa por pessoa
+    for (const pessoa of pessoas) {
+      const horasP = horasPer.filter(h => h.user === pessoa.people);
+      if (!horasP.length) continue;
+
+      const totalP = horasP.reduce((a,h) => a+(h.horas||0), 0);
+      html += `<div class="rel-pessoa-hd">${nomeF(pessoa.people)} · ${fmtH(totalP)}</div>`;
+      html += `<table class="rel-table" style="margin-bottom:12px">
+        <thead><tr>
+          <th style="width:80px">Data</th>
+          <th style="width:50px">Dia</th>
+          <th>Projeto</th>
+          <th>Atividade</th>
+          <th style="width:70px;text-align:right">Horas</th>
+        </tr></thead>
+        <tbody>`;
+
+      // Ordena por data
+      const ordenados = [...horasP].sort((a,b)=>a.data.localeCompare(b.data));
+      let diaAtual = '', totalDia = 0, linhasDia = [];
+
+      const flushDia = () => {
+        if (!linhasDia.length) return '';
+        const rows = linhasDia.join('');
+        linhasDia = [];
+        return rows + (totalDia > 0 ? `<tr style="background:var(--bg3)">
+          <td colspan="4" style="font-size:11px;color:var(--text3);font-weight:600">Total do dia</td>
+          <td class="td-horas" style="font-size:11px">${fmtH(totalDia)}</td>
+        </tr>` : '');
+      };
+
+      let htmlRows = '';
+      for (const h of ordenados) {
+        if (h.data !== diaAtual) {
+          htmlRows += flushDia();
+          totalDia = 0;
+          diaAtual = h.data;
+        }
+        const dt = new Date(h.data+'T12:00:00');
+        const dow = DIAS_SEMANA[dt.getDay()];
+        const desc = (h.taskText && h.taskText !== 'Atividade não informada' && h.taskText !== '')
+          ? h.taskText
+          : (h.descricao && h.descricao !== '{ID=SEM_TASK}' ? h.descricao.replace(/\{[^}]+\}/g,'').trim() : '—');
+        const proj = h.projeto ? (h.projeto.length > 30 ? h.projeto.substring(0,30)+'…' : h.projeto) : '—';
+        const fase = h.fase ? ` <span style="color:var(--text3);font-size:10px">[${h.fase}]</span>` : '';
+        totalDia += (h.horas||0);
+        linhasDia.push(`<tr>
+          <td class="td-dia">${fmtData(dt)}</td>
+          <td class="td-dia">${dow}</td>
+          <td class="td-proj">${proj}${fase}</td>
+          <td class="td-desc" style="font-size:12px">${desc}</td>
+          <td class="td-horas">${fmtH(h.horas||0)}</td>
+        </tr>`);
+      }
+      htmlRows += flushDia();
+
+      html += htmlRows;
+      html += `<tr class="rel-total-row">
+        <td colspan="4" style="font-size:12px">Total — ${nomeF(pessoa.people)}</td>
+        <td class="td-horas">${fmtH(totalP)}</td>
+      </tr>`;
+      html += `</tbody></table>`;
+    }
+  }
+  html += `</div>`;
+
+  // ── TABELA 2: Resumo de atividades agrupadas ──────────
+  html += `<div class="rel-section">
+    <div class="rel-section-title">📊 Resumo de Atividades Agrupadas</div>`;
+
+  // Agrupa por pessoa → atividade (taskText ou descricao limpa)
+  const porPessoa = {};
+  for (const h of horasPer) {
+    if (!porPessoa[h.user]) porPessoa[h.user] = {};
+    const chave = (h.taskText && h.taskText !== 'Atividade não informada' && h.taskText !== '')
+      ? h.taskText
+      : (h.descricao ? h.descricao.replace(/\{[^}]+\}/g,'').trim() : '');
+    const desc = chave || 'Atividade não descrita';
+    const key  = `${h.projeto}|||${desc}`;
+    if (!porPessoa[h.user][key]) porPessoa[h.user][key] = { projeto: h.projeto, desc, horas: 0 };
+    porPessoa[h.user][key].horas += (h.horas||0);
+  }
+
+  for (const pessoa of pessoas) {
+    const dados = porPessoa[pessoa.people];
+    if (!dados) continue;
+    const itens = Object.values(dados).sort((a,b)=>b.horas-a.horas);
+    const totalP = itens.reduce((a,i)=>a+i.horas, 0);
+
+    html += `<div class="rel-pessoa-hd">${nomeF(pessoa.people)} · ${fmtH(totalP)}</div>`;
+    html += `<table class="rel-table" style="margin-bottom:12px">
+      <thead><tr>
+        <th>Projeto</th>
+        <th>Atividade</th>
+        <th style="width:80px;text-align:right">Total Horas</th>
+        <th style="width:60px;text-align:right">%</th>
+      </tr></thead>
+      <tbody>`;
+
+    for (const item of itens) {
+      const pct = totalP > 0 ? Math.round(item.horas/totalP*100) : 0;
+      const proj = item.projeto ? (item.projeto.length>30?item.projeto.substring(0,30)+'…':item.projeto) : '—';
+      html += `<tr>
+        <td class="td-proj">${proj}</td>
+        <td class="td-desc" style="font-size:12px">${item.desc}</td>
+        <td class="td-horas">${fmtH(item.horas)}</td>
+        <td class="td-horas" style="color:var(--text2)">${pct}%</td>
+      </tr>`;
+    }
+    html += `<tr class="rel-total-row">
+      <td colspan="2" style="font-size:12px">Total — ${nomeF(pessoa.people)}</td>
+      <td class="td-horas">${fmtH(totalP)}</td>
+      <td class="td-horas" style="color:var(--text2)">100%</td>
+    </tr>`;
+    html += `</tbody></table>`;
+  }
+
+  // Totais gerais
+  const totalGeral = horasPer.reduce((a,h)=>a+(h.horas||0),0);
+  if (pessoas.length > 1) {
+    html += `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-top:8px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:13px;font-weight:700">Total Geral do Período</span>
+      <span style="font-size:20px;font-weight:700;color:var(--accent)">${fmtH(totalGeral)}</span>
+    </div>`;
+  }
+  html += `</div>`;
+
+  return html;
+}
+
+function fecharRelatorio() {
+  document.getElementById('modalRelatorio').classList.remove('open');
+}
+
+function exportarRelatorioCSV() {
+  if (!_relDados) return;
+  const { horasPer, pessoas, titulo, subtitulo } = _relDados;
+  const DIAS_SEMANA = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  let csv = `"${titulo} — ${subtitulo}"\n\n`;
+
+  // Tabela 1
+  csv += '"REGISTROS DIÁRIOS"\n';
+  csv += '"Profissional","Data","Dia","Projeto","Fase","Atividade","Horas"\n';
+  const ordenados = [...horasPer].sort((a,b)=>a.data.localeCompare(b.data)||a.user.localeCompare(b.user));
+  for (const h of ordenados) {
+    const pAtivo = pessoas.find(p=>p.people===h.user);
+    if (!pAtivo) continue;
+    const dt = new Date(h.data+'T12:00:00');
+    const dow = DIAS_SEMANA[dt.getDay()];
+    const desc = (h.taskText && h.taskText !== 'Atividade não informada') ? h.taskText
+      : (h.descricao ? h.descricao.replace(/\{[^}]+\}/g,'').trim() : '');
+    const horas = (h.horas||0).toFixed(4).replace('.',',');
+    csv += `"${nomeF(h.user)}","${fmtData(dt)}","${dow}","${h.projeto||''}","${h.fase||''}","${desc.replace(/"/g,"'")}","${horas}"\n`;
+  }
+
+  csv += '\n"RESUMO DE ATIVIDADES"\n';
+  csv += '"Profissional","Projeto","Atividade","Horas","% do Total"\n';
+  const porPessoa = {};
+  for (const h of horasPer) {
+    if (!pessoas.find(p=>p.people===h.user)) continue;
+    if (!porPessoa[h.user]) porPessoa[h.user] = {};
+    const desc = (h.taskText && h.taskText !== 'Atividade não informada') ? h.taskText
+      : (h.descricao ? h.descricao.replace(/\{[^}]+\}/g,'').trim() : 'Atividade não descrita');
+    const key = `${h.projeto}|||${desc}`;
+    if (!porPessoa[h.user][key]) porPessoa[h.user][key] = { projeto:h.projeto, desc, horas:0 };
+    porPessoa[h.user][key].horas += (h.horas||0);
+  }
+  for (const pessoa of pessoas) {
+    const dados = porPessoa[pessoa.people];
+    if (!dados) continue;
+    const itens = Object.values(dados).sort((a,b)=>b.horas-a.horas);
+    const totalP = itens.reduce((a,i)=>a+i.horas,0);
+    for (const item of itens) {
+      const pct = totalP>0?Math.round(item.horas/totalP*100):0;
+      csv += `"${nomeF(pessoa.people)}","${item.projeto||''}","${item.desc.replace(/"/g,"'")}","${item.horas.toFixed(4).replace('.',',')}","${pct}%"\n`;
+    }
+  }
+
+  // Download
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download=`relatorio-${subtitulo.replace(/[^a-z0-9]/gi,'-').toLowerCase()}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('✓ CSV exportado');
+}
+
+function imprimirRelatorio() {
+  const conteudo = document.getElementById('relConteudo').innerHTML;
+  const titulo   = document.getElementById('relTitulo').textContent;
+  const sub      = document.getElementById('relSubtitulo').textContent;
+  const w = window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+    <title>${titulo}</title>
+    <style>
+      body{font-family:Arial,sans-serif;font-size:12px;color:#111;padding:20px}
+      h1{font-size:18px;margin-bottom:4px}
+      h2{font-size:13px;color:#555;font-weight:400;margin-bottom:20px}
+      .rel-section{margin-bottom:28px}
+      .rel-section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#888;border-bottom:1px solid #ddd;padding-bottom:5px;margin-bottom:10px}
+      .rel-pessoa-hd{font-size:13px;font-weight:700;margin:12px 0 5px;color:#1A56DB}
+      .rel-table{width:100%;border-collapse:collapse;margin-bottom:10px;font-size:11px}
+      .rel-table th{padding:5px 8px;text-align:left;background:#f4f5f7;border-bottom:2px solid #ddd;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+      .rel-table td{padding:5px 8px;border-bottom:1px solid #eee}
+      .rel-table .td-horas{text-align:right;font-weight:600}
+      .rel-table .td-dia{color:#666;white-space:nowrap}
+      .rel-table .td-proj{color:#666;font-size:10px}
+      .rel-total-row td{font-weight:700;background:#f4f5f7;border-top:2px solid #ddd}
+      @media print{body{padding:0}}
+    </style></head><body>
+    <h1>${titulo}</h1><h2>${sub}</h2>
+    ${conteudo.replace(/class="rel-pessoa-hd"/g,'class="rel-pessoa-hd"').replace(/var\(--[^)]+\)/g,'inherit')}
+    </body></html>`);
+  w.document.close();
+  setTimeout(()=>w.print(), 400);
 }
 
 // ══════════════════════════════════════════════════════
