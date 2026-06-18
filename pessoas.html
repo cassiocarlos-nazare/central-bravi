@@ -456,12 +456,25 @@ function getExtras(id) {
 }
 
 // ── FILTROS ──
+// Funções oficiais da planilha Pessoas-2026 (Role), ordenadas alfabeticamente
+const FUNCOES_PLANILHA = [
+  'Analyst','CEO','COM','Developer','FIN','GOP','Marketing',
+  'PPC','Product Design','Product Owner','Project Manager',
+  'QA','QA Engineer','Scrum','Software Architect','Software Engineer','Tech Lead'
+];
+
 function popularFiltros() {
   const fp = document.getElementById('f-projeto');
   const ff = document.getElementById('f-funcao');
   const fs = document.getElementById('f-setor');
   fp.innerHTML = '<option value="">Todos os projetos</option>' + DB.projetos.filter(p=>p.status==='ativo').map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
-  ff.innerHTML = '<option value="">Todas as funções</option>' + DB.funcoes.map(f=>`<option value="${f.nome}">${f.nome}</option>`).join('');
+
+  // Usa lista da planilha como base; adiciona funções extras que possam existir no cadastro
+  const funcoesCadastro = [...new Set(DB.funcoes.map(f=>f.nome).concat(
+    DB.profissionais.filter(p=>p.funcao).map(p=>p.funcao)
+  ).concat(FUNCOES_PLANILHA))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  ff.innerHTML = '<option value="">Todas as funções</option>' + funcoesCadastro.map(f=>`<option value="${f}">${f}</option>`).join('');
+
   fs.innerHTML = '<option value="">Todos os setores</option>' + DB.setores.map(s=>`<option value="${s.nome}">${s.nome}</option>`).join('');
 }
 
@@ -500,7 +513,7 @@ function setFiltroStatus(s, el) {
 function setGridCols(n) { gridCols=n; document.getElementById('people-grid').style.gridTemplateColumns=`repeat(${n},1fr)`; }
 
 function getProfsFiltrados() {
-  const q      = document.getElementById('search-input')?.value.toLowerCase()||'';
+  const q      = document.getElementById('search-input')?.value.toLowerCase().trim()||'';
   const fProj  = document.getElementById('f-projeto')?.value||'';
   const fFunc  = document.getElementById('f-funcao')?.value||'';
   const fSetor = document.getElementById('f-setor')?.value||'';
@@ -511,7 +524,13 @@ function getProfsFiltrados() {
     if (fProj && p.projetoPrincipal !== fProj) return false;
     if (fFunc && p.funcao !== fFunc) return false;
     if (fSetor && p.setor !== fSetor) return false;
-    if (q) return (p.nome||'').toLowerCase().includes(q)||(p.funcao||'').toLowerCase().includes(q)||(p.setor||'').toLowerCase().includes(q);
+    if (q) {
+      const nome   = (p.nome||'').toLowerCase();
+      const funcao = (p.funcao||'').toLowerCase();
+      const email  = (p.email||'').toLowerCase();
+      const setor  = (p.setor||'').toLowerCase();
+      return nome.includes(q) || funcao.includes(q) || email.includes(q) || setor.includes(q);
+    }
     return true;
   });
 }
@@ -603,6 +622,9 @@ function renderGrid(profs) {
   }
   grid.style.gridTemplateColumns = `repeat(${gridCols},1fr)`;
 
+  // Ordenação alfabética por nome
+  const profsOrdenados = [...profs].sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','pt-BR'));
+
   const horasMes = {};
   DB.horas.forEach(h=>{
     const d=new Date(h.data||''); const n=new Date();
@@ -612,7 +634,7 @@ function renderGrid(profs) {
     }
   });
 
-  grid.innerHTML = profs.map(p=>{
+  grid.innerHTML = profsOrdenados.map(p=>{
     const ini = p.nome?p.nome.split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase():'??';
     const proj = DB.projetos.find(pr=>pr.id===p.projetoPrincipal);
     const dashIni2 = document.getElementById('dash-ini')?.value || '';
@@ -1546,10 +1568,23 @@ async function sincronizarDrive() {
     }
   } catch(e) { console.warn('Sync Pessoas-Drive falhou (não bloqueante):', e); }
 
+  // Mescla Projetos e Clientes da planilha Projetos-YYYY no cadastro
+  let syncProjMsg = '';
+  try {
+    const apiUrl = BraviDB.getApiUrl();
+    if (apiUrl) {
+      const r = await fetch(apiUrl + '?action=sync-projetos-drive&_=' + Date.now());
+      if (r.ok) {
+        const j = await r.json();
+        if (j.ok) syncProjMsg = `\n📁 Projetos-${new Date().getFullYear()}: ${j.projNovo} novos, ${j.clienteNovo} clientes novos`;
+      }
+    }
+  } catch(e) { console.warn('Sync Projetos-Drive falhou (não bloqueante):', e); }
+
   const ok = await BraviDB.sincronizar();
   if (ok) { carregarDB(); popularFiltros(); renderDashboard(); atualizarContadores(); }
   if (btn) { btn.innerHTML = '<i class="ti ti-refresh"></i> Sincronizar Drive'; btn.disabled = false; }
-  alert((ok ? '✅ Drive sincronizado!' : '⚠️ Sync parcial — dados locais mantidos') + syncPessoasMsg);
+  alert((ok ? '✅ Drive sincronizado!' : '⚠️ Sync parcial — dados locais mantidos') + syncPessoasMsg + syncProjMsg);
 }
 
 // spin animation
