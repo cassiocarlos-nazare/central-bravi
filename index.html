@@ -127,6 +127,34 @@ header{background:var(--bravi-dark);padding:0 48px;height:64px;display:flex;alig
 
 @media(max-width:960px){.modules-grid{grid-template-columns:repeat(2,1fr)}.module-card.featured{grid-column:span 1}.hero,.stats-bar,.main,.footer{padding-left:24px;padding-right:24px}}
 @media(max-width:600px){.modules-grid{grid-template-columns:1fr}.hero h1{font-size:28px}}
+
+/* ── LOGIN MODAL ── */
+.login-overlay{position:fixed;inset:0;background:rgba(26,26,46,.72);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+.login-overlay.open{display:flex}
+.login-box{background:#fff;border-radius:16px;padding:40px 36px;width:400px;max-width:95vw;box-shadow:0 24px 64px rgba(0,0,0,.3);position:relative}
+.login-box-close{position:absolute;top:16px;right:16px;background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:18px;padding:6px;border-radius:6px;line-height:1}
+.login-box-close:hover{background:var(--bg)}
+.login-logo{display:flex;align-items:center;gap:10px;margin-bottom:24px}
+.login-mark{width:36px;height:36px;background:var(--bravi-purple);border-radius:9px;display:grid;place-items:center;color:#fff;font-family:var(--font-display);font-size:16px;font-weight:800}
+.login-name{font-family:var(--font-display);font-size:18px;font-weight:800;color:var(--text-primary)}
+.login-name em{font-style:normal;color:var(--bravi-purple)}
+.login-title{font-family:var(--font-display);font-size:20px;font-weight:700;margin-bottom:4px;letter-spacing:-.02em}
+.login-sub{font-size:13px;color:var(--text-muted);margin-bottom:22px;line-height:1.5}
+.lfield{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.lfield label{font-size:12px;font-weight:600;color:var(--text-secondary)}
+.lfield input{padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font-body);font-size:13px;color:var(--text-primary);outline:none;transition:border-color .15s,box-shadow .15s;background:#fff}
+.lfield input:focus{border-color:var(--bravi-purple);box-shadow:0 0 0 3px rgba(124,58,237,.1)}
+.login-error{color:var(--danger);font-size:12px;margin-top:6px;margin-bottom:6px;display:none}
+.login-btn{width:100%;padding:11px;background:var(--bravi-purple);color:#fff;border:none;border-radius:8px;font-family:var(--font-display);font-size:14px;font-weight:700;cursor:pointer;margin-top:8px;transition:background .15s}
+.login-btn:hover:not(:disabled){background:#6b21d8}
+.login-btn:disabled{opacity:.6;cursor:not-allowed}
+.login-help{margin-top:18px;padding-top:16px;border-top:1px solid var(--border);font-size:12px;color:var(--text-muted);line-height:1.6}
+
+/* ── SESSÃO ATIVA (header) ── */
+.session-pill{display:none;align-items:center;gap:8px;background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.25);border-radius:100px;padding:5px 14px 5px 6px;cursor:pointer}
+.session-pill.show{display:flex}
+.session-avatar{width:22px;height:22px;border-radius:50%;background:var(--bravi-purple);color:#fff;display:grid;place-items:center;font-size:10px;font-weight:700;flex-shrink:0}
+.session-email{font-size:12px;color:#e9d5ff;font-weight:500}
 </style>
 </head>
 <body>
@@ -137,6 +165,10 @@ header{background:var(--bravi-dark);padding:0 48px;height:64px;display:flex;alig
     <span class="logo-name">Central <em>Bravi</em></span>
   </a>
   <div class="header-right">
+    <div class="session-pill" id="session-pill" onclick="doLogoutHub()" title="Clique para sair">
+      <div class="session-avatar" id="session-avatar">--</div>
+      <span class="session-email" id="session-email"></span>
+    </div>
     <div class="header-status"><div class="status-dot"></div> Sistema ativo</div>
     <div class="header-version">v1.0</div>
   </div>
@@ -241,7 +273,7 @@ header{background:var(--bravi-dark);padding:0 48px;height:64px;display:flex;alig
       <div class="card-status cs-live"><div class="cs-dot"></div> Ativo</div>
     </a>
 
-    <a href="recesso.html" class="module-card">
+    <a href="recesso.html" class="module-card" id="card-recesso" onclick="return interceptarModuloComLogin(event,'recesso.html')">
       <div class="card-top">
         <div class="card-icon" style="background:#fef3c7">🌴</div>
         <div class="card-arrow">↗</div>
@@ -249,7 +281,7 @@ header{background:var(--bravi-dark);padding:0 48px;height:64px;display:flex;alig
       <span class="card-cat" style="background:#fef3c7;color:#92400e">Ausências</span>
       <div class="card-title">Controle de Recesso</div>
       <div class="card-desc">Férias, recessos e ausências dos profissionais. Calendário de disponibilidade da equipe.</div>
-      <div class="card-status cs-soon"><div class="cs-dot"></div> Em breve</div>
+      <div class="card-status cs-live"><div class="cs-dot"></div> Ativo</div>
     </a>
 
     <a href="pipeline.html" class="module-card">
@@ -293,7 +325,35 @@ header{background:var(--bravi-dark);padding:0 48px;height:64px;display:flex;alig
   <div class="footer-badge">Bravi Software © 2026</div>
 </footer>
 
+<!-- ─── MODAL DE LOGIN (sessão compartilhada entre módulos) ──── -->
+<div class="login-overlay" id="login-overlay">
+  <div class="login-box">
+    <button class="login-box-close" onclick="fecharLoginHub()">✕</button>
+    <div class="login-logo">
+      <div class="login-mark">B</div>
+      <span class="login-name">Central <em>Bravi</em></span>
+    </div>
+    <div class="login-title">Acesso necessário</div>
+    <div class="login-sub" id="login-modulo-sub">Entre com seu e-mail e senha Bravi para acessar este módulo.</div>
+    <div class="lfield">
+      <label>E-mail Bravi</label>
+      <input type="email" id="hub-login-email" placeholder="nome.sobrenome@bravi.com.br" autocomplete="email">
+    </div>
+    <div class="lfield">
+      <label>Senha</label>
+      <input type="password" id="hub-login-senha" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLoginHub()">
+    </div>
+    <div id="hub-login-error" class="login-error"></div>
+    <button class="login-btn" id="hub-login-btn" onclick="doLoginHub()">Entrar</button>
+    <div class="login-help">Sem acesso ainda? Solicite a criação do seu usuário ao People Care (Andresa). Você receberá a senha padrão e deverá criar uma nova senha no primeiro acesso.</div>
+  </div>
+</div>
+
 <script>
+const HUB_API_URL = 'https://script.google.com/macros/s/AKfycbwflnR51V4sh7cc99AgHD9cJkfgE6BK38Xkcjaket0rfGy0HArMnTOHpQbGFhuwL6HD/exec';
+const LS_SESSAO = 'bravi_sessao';
+const SESSAO_DURACAO_MS = 8 * 60 * 60 * 1000; // 8 horas
+
 function animNum(id,val){
   const el=document.getElementById(id);
   if(!el||val===0){if(el)el.textContent='0';return}
@@ -308,6 +368,138 @@ try{
   animNum('stat-proj',pr.filter(x=>x.status==='ativo').length);
   animNum('stat-cli',cl.filter(x=>x.ativo!==false).length);
 }catch(e){}
+
+// ══════════════════════════════════════════════════════════════
+// SESSÃO COMPARTILHADA (login no hub vale para todos os módulos)
+// ══════════════════════════════════════════════════════════════
+
+/**
+ * Lê a sessão ativa do localStorage, já validando expiração.
+ * Retorna null se não houver sessão ou se ela tiver expirado.
+ */
+function lerSessaoHub() {
+  try {
+    const raw = localStorage.getItem(LS_SESSAO);
+    if (!raw) return null;
+    const sessao = JSON.parse(raw);
+    if (!sessao || !sessao.expiraEm || Date.now() > sessao.expiraEm) {
+      localStorage.removeItem(LS_SESSAO);
+      return null;
+    }
+    return sessao;
+  } catch(e) { return null; }
+}
+
+function salvarSessaoHub(email, papel, precisaTrocarSenha) {
+  const sessao = { email, papel, precisaTrocarSenha: !!precisaTrocarSenha, expiraEm: Date.now() + SESSAO_DURACAO_MS };
+  localStorage.setItem(LS_SESSAO, JSON.stringify(sessao));
+  return sessao;
+}
+
+function limparSessaoHub() {
+  localStorage.removeItem(LS_SESSAO);
+}
+
+function atualizarPillSessao() {
+  const sessao = lerSessaoHub();
+  const pill = document.getElementById('session-pill');
+  if (!sessao) { pill.classList.remove('show'); return; }
+  document.getElementById('session-avatar').textContent = sessao.email.slice(0,2).toUpperCase();
+  document.getElementById('session-email').textContent = sessao.email;
+  pill.classList.add('show');
+}
+
+function doLogoutHub() {
+  if (!confirm('Sair da Central Bravi?')) return;
+  limparSessaoHub();
+  atualizarPillSessao();
+}
+
+// ── Intercepta cliques em módulos que exigem login ──
+// Se já há sessão válida, deixa o link navegar normalmente.
+// Se não, impede a navegação e abre o modal de login; ao logar com
+// sucesso, completa a navegação para o módulo desejado.
+let MODULO_PENDENTE = null;
+
+function interceptarModuloComLogin(event, destino) {
+  const sessao = lerSessaoHub();
+  if (sessao) return true; // já logado, deixa navegar normalmente
+
+  event.preventDefault();
+  MODULO_PENDENTE = destino;
+  abrirLoginHub(destino);
+  return false;
+}
+
+function abrirLoginHub(destino) {
+  const sub = document.getElementById('login-modulo-sub');
+  sub.textContent = destino
+    ? `Entre com seu e-mail e senha Bravi para acessar este módulo.`
+    : `Entre com seu e-mail e senha Bravi para continuar.`;
+  document.getElementById('hub-login-email').value = '';
+  document.getElementById('hub-login-senha').value = '';
+  document.getElementById('hub-login-error').style.display = 'none';
+  document.getElementById('login-overlay').classList.add('open');
+}
+
+function fecharLoginHub() {
+  document.getElementById('login-overlay').classList.remove('open');
+  MODULO_PENDENTE = null;
+}
+
+let HUB_LOGIN_EM_ANDAMENTO = false;
+
+async function doLoginHub() {
+  if (HUB_LOGIN_EM_ANDAMENTO) return;
+  const email = document.getElementById('hub-login-email').value.trim().toLowerCase();
+  const senha = document.getElementById('hub-login-senha').value;
+  const errEl = document.getElementById('hub-login-error');
+  errEl.style.display = 'none';
+
+  if (!email || !senha) { errEl.textContent = 'Informe e-mail e senha.'; errEl.style.display='block'; return; }
+  if (!email.endsWith('@bravi.com.br')) { errEl.textContent = 'Use seu e-mail @bravi.com.br.'; errEl.style.display='block'; return; }
+
+  HUB_LOGIN_EM_ANDAMENTO = true;
+  const btn = document.getElementById('hub-login-btn');
+  const textoOriginal = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Entrando...';
+
+  try {
+    const r = await fetch(HUB_API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'auth-login', email, senha }),
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+    }).then(x => x.json());
+
+    if (!r.ok) {
+      errEl.textContent = r.erro || 'E-mail ou senha incorretos.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    salvarSessaoHub(email, r.usuario.papel, r.usuario.precisaTrocarSenha);
+    atualizarPillSessao();
+    fecharLoginHub();
+
+    // Se a senha ainda é a padrão, o módulo de destino (ex: recesso.html)
+    // é responsável por detectar isso e mostrar a tela de troca de senha
+    // obrigatória — o hub só guarda a sessão e navega.
+    if (MODULO_PENDENTE) {
+      const destino = MODULO_PENDENTE;
+      MODULO_PENDENTE = null;
+      window.location.href = destino;
+    }
+  } catch(e) {
+    errEl.textContent = 'Falha ao conectar. Tente novamente.';
+    errEl.style.display = 'block';
+  } finally {
+    HUB_LOGIN_EM_ANDAMENTO = false;
+    btn.disabled = false; btn.textContent = textoOriginal;
+  }
+}
+
+// Inicializa o estado da sessão ao carregar o hub
+atualizarPillSessao();
 </script>
 </body>
 </html>

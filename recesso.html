@@ -271,29 +271,17 @@ sep{display:block;height:1px;background:var(--border);margin:16px 0}
 </head>
 <body>
 
-<!-- ─── LOGIN ─────────────────────────────────────────────── -->
+<!-- ─── SEM SESSÃO — redireciona para o hub (login centralizado) ──── -->
 <div id="login-page">
   <div class="login-box">
     <div class="login-logo">
       <div class="login-mark">B</div>
       <span class="login-name">Central <span>Bravi</span></span>
     </div>
-    <div class="login-title">Recesso & Ausências</div>
-    <div class="login-sub">Entre com seu e-mail e senha Bravi para continuar</div>
-    <div class="field">
-      <label>E-mail Bravi</label>
-      <input type="email" id="login-email" placeholder="nome.sobrenome@bravi.com.br" autocomplete="email">
-    </div>
-    <div class="field">
-      <label>Senha</label>
-      <input type="password" id="login-senha" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
-    </div>
-    <div id="login-error" class="login-error">E-mail ou senha incorretos.</div>
-    <button class="login-btn" id="login-btn" onclick="doLogin()">Entrar</button>
-    <div class="login-shortcuts">
-      <p>Sem acesso ainda?</p>
-      <p style="font-size:12px;color:var(--text2);line-height:1.5">Solicite a criação do seu usuário ao People Care (Andresa). Você receberá a senha padrão e deverá criar uma nova senha no primeiro acesso.</p>
-    </div>
+    <div class="login-title">Acesso necessário</div>
+    <div class="login-sub">Você precisa entrar pela Central Bravi para acessar este módulo.</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:18px">Redirecionando para o login...</p>
+    <a href="index.html" class="login-btn" style="display:block;text-align:center;text-decoration:none">Ir para a Central Bravi agora</a>
   </div>
 </div>
 
@@ -314,6 +302,9 @@ sep{display:block;height:1px;background:var(--border);margin:16px 0}
       <label>Nova senha</label>
       <input type="password" id="ts-senha-nova" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
     </div>
+    <p style="font-size:12px;color:var(--text2);margin:-6px 0 14px;line-height:1.5">
+      A senha deve ter pelo menos <strong>6 caracteres</strong> e não pode ser a senha padrão (<strong>Bravi123</strong>).
+    </p>
     <div class="field">
       <label>Confirmar nova senha</label>
       <input type="password" id="ts-senha-confirma" placeholder="Repita a nova senha" autocomplete="new-password" onkeydown="if(event.key==='Enter')confirmarTrocaSenha()">
@@ -787,6 +778,7 @@ const LS_REGRAS     = 'bravi_recesso_regras';
 const LS_PROJ_GP    = 'bravi_recesso_proj_gp'; // {projeto: people}
 const LS_ANIV       = 'bravi_recesso_aniversario'; // {people: ano_usado}
 const LS_PROF_CFG   = 'bravi_recesso_prof_cfg';   // {people: {dataIniRecesso, nasc}}
+const LS_SESSAO     = 'bravi_sessao'; // sessão compartilhada com index.html (hub) — {email,papel,expiraEm}
 
 const FERIADOS_BR = new Set(['2026-01-01','2026-02-16','2026-02-17','2026-04-03','2026-04-21',
   '2026-05-01','2026-06-04','2026-09-07','2026-10-12','2026-11-02','2026-11-15','2026-12-25']);
@@ -820,11 +812,74 @@ let DB = {
 // ══════════════════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════════════════
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
   loadLocal();
   // Tenta sincronizar pessoas do Drive em background
   carregarPessoas();
+  await iniciarComSessaoDoHub();
 });
+
+/**
+ * Lê a sessão gravada pelo hub (index.html) em localStorage. Se não houver
+ * sessão válida, redireciona de volta para o hub — este módulo não tem mais
+ * tela de login própria, o login é sempre feito a partir da Central Bravi.
+ */
+function lerSessaoHub() {
+  try {
+    const raw = localStorage.getItem(LS_SESSAO);
+    if (!raw) return null;
+    const sessao = JSON.parse(raw);
+    if (!sessao || !sessao.expiraEm || Date.now() > sessao.expiraEm) {
+      localStorage.removeItem(LS_SESSAO);
+      return null;
+    }
+    return sessao;
+  } catch(e) { return null; }
+}
+
+async function iniciarComSessaoDoHub() {
+  const sessao = lerSessaoHub();
+  if (!sessao) {
+    // Sem sessão válida — mostra a tela de aviso e redireciona ao hub.
+    document.getElementById('login-page').style.display = 'flex';
+    setTimeout(() => { window.location.href = 'index.html'; }, 1200);
+    return;
+  }
+
+  // Sessão válida — monta o usuário e verifica se precisa trocar senha.
+  // A sessão do hub não carrega 'precisaTrocarSenha' (ela só guarda email/papel),
+  // então confirmamos isso com uma chamada leve ao backend antes de abrir o app.
+  if (!DB.pessoas.length) {
+    const cache = ls(LS_PESSOAS);
+    if (cache) DB.pessoas = cache;
+  }
+
+  const email = sessao.email;
+  const pessoa = DB.pessoas.find(p => (p.email||'').toLowerCase() === email);
+  const papel = sessao.papel;
+  const role = (papel === 'admin') ? 'pc' : determinarRole(papel);
+  const nomeBase = pessoa ? pessoa.people : email.replace('@bravi.com.br','');
+  const nome = nomeF(nomeBase);
+
+  STATE.currentUser = {
+    people: nomeBase,
+    nome,
+    email,
+    role,
+    papel,
+    roleLabel: papel==='admin' ? 'Administrador' : role==='pc' ? 'People Care' : role==='gp' ? 'Gestor de Projetos' : 'Profissional',
+    pessoa
+  };
+
+  document.getElementById('login-page').style.display = 'none';
+
+  if (sessao.precisaTrocarSenha) {
+    abrirTrocaSenhaObrigatoria(email);
+    return;
+  }
+
+  iniciarApp();
+}
 
 function loadLocal() {
   const r = ls(LS_REGRAS);   if (r) DB.regras = r;
@@ -850,80 +905,16 @@ async function carregarPessoas() {
 }
 
 // ══════════════════════════════════════════════════════════════
-// LOGIN (com senha — autenticação real via backend)
+// LOGIN — não existe mais tela própria neste módulo. A autenticação
+// acontece no hub (index.html), que grava a sessão compartilhada em
+// localStorage (LS_SESSAO). Este módulo só lê essa sessão — ver
+// iniciarComSessaoDoHub() no bloco INIT, acima.
 // ══════════════════════════════════════════════════════════════
-let LOGIN_EM_ANDAMENTO = false;
-
-async function doLogin() {
-  if (LOGIN_EM_ANDAMENTO) return;
-  const email = document.getElementById('login-email').value.trim().toLowerCase();
-  const senha = document.getElementById('login-senha').value;
-
-  if (!email || !senha) { showLoginError('Informe e-mail e senha.'); return; }
-  if (!email.endsWith('@bravi.com.br')) { showLoginError('Use seu e-mail @bravi.com.br.'); return; }
-
-  LOGIN_EM_ANDAMENTO = true;
-  const btn = document.getElementById('login-btn');
-  const btnTextoOriginal = btn.textContent;
-  btn.disabled = true; btn.textContent = 'Entrando...';
-
-  try {
-    const r = await fetch(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'auth-login', email, senha }),
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-    }).then(x => x.json());
-
-    if (!r.ok) {
-      showLoginError(r.erro || 'E-mail ou senha incorretos.');
-      return;
-    }
-
-    // Aguarda pessoas carregadas (para nome de exibição e dados do cadastro)
-    if (!DB.pessoas.length) {
-      const cache = ls(LS_PESSOAS);
-      if (cache) DB.pessoas = cache;
-    }
-
-    const pessoa = DB.pessoas.find(p => (p.email||'').toLowerCase() === email);
-    const papel = r.usuario.papel;
-    // 'admin' herda o comportamento de negócio de 'pc' (aprovações, dashboard, etc.)
-    // — o papel real ('admin') fica guardado separadamente só para exibição e para
-    // liberar a tela extra de Gerenciar Usuários, sem precisar duplicar toda regra
-    // de negócio que hoje já checa role==='pc'.
-    const role = (papel === 'admin') ? 'pc' : determinarRole(papel);
-    const nomeBase = pessoa ? pessoa.people : email.replace('@bravi.com.br','');
-    const nome = nomeF(nomeBase);
-
-    STATE.currentUser = {
-      people: nomeBase,
-      nome,
-      email,
-      role,
-      papel,
-      roleLabel: papel==='admin' ? 'Administrador' : role==='pc' ? 'People Care' : role==='gp' ? 'Gestor de Projetos' : 'Profissional',
-      pessoa
-    };
-
-    document.getElementById('login-error').style.display = 'none';
-
-    if (r.usuario.precisaTrocarSenha) {
-      abrirTrocaSenhaObrigatoria(email);
-      return;
-    }
-
-    iniciarApp();
-  } catch(e) {
-    showLoginError('Falha ao conectar. Tente novamente.');
-  } finally {
-    LOGIN_EM_ANDAMENTO = false;
-    btn.disabled = false; btn.textContent = btnTextoOriginal;
-  }
-}
 
 // Papel salvo no backend ('pc' ou 'profissional') → role interno da UI.
-// 'admin' é tratado antes desta função ser chamada (ver doLogin) e nunca
-// chega aqui. GP é detectado depois via ROLES_GP no cadastro (em iniciarApp).
+// 'admin' é tratado como 'pc' antes desta função ser chamada (ver
+// iniciarComSessaoDoHub) e nunca chega aqui. GP é detectado depois via
+// ROLES_GP no cadastro (em iniciarApp).
 function determinarRole(papel) {
   if (papel === 'pc') return 'pc';
   return 'pro';
@@ -931,7 +922,7 @@ function determinarRole(papel) {
 
 function showLoginError(msg) {
   const el = document.getElementById('login-error');
-  el.textContent = msg; el.style.display = 'block';
+  if (el) { el.textContent = msg; el.style.display = 'block'; }
 }
 
 function iniciarApp() {
@@ -968,9 +959,8 @@ function iniciarApp() {
 
 function doLogout() {
   STATE.currentUser = null;
-  document.getElementById('app').style.display = 'none';
-  document.getElementById('login-page').style.display = 'flex';
-  document.getElementById('login-senha').value = '';
+  localStorage.removeItem(LS_SESSAO);
+  window.location.href = 'index.html';
 }
 
 // ── TROCA DE SENHA OBRIGATÓRIA (primeiro acesso ou após reset) ──
@@ -1010,6 +1000,14 @@ async function confirmarTrocaSenha() {
     }).then(x => x.json());
 
     if (!r.ok) { errEl.textContent = r.erro || 'Não foi possível trocar a senha.'; errEl.style.display='block'; return; }
+
+    // Atualiza a sessão compartilhada para não cair de novo nesta tela
+    // ao recarregar a página (a senha já não é mais a padrão).
+    const sessaoAtual = lerSessaoHub();
+    if (sessaoAtual) {
+      sessaoAtual.precisaTrocarSenha = false;
+      localStorage.setItem(LS_SESSAO, JSON.stringify(sessaoAtual));
+    }
 
     toast('Senha definida com sucesso!','success');
     iniciarApp();
