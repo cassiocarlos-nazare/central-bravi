@@ -279,21 +279,47 @@ sep{display:block;height:1px;background:var(--border);margin:16px 0}
       <span class="login-name">Central <span>Bravi</span></span>
     </div>
     <div class="login-title">Recesso & Ausências</div>
-    <div class="login-sub">Entre com seu e-mail Bravi para continuar</div>
+    <div class="login-sub">Entre com seu e-mail e senha Bravi para continuar</div>
     <div class="field">
       <label>E-mail Bravi</label>
       <input type="email" id="login-email" placeholder="nome.sobrenome@bravi.com.br" autocomplete="email">
     </div>
-    <div id="login-error" class="login-error">E-mail não encontrado na base de profissionais.</div>
-    <button class="login-btn" onclick="doLogin()">Entrar</button>
-    <div class="login-shortcuts">
-      <p>Acesso rápido (demo)</p>
-      <div class="shortcut-pills">
-        <span class="spill active" onclick="setDemo('andresa.rosa@bravi.com.br','People Care')">Andresa · PC</span>
-        <span class="spill" onclick="setDemo('cassio.nazare@bravi.com.br','GP')">Cássio · GP</span>
-        <span class="spill" onclick="setDemo('mateus.schmitz@bravi.com.br','Pro')">Mateus · Pro</span>
-      </div>
+    <div class="field">
+      <label>Senha</label>
+      <input type="password" id="login-senha" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
     </div>
+    <div id="login-error" class="login-error">E-mail ou senha incorretos.</div>
+    <button class="login-btn" id="login-btn" onclick="doLogin()">Entrar</button>
+    <div class="login-shortcuts">
+      <p>Sem acesso ainda?</p>
+      <p style="font-size:12px;color:var(--text2);line-height:1.5">Solicite a criação do seu usuário ao People Care (Andresa). Você receberá a senha padrão e deverá criar uma nova senha no primeiro acesso.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ─── TROCA DE SENHA OBRIGATÓRIA (primeiro acesso / reset) ──── -->
+<div id="troca-senha-page" style="display:none;min-height:100vh;align-items:center;justify-content:center;background:linear-gradient(135deg,#1A56DB,#1E429F 50%,#111827)">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-mark">B</div>
+      <span class="login-name">Central <span>Bravi</span></span>
+    </div>
+    <div class="login-title">Criar nova senha</div>
+    <div class="login-sub">Por segurança, crie uma senha definitiva para continuar.</div>
+    <div class="field">
+      <label>Senha atual (padrão fornecida)</label>
+      <input type="password" id="ts-senha-atual" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <div class="field">
+      <label>Nova senha</label>
+      <input type="password" id="ts-senha-nova" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+    </div>
+    <div class="field">
+      <label>Confirmar nova senha</label>
+      <input type="password" id="ts-senha-confirma" placeholder="Repita a nova senha" autocomplete="new-password" onkeydown="if(event.key==='Enter')confirmarTrocaSenha()">
+    </div>
+    <div id="ts-error" class="login-error"></div>
+    <button class="login-btn" onclick="confirmarTrocaSenha()">Definir nova senha</button>
   </div>
 </div>
 
@@ -327,6 +353,9 @@ sep{display:block;height:1px;background:var(--border);margin:16px 0}
         </div>
         <div class="nav-item" onclick="nav('pg-regras')" id="ni-regras">
           <span class="ni-icon">⚙️</span> Regras
+        </div>
+        <div class="nav-item" onclick="nav('pg-usuarios')" id="ni-usuarios">
+          <span class="ni-icon">🔐</span> Gerenciar Usuários
         </div>
         <div class="nav-grp">Meu Recesso</div>
         <div class="nav-item" onclick="nav('pg-meu-recesso')" id="ni-meu-pc">
@@ -622,6 +651,52 @@ sep{display:block;height:1px;background:var(--border);margin:16px 0}
         </div>
       </div>
 
+      <!-- ── GERENCIAR USUÁRIOS (PC/admin) ── -->
+      <div id="pg-usuarios" class="page">
+        <div class="ph"><h1>Gerenciar Usuários</h1><p>Crie acessos e gerencie senhas dos profissionais</p></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="card" style="grid-column:1/-1">
+            <div class="card-hd"><h2>Criar Novo Usuário</h2></div>
+            <div class="card-bd">
+              <div class="form-grid" style="align-items:flex-end">
+                <div class="field">
+                  <label>E-mail Bravi <span class="req">*</span></label>
+                  <input type="email" id="usr-email" placeholder="nome.sobrenome@bravi.com.br">
+                </div>
+                <div class="field">
+                  <label>Papel de acesso</label>
+                  <select id="usr-papel">
+                    <option value="profissional">Profissional</option>
+                    <option value="pc">People Care</option>
+                    <option value="admin" id="usr-papel-admin-opt">Administrador (acesso total)</option>
+                  </select>
+                </div>
+              </div>
+              <div id="usr-criar-aviso" style="display:none;margin-top:10px"></div>
+              <div class="form-actions">
+                <button class="btn btn-brand" onclick="criarUsuario()">+ Criar Usuário</button>
+              </div>
+              <p style="font-size:12px;color:var(--text2);margin-top:8px">
+                O novo usuário recebe a senha padrão <strong>Bravi123</strong> e será obrigado a criar uma senha definitiva no primeiro acesso.
+              </p>
+            </div>
+          </div>
+
+          <div class="card" style="grid-column:1/-1">
+            <div class="card-hd">
+              <h2>Usuários com Acesso</h2>
+              <button class="btn btn-outline btn-sm" onclick="carregarUsuarios()">🔄 Atualizar</button>
+            </div>
+            <div class="card-bd">
+              <div class="table-wrap"><table>
+                <thead><tr><th>E-mail</th><th>Papel</th><th>Status da senha</th><th>Último login</th><th>Criado em</th><th>Ações</th></tr></thead>
+                <tbody id="usr-tbody"><tr><td colspan="6"><div class="empty"><div class="empty-icon">🔐</div><h3>Carregando...</h3></div></td></tr></tbody>
+              </table></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div><!-- /content -->
   </div><!-- /main -->
 </div><!-- /app -->
@@ -746,7 +821,6 @@ let DB = {
 // INIT
 // ══════════════════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('login-email').value = 'andresa.rosa@bravi.com.br';
   loadLocal();
   // Tenta sincronizar pessoas do Drive em background
   carregarPessoas();
@@ -776,52 +850,82 @@ async function carregarPessoas() {
 }
 
 // ══════════════════════════════════════════════════════════════
-// LOGIN
+// LOGIN (com senha — autenticação real via backend)
 // ══════════════════════════════════════════════════════════════
-function setDemo(email) {
-  document.getElementById('login-email').value = email;
-  document.querySelectorAll('.spill').forEach(s => s.classList.remove('active'));
-  event.target.classList.add('active');
-}
+let LOGIN_EM_ANDAMENTO = false;
 
-function doLogin() {
+async function doLogin() {
+  if (LOGIN_EM_ANDAMENTO) return;
   const email = document.getElementById('login-email').value.trim().toLowerCase();
-  if (!email) { showLoginError('Informe o e-mail.'); return; }
+  const senha = document.getElementById('login-senha').value;
 
-  // Aguarda pessoas carregadas
-  if (!DB.pessoas.length) {
-    const cache = ls(LS_PESSOAS);
-    if (cache) DB.pessoas = cache;
-  }
+  if (!email || !senha) { showLoginError('Informe e-mail e senha.'); return; }
+  if (!email.endsWith('@bravi.com.br')) { showLoginError('Use seu e-mail @bravi.com.br.'); return; }
 
-  const pessoa = DB.pessoas.find(p => (p.email||'').toLowerCase() === email);
+  LOGIN_EM_ANDAMENTO = true;
+  const btn = document.getElementById('login-btn');
+  const btnTextoOriginal = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Entrando...';
 
-  if (!pessoa) {
-    // Tenta criar usuário demo se email reconhecido
-    if (!email.endsWith('@bravi.com.br')) { showLoginError('Use seu e-mail @bravi.com.br.'); return; }
-    // Permite login mesmo sem dados (modo demo)
-    const parts = email.replace('@bravi.com.br','').split('.');
-    const nome = parts.map(p=>p.charAt(0).toUpperCase()+p.slice(1)).join(' ');
-    STATE.currentUser = { people: email.replace('@bravi.com.br',''), nome, email, role: determinarRole(null, email), roleLabel: 'Profissional' };
-  } else {
-    const role = determinarRole(pessoa, email);
+  try {
+    const r = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'auth-login', email, senha }),
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+    }).then(x => x.json());
+
+    if (!r.ok) {
+      showLoginError(r.erro || 'E-mail ou senha incorretos.');
+      return;
+    }
+
+    // Aguarda pessoas carregadas (para nome de exibição e dados do cadastro)
+    if (!DB.pessoas.length) {
+      const cache = ls(LS_PESSOAS);
+      if (cache) DB.pessoas = cache;
+    }
+
+    const pessoa = DB.pessoas.find(p => (p.email||'').toLowerCase() === email);
+    const papel = r.usuario.papel;
+    // 'admin' herda o comportamento de negócio de 'pc' (aprovações, dashboard, etc.)
+    // — o papel real ('admin') fica guardado separadamente só para exibição e para
+    // liberar a tela extra de Gerenciar Usuários, sem precisar duplicar toda regra
+    // de negócio que hoje já checa role==='pc'.
+    const role = (papel === 'admin') ? 'pc' : determinarRole(papel);
+    const nomeBase = pessoa ? pessoa.people : email.replace('@bravi.com.br','');
+    const nome = nomeF(nomeBase);
+
     STATE.currentUser = {
-      people: pessoa.people,
-      nome: pessoa.people.split('.').map(p=>p.charAt(0).toUpperCase()+p.slice(1)).join(' '),
+      people: nomeBase,
+      nome,
       email,
       role,
-      roleLabel: role==='pc'?'People Care':role==='gp'?'Gestor de Projetos':'Profissional',
+      papel,
+      roleLabel: papel==='admin' ? 'Administrador' : role==='pc' ? 'People Care' : role==='gp' ? 'Gestor de Projetos' : 'Profissional',
       pessoa
     };
-  }
 
-  document.getElementById('login-error').style.display = 'none';
-  iniciarApp();
+    document.getElementById('login-error').style.display = 'none';
+
+    if (r.usuario.precisaTrocarSenha) {
+      abrirTrocaSenhaObrigatoria(email);
+      return;
+    }
+
+    iniciarApp();
+  } catch(e) {
+    showLoginError('Falha ao conectar. Tente novamente.');
+  } finally {
+    LOGIN_EM_ANDAMENTO = false;
+    btn.disabled = false; btn.textContent = btnTextoOriginal;
+  }
 }
 
-function determinarRole(pessoa, email) {
-  if (email === EMAIL_PC) return 'pc';
-  if (pessoa && ROLES_GP.includes(pessoa.role)) return 'gp';
+// Papel salvo no backend ('pc' ou 'profissional') → role interno da UI.
+// 'admin' é tratado antes desta função ser chamada (ver doLogin) e nunca
+// chega aqui. GP é detectado depois via ROLES_GP no cadastro (em iniciarApp).
+function determinarRole(papel) {
+  if (papel === 'pc') return 'pc';
   return 'pro';
 }
 
@@ -832,16 +936,26 @@ function showLoginError(msg) {
 
 function iniciarApp() {
   const u = STATE.currentUser;
+  // GP é um caso especial: mesmo com papel 'profissional' no usuarios.json,
+  // se o cadastro (profissionais.json) indica um role de gestão, ele vê o menu de GP.
+  if (u.role === 'pro' && u.pessoa && ROLES_GP.includes(u.pessoa.role)) {
+    u.role = 'gp';
+    u.roleLabel = 'Gestor de Projetos';
+  }
+
   document.getElementById('u-av').textContent = u.nome.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   document.getElementById('u-nm').textContent = u.nome;
   document.getElementById('u-rl').textContent = u.roleLabel;
 
-  // Mostra seções do nav por role
+  // Mostra seções do nav por role. Quem tem role 'pc' já vê a seção PC
+  // completa (inclui Gerenciar Usuários) — isso cobre tanto People Care
+  // quanto Administrador, já que o admin usa role:'pc' internamente.
   document.getElementById('nav-pc-section').style.display  = u.role==='pc' ? '' : 'none';
   document.getElementById('nav-gp-section').style.display  = u.role==='gp' ? '' : 'none';
   document.getElementById('nav-pro-section').style.display = 'none'; // sempre oculta — cada role tem seu próprio bloco Meu Recesso
 
   document.getElementById('login-page').style.display = 'none';
+  document.getElementById('troca-senha-page').style.display = 'none';
   document.getElementById('app').style.display = 'block';
 
   // Página inicial por role
@@ -856,6 +970,141 @@ function doLogout() {
   STATE.currentUser = null;
   document.getElementById('app').style.display = 'none';
   document.getElementById('login-page').style.display = 'flex';
+  document.getElementById('login-senha').value = '';
+}
+
+// ── TROCA DE SENHA OBRIGATÓRIA (primeiro acesso ou após reset) ──
+let EMAIL_TROCA_SENHA = null;
+
+function abrirTrocaSenhaObrigatoria(email) {
+  EMAIL_TROCA_SENHA = email;
+  document.getElementById('login-page').style.display = 'none';
+  document.getElementById('troca-senha-page').style.display = 'flex';
+  document.getElementById('ts-senha-atual').value = '';
+  document.getElementById('ts-senha-nova').value = '';
+  document.getElementById('ts-senha-confirma').value = '';
+  document.getElementById('ts-error').style.display = 'none';
+}
+
+async function confirmarTrocaSenha() {
+  const senhaAtual = document.getElementById('ts-senha-atual').value;
+  const senhaNova = document.getElementById('ts-senha-nova').value;
+  const senhaConfirma = document.getElementById('ts-senha-confirma').value;
+  const errEl = document.getElementById('ts-error');
+
+  if (!senhaAtual || !senhaNova || !senhaConfirma) {
+    errEl.textContent = 'Preencha todos os campos.'; errEl.style.display='block'; return;
+  }
+  if (senhaNova.length < 6) {
+    errEl.textContent = 'A nova senha deve ter pelo menos 6 caracteres.'; errEl.style.display='block'; return;
+  }
+  if (senhaNova !== senhaConfirma) {
+    errEl.textContent = 'As senhas não coincidem.'; errEl.style.display='block'; return;
+  }
+
+  try {
+    const r = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'auth-trocar-senha', email: EMAIL_TROCA_SENHA, senhaAtual, senhaNova }),
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+    }).then(x => x.json());
+
+    if (!r.ok) { errEl.textContent = r.erro || 'Não foi possível trocar a senha.'; errEl.style.display='block'; return; }
+
+    toast('Senha definida com sucesso!','success');
+    iniciarApp();
+  } catch(e) {
+    errEl.textContent = 'Falha ao conectar. Tente novamente.'; errEl.style.display='block';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// GERENCIAR USUÁRIOS (PC / admin)
+// ══════════════════════════════════════════════════════════════
+async function carregarUsuarios() {
+  // Apenas quem é admin de fato pode criar outros admins.
+  const optAdmin = document.getElementById('usr-papel-admin-opt');
+  if (optAdmin) optAdmin.style.display = (STATE.currentUser.papel === 'admin') ? '' : 'none';
+
+  const tbody = document.getElementById('usr-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><div class="empty-icon">⏳</div><h3>Carregando...</h3></div></td></tr>`;
+  try {
+    const r = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'auth-listar-usuarios' }),
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+    }).then(x => x.json());
+
+    if (!r.ok || !r.usuarios.length) {
+      tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><div class="empty-icon">🔐</div><h3>Nenhum usuário cadastrado</h3><p>Crie o primeiro acesso acima.</p></div></td></tr>`;
+      return;
+    }
+
+    const papelLabel = { admin: badge('purple','Administrador'), pc: badge('blue','People Care'), profissional: badge('gray','Profissional') };
+
+    tbody.innerHTML = r.usuarios.sort((a,b)=>a.email.localeCompare(b.email)).map(u => `<tr>
+      <td>${u.email}</td>
+      <td>${papelLabel[u.papel]||badge('gray',u.papel)}</td>
+      <td>${u.precisaTrocarSenha ? badge('yellow','Senha padrão (pendente)') : badge('green','Senha definida')}</td>
+      <td style="font-size:12px">${u.ultimoLogin ? fmtDataHora(u.ultimoLogin) : '—'}</td>
+      <td style="font-size:12px">${u.criadoEm ? fmtDataHora(u.criadoEm) : '—'}</td>
+      <td><button class="btn btn-outline btn-xs" onclick="resetarSenhaUsuario('${u.email}')">🔁 Resetar senha</button></td>
+    </tr>`).join('');
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><div class="empty-icon">⚠️</div><h3>Falha ao carregar usuários</h3></div></td></tr>`;
+  }
+}
+
+async function criarUsuario() {
+  const email = document.getElementById('usr-email').value.trim().toLowerCase();
+  const papel = document.getElementById('usr-papel').value;
+  const avisoEl = document.getElementById('usr-criar-aviso');
+  avisoEl.style.display = 'none';
+
+  if (!email) { toast('Informe o e-mail.','error'); return; }
+  if (!email.endsWith('@bravi.com.br')) { toast('Apenas e-mails @bravi.com.br.','error'); return; }
+
+  try {
+    const r = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'auth-criar-usuario', email, papel, criadoPorEmail: STATE.currentUser.email }),
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+    }).then(x => x.json());
+
+    if (!r.ok) { toast(r.erro || 'Não foi possível criar o usuário.','error'); return; }
+
+    avisoEl.innerHTML = `<div class="val-row ok"><span class="val-icon">✅</span> Usuário criado! Senha padrão: <strong>Bravi123</strong> — será exigida a troca no primeiro acesso.</div>`;
+    avisoEl.style.display = 'block';
+    document.getElementById('usr-email').value = '';
+    toast('Usuário criado com sucesso!','success');
+    carregarUsuarios();
+  } catch(e) {
+    toast('Falha ao conectar com o servidor.','error');
+  }
+}
+
+async function resetarSenhaUsuario(email) {
+  if (!confirm(`Resetar a senha de ${email} para a senha padrão (Bravi123)?\n\nO usuário precisará criar uma nova senha no próximo acesso.`)) return;
+  try {
+    const r = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'auth-resetar-senha', email, resetadoPorEmail: STATE.currentUser.email }),
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+    }).then(x => x.json());
+
+    if (!r.ok) { toast(r.erro || 'Não foi possível resetar a senha.','error'); return; }
+    toast('Senha resetada para o padrão Bravi123.','success');
+    carregarUsuarios();
+  } catch(e) {
+    toast('Falha ao conectar com o servidor.','error');
+  }
+}
+
+function fmtDataHora(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -871,7 +1120,7 @@ function nav(pg) {
   const titleMap = {
     'pg-dashboard':'Dashboard','pg-meu-recesso':'Meu Recesso','pg-solicitar':'Solicitar Recesso',
     'pg-aprovacoes':'Aprovações','pg-profissionais':'Profissionais','pg-projetos-gp':'Projetos & GPs',
-    'pg-regras':'Regras','pg-calendario':'Calendário'
+    'pg-regras':'Regras','pg-calendario':'Calendário','pg-usuarios':'Gerenciar Usuários'
   };
   document.getElementById('topbar-title').textContent = titleMap[pg]||'';
 
@@ -884,6 +1133,7 @@ function nav(pg) {
   if (pg==='pg-projetos-gp')    renderProjetosGP();
   if (pg==='pg-regras')         loadRegras();
   if (pg==='pg-calendario')     renderCalendar();
+  if (pg==='pg-usuarios')       carregarUsuarios();
 }
 
 // ══════════════════════════════════════════════════════════════
