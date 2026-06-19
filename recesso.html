@@ -200,15 +200,15 @@ tbody td{padding:11px 14px;font-size:13px;vertical-align:middle}
 /* MODAL */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:500;padding:20px}
 .modal-overlay.open{display:flex}
-.modal-box{background:#fff;border-radius:14px;width:100%;max-width:520px;box-shadow:var(--shadow-lg);overflow:hidden;animation:mIn .2s ease}
+.modal-box{background:#fff;border-radius:14px;width:100%;max-width:520px;box-shadow:var(--shadow-lg);overflow:hidden;animation:mIn .2s ease;max-height:calc(100vh - 40px);display:flex;flex-direction:column}
 .modal-box.wide{max-width:660px}
 @keyframes mIn{from{opacity:0;transform:scale(.96) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
-.modal-hd{display:flex;align-items:center;justify-content:space-between;padding:17px 22px;border-bottom:1px solid var(--border)}
+.modal-hd{display:flex;align-items:center;justify-content:space-between;padding:17px 22px;border-bottom:1px solid var(--border);flex-shrink:0}
 .modal-hd h3{font-size:15px;font-weight:600}
 .modal-close{background:none;border:none;cursor:pointer;color:var(--text2);font-size:18px;padding:4px;border-radius:5px;line-height:1}
 .modal-close:hover{background:var(--bg)}
-.modal-bd{padding:22px}
-.modal-ft{display:flex;justify-content:flex-end;gap:10px;padding:15px 22px;border-top:1px solid var(--border)}
+.modal-bd{padding:22px;overflow-y:auto;flex:1;min-height:0}
+.modal-ft{display:flex;justify-content:flex-end;gap:10px;padding:15px 22px;border-top:1px solid var(--border);flex-shrink:0}
 
 /* INFO GRID */
 .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -1248,8 +1248,8 @@ function submitSolicitar(e) {
   salvarSolicitacoes();
   atualizarBadges();
 
-  // Simula envio de e-mail
-  console.log(`[EMAIL] Solicitação enviada para ${u.email} e GP ${gp}@bravi.com.br`);
+  // Dispara e-mail de notificação da nova solicitação (solicitante → GP + PPC)
+  notificarSolicitacaoRecesso(sol, pessoa);
 
   // Marca day off de aniversário como usado
   if (just.includes('Day off de aniversário')) {
@@ -1427,8 +1427,8 @@ function aprovar() {
   document.getElementById('aprov-ok-msg').textContent = msg;
   openModal('modal-aprov-ok');
 
-  console.log(`[EMAIL] Aprovação registrada: ${u.role} aprovou sol ${sol.id}`);
-  if (totalAprov) console.log(`[EMAIL] Recesso confirmado enviado para ${sol.profEmail}`);
+  // Dispara e-mail de decisão (aprovação) — aprovador → solicitante, com cópia para GP/PPC
+  notificarDecisaoRecesso(sol, 'Aprovado', u);
 
   renderAprovacoes();
 }
@@ -1453,7 +1453,10 @@ function confirmarRecusa() {
   salvarSolicitacoes(); atualizarBadges();
   closeModal('modal-recusar');
   toast('Solicitação recusada. Profissional será notificado.','info');
-  console.log(`[EMAIL] Recusa enviada para ${sol.profEmail}: ${motivo}`);
+
+  // Dispara e-mail de decisão (recusa) — aprovador → solicitante, com cópia para GP/PPC
+  notificarDecisaoRecesso(sol, 'Recusado', u);
+
   renderAprovacoes();
 }
 
@@ -1463,6 +1466,98 @@ function verMotivoRecusa(id) {
   document.getElementById('pd-title').textContent = 'Motivo da Recusa';
   document.getElementById('pd-body').innerHTML = `<div class="val-row fail"><span class="val-icon">✕</span>${sol.motivoRecusa||'Não informado'}</div>`;
   openModal('modal-prof-detalhe');
+}
+
+// ══════════════════════════════════════════════════════════════
+// NOTIFICAÇÕES POR E-MAIL
+// ══════════════════════════════════════════════════════════════
+
+// Resolve o e-mail do GP responsável pelo projeto atual da pessoa.
+// gpDoProjeto() devolve o "people" (slug) do GP configurado em pg-projetos-gp;
+// aqui convertemos para e-mail buscando o cadastro correspondente em DB.pessoas.
+function emailDoGP(gpPeople) {
+  if (!gpPeople) return null;
+  const gp = DB.pessoas.find(p => p.people === gpPeople);
+  if (gp && gp.email) return gp.email;
+  // Fallback: monta e-mail padrão Bravi a partir do slug, caso o cadastro não tenha e-mail preenchido
+  return gpPeople + '@bravi.com.br';
+}
+
+// Notifica a abertura de uma nova solicitação de recesso.
+// Remetente: o próprio solicitante (via replyTo) · Destinatários: GP do projeto principal + PPC (Andresa)
+async function notificarSolicitacaoRecesso(sol, pessoa) {
+  const gpEmail = sol.gpPeople ? emailDoGP(sol.gpPeople) : null;
+  const destinatarios = [gpEmail, EMAIL_PC].filter(Boolean);
+  if (!destinatarios.length) return;
+
+  const nomeSolicitante = nomeF(sol.profPeople);
+  const projeto = pessoa?.projetoAtual || '—';
+
+  const payload = {
+    action: 'notificar-solicitacao-recesso',
+    destinatarios,
+    remetenteNome: nomeSolicitante,
+    remetenteEmail: sol.profEmail,
+    dados: {
+      nome: nomeSolicitante,
+      email: sol.profEmail,
+      projeto,
+      inicio: sol.inicio,
+      fim: sol.fim,
+      dias: sol.dias,
+      dataSol: sol.dataSol,
+      justificativa: sol.justificativa || '—',
+      alinhado: sol.alinhado ? 'Sim' : 'Não',
+      idSolicitacao: sol.id,
+    }
+  };
+
+  try {
+    await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+    });
+  } catch(e) {
+    console.warn('Falha ao notificar solicitação de recesso por e-mail.', e);
+  }
+}
+
+// Notifica a decisão (aprovação/recusa) de uma solicitação.
+// Remetente: o aprovador que tomou a decisão (via replyTo) · Destinatário principal: solicitante
+// Cópia (CC): GP e/ou PPC — todos os envolvidos no fluxo de aprovação dessa solicitação.
+async function notificarDecisaoRecesso(sol, decisao, aprovador) {
+  const gpEmail = sol.gpPeople ? emailDoGP(sol.gpPeople) : null;
+  const cc = [gpEmail, EMAIL_PC].filter(Boolean).filter(e => e.toLowerCase() !== (aprovador.email||'').toLowerCase());
+
+  const payload = {
+    action: 'notificar-decisao-recesso',
+    destinatario: sol.profEmail,
+    cc,
+    remetenteNome: aprovador.nome,
+    remetenteEmail: aprovador.email,
+    dados: {
+      nomeSolicitante: nomeF(sol.profPeople),
+      decisao, // 'Aprovado' ou 'Recusado'
+      aprovadorNome: aprovador.nome,
+      aprovadorPapel: aprovador.roleLabel,
+      inicio: sol.inicio,
+      fim: sol.fim,
+      dias: sol.dias,
+      motivoRecusa: sol.motivoRecusa || '',
+      idSolicitacao: sol.id,
+    }
+  };
+
+  try {
+    await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+    });
+  } catch(e) {
+    console.warn('Falha ao notificar decisão de recesso por e-mail.', e);
+  }
 }
 
 // ══════════════════════════════════════════════════════════════
