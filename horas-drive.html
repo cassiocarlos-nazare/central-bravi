@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Horas · Drive — Central Bravi</title>
+<script src="bravi-auth.js"></script>
 <style>
 :root {
   --bg:#0f1117; --bg2:#181c27; --bg3:#1e2334; --border:#2a3049;
@@ -210,6 +211,9 @@ input[type=text].input-full{width:100%;padding:7px 10px;margin-bottom:8px}
 .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px}
 .section-title{font-size:16px;font-weight:700}
 .section-sub{font-size:13px;color:var(--text2);margin-top:2px}
+
+/* MODO PROFISSIONAL */
+.readonly-pill{display:flex;align-items:center;gap:6px;background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.3);color:var(--accent2);border-radius:100px;padding:4px 12px;font-size:11px;font-weight:600}
 </style>
 </head>
 <body>
@@ -219,12 +223,17 @@ input[type=text].input-full{width:100%;padding:7px 10px;margin-bottom:8px}
 <div class="topbar">
   <a href="index.html" class="topbar-logo" title="Central Bravi">BRAVI</a>
   <span class="topbar-sep">/</span>
-  <span class="topbar-title">Controle de Horas · Drive</span>
-  <div class="topbar-right">
+  <span class="topbar-title" id="pageTitle">Controle de Horas · Drive</span>
+  <div class="topbar-right" id="topbarActionsGestao">
     <a href="index.html" class="topbar-back">← Central Bravi</a>
     <button class="btn btn-sm" onclick="abrirModalFeriados()">📅 Feriados</button>
     <button class="btn btn-sm" onclick="abrirModalEquipes()">⚙ Equipes</button>
     <button class="btn btn-sm btn-primary" id="btnSync" onclick="carregarTudo()">↻ Sincronizar</button>
+  </div>
+  <div class="topbar-right" id="topbarActionsProfissional" style="display:none">
+    <a href="index.html" class="topbar-back">← Central Bravi</a>
+    <span class="readonly-pill">🔒 Minhas Horas</span>
+    <button class="btn btn-sm btn-primary" id="btnSyncProf" onclick="carregarTudo()">↻ Sincronizar</button>
   </div>
 </div>
 
@@ -245,19 +254,20 @@ input[type=text].input-full{width:100%;padding:7px 10px;margin-bottom:8px}
       <select id="filtroAno" onchange="onFiltroMudou()"><option value="2026">2026</option></select>
     </div>
     <div class="filters-sep"></div>
-    <div class="filter-group">
+    <!-- Filtros de equipe/gestão — ocultos no modo Profissional -->
+    <div class="filter-group filtro-gestao">
       <span class="filter-label">Role</span>
       <select id="filtroRole" onchange="aplicarFiltros()"><option value="">Todos</option></select>
     </div>
-    <div class="filter-group">
+    <div class="filter-group filtro-gestao">
       <span class="filter-label">Level</span>
       <select id="filtroLevel" onchange="aplicarFiltros()"><option value="">Todos</option></select>
     </div>
-    <div class="filter-group">
+    <div class="filter-group filtro-gestao">
       <span class="filter-label">Equipe</span>
       <select id="filtroEquipe" onchange="aplicarFiltros()"><option value="">Todas</option></select>
     </div>
-    <div class="filter-group">
+    <div class="filter-group filtro-gestao">
       <span class="filter-label">Pessoa</span>
       <select id="filtroPessoa" onchange="aplicarFiltros()"><option value="">Todas</option></select>
     </div>
@@ -265,7 +275,7 @@ input[type=text].input-full{width:100%;padding:7px 10px;margin-bottom:8px}
       <span class="filter-label">Projeto</span>
       <select id="filtroProjeto" onchange="aplicarFiltros()"><option value="">Todos</option></select>
     </div>
-    <div class="filter-group">
+    <div class="filter-group filtro-gestao">
       <span class="filter-label">Status</span>
       <select id="filtroAtivo" onchange="aplicarFiltros()">
         <option value="1">Ativos</option>
@@ -304,7 +314,10 @@ input[type=text].input-full{width:100%;padding:7px 10px;margin-bottom:8px}
         <div class="panel"><div class="panel-title">Horas por Semana</div><div class="chart-bars" id="chartSemanas"></div></div>
         <div class="panel"><div class="panel-title">Horas por Projeto (Top 10)</div><div class="chart-bars" id="chartProjetos"></div></div>
       </div>
-      <div class="panel"><div class="panel-title">Ranking de Profissionais</div><div id="rankingLista"></div></div>
+      <div class="charts-row" id="chartFasesRow">
+        <div class="panel"><div class="panel-title">Horas por Phase de Lançamento</div><div class="chart-bars" id="chartFases"></div></div>
+        <div class="panel" id="rankingPanel"><div class="panel-title">Ranking de Profissionais</div><div id="rankingLista"></div></div>
+      </div>
     </div>
   </div>
 
@@ -315,7 +328,7 @@ input[type=text].input-full{width:100%;padding:7px 10px;margin-bottom:8px}
         <div class="section-title" id="mensalTitle">Conferência Mensal</div>
         <div class="section-sub" id="mensalSub"></div>
       </div>
-      <button class="btn btn-sm" onclick="abrirRelatorio('mensal')">📄 Relatório</button>
+      <button class="btn btn-sm filtro-gestao" onclick="abrirRelatorio('mensal')">📄 Relatório</button>
     </div>
     <div class="panel">
       <div id="tabMensalWrap"><div class="loading"><div class="spinner"></div> Carregando...</div></div>
@@ -332,7 +345,7 @@ input[type=text].input-full{width:100%;padding:7px 10px;margin-bottom:8px}
       </div>
       <button class="btn" onclick="irSemanaAtual()">Semana atual</button>
       <button class="btn" onclick="irSemanaAnterior()">Semana anterior</button>
-      <button class="btn btn-sm" style="margin-left:auto" onclick="abrirRelatorio('semanal')">📄 Relatório</button>
+      <button class="btn btn-sm filtro-gestao" style="margin-left:auto" onclick="abrirRelatorio('semanal')">📄 Relatório</button>
     </div>
     <div class="panel">
       <div id="tabSemanalWrap"><div class="loading"><div class="spinner"></div> Carregando...</div></div>
@@ -348,7 +361,7 @@ input[type=text].input-full{width:100%;padding:7px 10px;margin-bottom:8px}
         <button class="btn btn-icon" onclick="navQuinzena(1)">›</button>
       </div>
       <button class="btn" onclick="irQuinzenaAtual()">Quinzena atual</button>
-      <button class="btn btn-sm" style="margin-left:auto" onclick="abrirRelatorio('quinzenal')">📄 Relatório</button>
+      <button class="btn btn-sm filtro-gestao" style="margin-left:auto" onclick="abrirRelatorio('quinzenal')">📄 Relatório</button>
     </div>
     <div class="panel">
       <div id="tabQuinzenalWrap"><div class="loading"><div class="spinner"></div> Carregando...</div></div>
@@ -434,6 +447,12 @@ input[type=text].input-full{width:100%;padding:7px 10px;margin-bottom:8px}
 
 <script>
 // ══════════════════════════════════════════════════════
+// GUARDA DE SESSÃO E PAPEL DE ACESSO
+// ══════════════════════════════════════════════════════
+const SESSAO_HORAS = BraviAuth.exigirSessao();
+const MODO_PROFISSIONAL_HORAS = SESSAO_HORAS ? BraviAuth.ehProfissional(SESSAO_HORAS) : false;
+
+// ══════════════════════════════════════════════════════
 // CONFIG
 // ══════════════════════════════════════════════════════
 const API_URL    = 'https://script.google.com/macros/s/AKfycbwflnR51V4sh7cc99AgHD9cJkfgE6BK38Xkcjaket0rfGy0HArMnTOHpQbGFhuwL6HD/exec';
@@ -466,11 +485,26 @@ let equipeEditandoIdx = null, equipeEditConfig = {};
 // INIT
 // ══════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
+  if (!SESSAO_HORAS) return; // já redirecionou ao hub
+  aplicarModoAcesso();
   preencherFiltroMes();
   DB.equipes  = carregarEquipes();
   DB.feriados = carregarFeriados();
   carregarTudo();
 });
+
+/**
+ * Ajusta a UI conforme o papel: Profissional vê só "Minhas Horas" (sem
+ * filtros de equipe/pessoa/role/level/status e sem botões de Relatório).
+ */
+function aplicarModoAcesso() {
+  if (!MODO_PROFISSIONAL_HORAS) return;
+  document.getElementById('pageTitle').textContent = 'Minhas Horas';
+  document.getElementById('topbarActionsGestao').style.display = 'none';
+  document.getElementById('topbarActionsProfissional').style.display = '';
+  document.querySelectorAll('.filtro-gestao').forEach(el => el.style.display = 'none');
+  document.getElementById('rankingPanel').style.display = 'none';
+}
 
 function preencherFiltroMes() {
   const sel = document.getElementById('filtroMes');
@@ -486,8 +520,8 @@ function preencherFiltroMes() {
 // CARGA
 // ══════════════════════════════════════════════════════
 async function carregarTudo() {
-  const btn = document.getElementById('btnSync');
-  btn.textContent = '↻ Sincronizando...'; btn.disabled = true;
+  const btn = MODO_PROFISSIONAL_HORAS ? document.getElementById('btnSyncProf') : document.getElementById('btnSync');
+  if (btn) { btn.textContent = '↻ Sincronizando...'; btn.disabled = true; }
   const mes = parseInt(document.getElementById('filtroMes').value);
   const ano = parseInt(document.getElementById('filtroAno').value);
   DB.mesAtual = mes; DB.anoAtual = ano;
@@ -507,7 +541,9 @@ async function carregarTudo() {
     DB.pessoas = carregarLS(LS_PESSOAS)||[];
     popularFiltros(); aplicarFiltros();
     toast('⚠ Usando cache local','warn');
-  } finally { btn.textContent='↻ Sincronizar'; btn.disabled=false; }
+  } finally {
+    if (btn) { btn.textContent='↻ Sincronizar'; btn.disabled=false; }
+  }
 }
 function onFiltroMudou() { carregarTudo(); }
 
@@ -515,6 +551,17 @@ function onFiltroMudou() { carregarTudo(); }
 // FILTROS
 // ══════════════════════════════════════════════════════
 function popularFiltros() {
+  if (MODO_PROFISSIONAL_HORAS) {
+    // Modo Profissional: só popula o filtro de Projeto (com os projetos do
+    // próprio usuário) — os demais seletores de equipe/pessoa ficam ocultos.
+    const meusProjetos = [...new Set(
+      DB.horas.filter(h => (h.userEmail||'').toLowerCase() === (SESSAO_HORAS.email||'').toLowerCase()
+                          || h.user === minhaPeopleKey())
+        .map(h=>h.projeto).filter(Boolean)
+    )].sort();
+    popularSelect('filtroProjeto', meusProjetos);
+    return;
+  }
   popularSelect('filtroRole',  [...new Set(DB.pessoas.map(p=>p.role).filter(Boolean))].sort());
   popularSelect('filtroLevel', [...new Set(DB.pessoas.map(p=>p.level).filter(Boolean))].sort());
   popularSelect('filtroProjeto',[...new Set(DB.horas.map(h=>h.projeto).filter(Boolean))].sort());
@@ -529,6 +576,13 @@ function popularFiltros() {
   DB.equipes.forEach(eq=>{ const o=document.createElement('option'); o.value=eq.id; o.textContent=eq.nome; se.appendChild(o); });
 }
 
+// Resolve a chave "people" (slug usado em DB.horas[].user) correspondente ao
+// e-mail da sessão atual, cruzando com o cadastro de pessoas carregado.
+function minhaPeopleKey() {
+  const p = DB.pessoas.find(x => (x.email||'').toLowerCase() === (SESSAO_HORAS.email||'').toLowerCase());
+  return p ? p.people : null;
+}
+
 function popularSelect(id, items) {
   const sel=document.getElementById(id); const val=sel.value;
   sel.innerHTML='<option value="">Todos</option>';
@@ -536,6 +590,23 @@ function popularSelect(id, items) {
 }
 
 function aplicarFiltros() {
+  // ── MODO PROFISSIONAL: sempre restringe a si mesmo, ignora os demais filtros de pessoa/equipe ──
+  if (MODO_PROFISSIONAL_HORAS) {
+    const minhaKey = minhaPeopleKey();
+    pessoasFiltradas = DB.pessoas.filter(p => p.people === minhaKey);
+    const proj = document.getElementById('filtroProjeto').value;
+    const dIni = document.getElementById('filtroDataIni').value;
+    const dFim = document.getElementById('filtroDataFim').value;
+
+    let horas = DB.horas.filter(h => h.user === minhaKey);
+    if (proj) horas = horas.filter(h=>h.projeto===proj);
+    if (dIni) horas = horas.filter(h=>h.data>=dIni);
+    if (dFim) horas = horas.filter(h=>h.data<=dFim);
+    horasFiltradas = horas;
+    renderizarAba();
+    return;
+  }
+
   const role   = document.getElementById('filtroRole').value;
   const level  = document.getElementById('filtroLevel').value;
   const equipe = document.getElementById('filtroEquipe').value;
@@ -604,7 +675,9 @@ function renderDashboard() {
   document.getElementById('dashLoading').style.display='none';
   document.getElementById('dashContent').style.display='block';
   const mes=DB.mesAtual, ano=DB.anoAtual;
-  document.getElementById('dashTitle').textContent=`Dashboard — ${MESES[mes-1]} ${ano}`;
+  document.getElementById('dashTitle').textContent = MODO_PROFISSIONAL_HORAS
+    ? `Minhas Horas — ${MESES[mes-1]} ${ano}`
+    : `Dashboard — ${MESES[mes-1]} ${ano}`;
   const totH   = horasFiltradas.reduce((a,h)=>a+(h.horas||0),0);
   const totBil = horasFiltradas.reduce((a,h)=>a+(h.horasBilaveis||0),0);
   const totInt = horasFiltradas.reduce((a,h)=>a+(h.horasInternas||0),0);
@@ -614,14 +687,25 @@ function renderDashboard() {
   const metaMes= ativos*duMes*8;
   const pctMeta= metaMes>0?Math.round(totH/metaMes*100):0;
   const pctBil = totH>0?Math.round(totBil/totH*100):0;
-  document.getElementById('dashSub').textContent=`${ativos} profissionais ativos · ${duMes} dias úteis · Meta: ${fmtH(metaMes)}`;
-  document.getElementById('cardsGrid').innerHTML=
-    card('Total de Horas',fmtH(totH),`Meta: ${fmtH(metaMes)}`,pctMeta,corPct(pctMeta))+
-    card('Horas Billáveis',fmtH(totBil),`${pctBil}% do total`,pctBil,'green')+
-    card('Horas Internas',fmtH(totInt),`${totH>0?Math.round(totInt/totH*100):0}% do total`,null,null)+
-    card('Horas Não Billáveis',fmtH(totNB),`${totH>0?Math.round(totNB/totH*100):0}% do total`,null,null)+
-    card('Meta Mensal',pctMeta+'%',`${fmtH(totH)} de ${fmtH(metaMes)}`,pctMeta,corPct(pctMeta))+
-    card('Profissionais',ativos,`${pessoasFiltradas.length} no filtro`,null,null);
+
+  document.getElementById('dashSub').textContent = MODO_PROFISSIONAL_HORAS
+    ? `${duMes} dias úteis no mês · Meta: ${fmtH(metaMes)}`
+    : `${ativos} profissionais ativos · ${duMes} dias úteis · Meta: ${fmtH(metaMes)}`;
+
+  if (MODO_PROFISSIONAL_HORAS) {
+    // Cards reduzidos: Total de horas + Meta Mensal (conforme solicitado)
+    document.getElementById('cardsGrid').innerHTML=
+      card('Total de Horas',fmtH(totH),`Meta: ${fmtH(metaMes)}`,pctMeta,corPct(pctMeta))+
+      card('Meta Mensal',pctMeta+'%',`${fmtH(totH)} de ${fmtH(metaMes)}`,pctMeta,corPct(pctMeta));
+  } else {
+    document.getElementById('cardsGrid').innerHTML=
+      card('Total de Horas',fmtH(totH),`Meta: ${fmtH(metaMes)}`,pctMeta,corPct(pctMeta))+
+      card('Horas Billáveis',fmtH(totBil),`${pctBil}% do total`,pctBil,'green')+
+      card('Horas Internas',fmtH(totInt),`${totH>0?Math.round(totInt/totH*100):0}% do total`,null,null)+
+      card('Horas Não Billáveis',fmtH(totNB),`${totH>0?Math.round(totNB/totH*100):0}% do total`,null,null)+
+      card('Meta Mensal',pctMeta+'%',`${fmtH(totH)} de ${fmtH(metaMes)}`,pctMeta,corPct(pctMeta))+
+      card('Profissionais',ativos,`${pessoasFiltradas.length} no filtro`,null,null);
+  }
 
   const porSem={};
   horasFiltradas.forEach(h=>{ const s=h.semana||semanaISO(h.data); porSem[s]=(porSem[s]||0)+(h.horas||0); });
@@ -634,6 +718,32 @@ function renderDashboard() {
   const projTop=Object.entries(porProj).sort((a,b)=>b[1]-a[1]).slice(0,10);
   const maxProj=Math.max(...projTop.map(p=>p[1]),1);
   document.getElementById('chartProjetos').innerHTML=projTop.map(([p,h])=>barRow(p.length>18?p.substring(0,18)+'…':p,h,maxProj,'accent2')).join('')||'<div class="empty">Sem dados</div>';
+
+  // ── Gráfico de Phases (com % e quantidade) — usado em ambos os modos ──
+  const porFase={};
+  const qtdFase={};
+  horasFiltradas.forEach(h=>{
+    const f = h.fase || 'Sem fase';
+    porFase[f]=(porFase[f]||0)+(h.horas||0);
+    qtdFase[f]=(qtdFase[f]||0)+1;
+  });
+  const totalHorasFase = Object.values(porFase).reduce((a,b)=>a+b,0)||1;
+  const faseTop = Object.entries(porFase).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const maxFase = Math.max(...faseTop.map(f=>f[1]),1);
+  const chartFasesEl = document.getElementById('chartFases');
+  if (chartFasesEl) {
+    chartFasesEl.innerHTML = faseTop.map(([f,h])=>{
+      const pct = Math.round(h/totalHorasFase*100);
+      const label = f.length>16?f.substring(0,16)+'…':f;
+      return `<div class="bar-row">
+        <span class="bar-label" title="${f}">${label}</span>
+        <div class="bar-track"><div class="bar-fill yellow" style="width:${Math.round(h/maxFase*100)}%"></div></div>
+        <span class="bar-value">${fmtH(h)} · ${pct}% · ${qtdFase[f]}x</span>
+      </div>`;
+    }).join('') || '<div class="empty">Sem dados</div>';
+  }
+
+  if (MODO_PROFISSIONAL_HORAS) return; // ranking de equipe não se aplica
 
   const porUser={};
   horasFiltradas.forEach(h=>{ if(!h.user) return; porUser[h.user]=(porUser[h.user]||0)+(h.horas||0); });
@@ -664,7 +774,9 @@ function renderMensal() {
   const iniISO=`${ano}-${String(mes).padStart(2,'0')}-01`;
   const fimDate=new Date(ano,mes,0);
   const fimISO=fmtISO(fimDate);
-  document.getElementById('mensalTitle').textContent=`Conferência Mensal — ${MESES[mes-1]} ${ano}`;
+  document.getElementById('mensalTitle').textContent = MODO_PROFISSIONAL_HORAS
+    ? `Minhas Horas — ${MESES[mes-1]} ${ano}`
+    : `Conferência Mensal — ${MESES[mes-1]} ${ano}`;
   const duMes=diasUteisMes(ano,mes);
   document.getElementById('mensalSub').textContent=`${duMes} dias úteis · Meta: ${fmtH(duMes*8)} por profissional`;
   const pessoas=pessoasFiltradas.filter(p=>p.ativo);
@@ -932,7 +1044,8 @@ function chipMeta(h,meta) {
 }
 
 // ══════════════════════════════════════════════════════
-// EQUIPES
+// EQUIPES (somente Admin/Gestão — funções abaixo não são chamadas
+// pela UI no modo Profissional, pois os botões ficam ocultos)
 // ══════════════════════════════════════════════════════
 function carregarEquipes() {
   const s=localStorage.getItem(LS_EQUIPES);
@@ -948,6 +1061,7 @@ function gerarEquipesPadrao() {
 function salvarEquipes() { localStorage.setItem(LS_EQUIPES,JSON.stringify(DB.equipes)); }
 
 function abrirModalEquipes() {
+  if (MODO_PROFISSIONAL_HORAS) return;
   if(!DB.equipes.length) DB.equipes=gerarEquipesPadrao();
   renderModalEquipes();
   document.getElementById('modalEquipes').classList.add('open');
@@ -1199,12 +1313,14 @@ function salvarConfigEquipe() {
 }
 
 // ══════════════════════════════════════════════════════
-// RELATÓRIO
+// RELATÓRIO (somente Admin/Gestão — botões ficam ocultos
+// no modo Profissional via classe .filtro-gestao)
 // ══════════════════════════════════════════════════════
 
 let _relDados = null; // cache para export CSV
 
 function abrirRelatorio(tipo) {
+  if (MODO_PROFISSIONAL_HORAS) return; // defesa extra: profissional não gera relatório
   let ini, fim, titulo, subtitulo;
   if (tipo === 'semanal') {
     const p = periodoSemana(offsetSemana);
@@ -1695,7 +1811,7 @@ function carregarFeriados() {
 function salvarFeriados() { localStorage.setItem(LS_FERIADOS,JSON.stringify(DB.feriados)); }
 function getFeriadoSet() { return new Set((DB.feriados||[]).map(f=>f.data)); }
 function getFeriadoNomes() { const m={}; (DB.feriados||[]).forEach(f=>{m[f.data]=f.nome}); return m; }
-function abrirModalFeriados() { renderModalFeriados(); document.getElementById('modalFeriados').classList.add('open'); }
+function abrirModalFeriados() { if (MODO_PROFISSIONAL_HORAS) return; renderModalFeriados(); document.getElementById('modalFeriados').classList.add('open'); }
 function fecharModalFeriados() { document.getElementById('modalFeriados').classList.remove('open'); }
 function renderModalFeriados() {
   const lista=[...DB.feriados].sort((a,b)=>a.data.localeCompare(b.data));

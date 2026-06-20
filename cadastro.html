@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="bravi-ds.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
 <script src="bravi-db.js"></script>
+<script src="bravi-auth.js"></script>
 <style>
 /* Quick-add inline */
 .qa-wrap { display:flex; gap:6px; align-items:center; }
@@ -20,10 +21,29 @@
 .qa-box input:focus { border-color:var(--bravi-purple); }
 .qa-box input::placeholder { color:var(--text-dim); }
 .qa-hint { font-size:10px; color:var(--bravi-purple); font-family:var(--font-display); font-weight:600; margin-bottom:6px; }
+
+/* Bloqueio de acesso (papel sem permissão) */
+.access-denied{display:flex;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:14px;text-align:center;padding:24px}
+.access-denied-icon{font-size:48px}
+.access-denied h2{font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--text-primary)}
+.access-denied p{font-size:13px;color:var(--text-muted);max-width:360px}
+
+/* Modal de inativação */
+.radio-row{display:flex;gap:18px;align-items:center;margin-top:6px}
+.radio-opt{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-secondary);cursor:pointer}
+.radio-opt input{accent-color:var(--bravi-purple);cursor:pointer}
 </style>
 </head>
 <body>
-<div class="app">
+
+<div id="access-denied-screen" class="access-denied" style="display:none">
+  <div class="access-denied-icon">🔒</div>
+  <h2>Acesso restrito</h2>
+  <p>Este módulo é destinado a Administradores e Gestão. Volte para a Central Bravi.</p>
+  <a href="index.html" class="btn btn-primary btn-sm" style="text-decoration:none">← Voltar para a Central Bravi</a>
+</div>
+
+<div class="app" id="app-root" style="display:none">
 
 <!-- SIDEBAR -->
 <nav class="sidebar">
@@ -72,10 +92,11 @@
 
     <!-- PROFISSIONAIS -->
     <div class="section-panel active" id="panel-profissionais">
-      <div class="stats-row" style="grid-template-columns:1fr 1fr 1fr 2fr;margin-bottom:16px">
+      <div class="stats-row" style="grid-template-columns:1fr 1fr 1fr 1fr 2fr;margin-bottom:16px">
         <div class="stat-card"><div class="stat-card-value" id="s-ativos">0</div><div class="stat-card-label">Ativos</div></div>
         <div class="stat-card"><div class="stat-card-value" id="s-inativos">0</div><div class="stat-card-label">Inativos</div></div>
-        <div class="stat-card"><div class="stat-card-value" id="s-media">—</div><div class="stat-card-label">Tempo médio</div></div>
+        <div class="stat-card"><div class="stat-card-value" id="s-masc">0</div><div class="stat-card-label">Masculino</div></div>
+        <div class="stat-card"><div class="stat-card-value" id="s-fem">0</div><div class="stat-card-label">Feminino</div></div>
         <div class="stat-card" style="padding:14px">
           <div style="font-size:10px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.07em;font-family:var(--font-display);margin-bottom:10px">Por função</div>
           <div id="chart-funcoes-cad" style="display:flex;flex-direction:column;gap:4px"></div>
@@ -220,6 +241,14 @@
           <div class="form-group">
             <label class="form-label">Data de nascimento</label>
             <input type="date" class="form-input" id="prof-nascimento">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Sexo</label>
+            <select class="form-select" id="prof-sexo">
+              <option value="">Selecionar...</option>
+              <option value="Masculino">Masculino</option>
+              <option value="Feminino">Feminino</option>
+            </select>
           </div>
           <div class="form-group">
             <label class="form-label">Regime</label>
@@ -421,11 +450,58 @@
   </div>
 </div>
 
+<!-- MODAL INATIVAR PROFISSIONAL -->
+<div class="modal-backdrop" id="modal-inativar">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header">
+      <span class="modal-title">Inativar Profissional</span>
+      <button class="modal-close" onclick="fecharModal('inativar')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Data de inativação <span class="req">*</span></label>
+        <input type="date" class="form-input" id="inat-data">
+      </div>
+      <div class="form-group" style="margin-top:14px">
+        <label class="form-label">Motivação <span class="req">*</span></label>
+        <div class="radio-row">
+          <label class="radio-opt"><input type="radio" name="inat-motivacao" value="Empresa" checked> Empresa</label>
+          <label class="radio-opt"><input type="radio" name="inat-motivacao" value="Profissional"> Profissional</label>
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:14px">
+        <label class="form-label">Observação</label>
+        <textarea class="form-textarea" id="inat-obs" placeholder="Detalhes sobre a inativação (opcional)..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="fecharModal('inativar')">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="confirmarInativacao()"><i class="ti ti-check"></i> Confirmar Inativação</button>
+    </div>
+  </div>
+</div>
+
 <script>
+// ══════════════════════════════════════════════════════════════
+// GUARDA DE SESSÃO — só Admin/Gestão acessam este módulo
+// ══════════════════════════════════════════════════════════════
+const SESSAO_CADASTRO = BraviAuth.exigirSessao();
+if (SESSAO_CADASTRO) {
+  if (!BraviAuth.temAcessoGestao(SESSAO_CADASTRO)) {
+    document.getElementById('access-denied-screen').style.display = 'flex';
+  } else {
+    document.getElementById('app-root').style.display = '';
+  }
+}
+// Se SESSAO_CADASTRO for null, BraviAuth.exigirSessao() já redirecionou ao hub.
+
 const DB={profissionais:[],clientes:[],projetos:[],setores:[],funcoes:[],vinculos:[]};
 let secao='profissionais',filtros={profissionais:'ativo',clientes:'ativo',projetos:'ativo'},editId=null,simplCtx='',fotoB64='';
+let inativandoId=null; // id do profissional em processo de inativação
 
 function init(){
+  // Só inicializa o app de fato se a sessão for válida e com acesso permitido
+  if (!SESSAO_CADASTRO || !BraviAuth.temAcessoGestao(SESSAO_CADASTRO)) return;
   ['profissionais','clientes','projetos','setores','funcoes','vinculos'].forEach(k=>{
     DB[k] = BraviDB.ler(k);
   });
@@ -525,9 +601,11 @@ function atualizarContadores(){
   const in_=DB.profissionais.filter(p=>p.ativo===false).length;
   document.getElementById('s-ativos').textContent=at;
   document.getElementById('s-inativos').textContent=in_;
-  // Tempo médio
-  const adm=DB.profissionais.filter(p=>p.ativo!==false&&p.admissao).map(p=>Math.floor((Date.now()-new Date(p.admissao))/(1000*60*60*24*30.5)));
-  if(adm.length>0){const m=Math.floor(adm.reduce((a,b)=>a+b,0)/adm.length);document.getElementById('s-media').textContent=fmtTempo(m);}
+  // Sexo (apenas ativos)
+  const masc=DB.profissionais.filter(p=>p.ativo!==false&&p.sexo==='Masculino').length;
+  const fem=DB.profissionais.filter(p=>p.ativo!==false&&p.sexo==='Feminino').length;
+  const elMasc=document.getElementById('s-masc'); if(elMasc) elMasc.textContent=masc;
+  const elFem=document.getElementById('s-fem'); if(elFem) elFem.textContent=fem;
   // Gráfico por função
   const porFunc={};
   DB.profissionais.filter(p=>p.ativo!==false&&p.funcao).forEach(p=>{porFunc[p.funcao]=(porFunc[p.funcao]||0)+1;});
@@ -565,6 +643,10 @@ function renderProfissionais(q=''){
     const pct=Math.min(m/120*100,100);
     const proj=DB.projetos.find(pr=>pr.id===p.projetoPrincipal);
     const pendente=isPendente(p);
+    const ativo = p.ativo!==false;
+    const btnAtivacao = ativo
+      ? `<button class="icon-btn" title="Inativar" onclick="event.stopPropagation();abrirModalInativar('${p.id}')"><i class="ti ti-user-off"></i></button>`
+      : `<button class="icon-btn" title="Reativar" onclick="event.stopPropagation();reativarProfissional('${p.id}')"><i class="ti ti-user-check"></i></button>`;
     return`<tr onclick="editarProfissional('${p.id}')">
       <td><div class="avatar-wrap"><div class="avatar">${p.foto?`<img src="${p.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:iniciais(p.nome)}</div><div><div class="td-primary">${p.nome}${pendente?` <span class="badge badge-amber" style="font-size:9px;vertical-align:middle">Pendente</span>`:''}</div><div class="td-muted" style="font-size:11px">${p.email||''}</div></div></div></td>
       <td class="td-muted">${p.funcao||'—'}</td>
@@ -572,8 +654,8 @@ function renderProfissionais(q=''){
       <td class="td-muted">${proj?proj.nome:'—'}</td>
       <td class="td-muted">${p.admissao?new Date(p.admissao+'T12:00:00').toLocaleDateString('pt-BR'):'—'}</td>
       <td><div class="tenure-bar"><div class="tenure-track"><div class="tenure-fill" style="width:${pct}%"></div></div><span class="td-muted" style="font-size:11px">${t}</span></div></td>
-      <td><span class="badge ${p.ativo!==false?'badge-green':'badge-red'}"><span class="badge-dot"></span>${p.ativo!==false?'Ativo':'Inativo'}</span></td>
-      <td><div class="row-actions"><button class="icon-btn" onclick="event.stopPropagation();editarProfissional('${p.id}')"><i class="ti ti-edit"></i></button><button class="icon-btn danger" onclick="event.stopPropagation();excluir('profissionais','${p.id}')"><i class="ti ti-trash"></i></button></div></td>
+      <td><span class="badge ${ativo?'badge-green':'badge-red'}"><span class="badge-dot"></span>${ativo?'Ativo':'Inativo'}</span></td>
+      <td><div class="row-actions">${btnAtivacao}<button class="icon-btn" onclick="event.stopPropagation();editarProfissional('${p.id}')"><i class="ti ti-edit"></i></button><button class="icon-btn danger" onclick="event.stopPropagation();excluir('profissionais','${p.id}')"><i class="ti ti-trash"></i></button></div></td>
     </tr>`;
   }).join('')}</tbody></table>`;
 }
@@ -708,8 +790,13 @@ function fecharModal(id){document.getElementById('modal-'+id).classList.remove('
 // ── SALVAR ──
 function salvarProfissional(){
   const nome=V('prof-nome');if(!nome){alert('Nome é obrigatório');return}
-  const obj={id:editId||uid(),nome,email:V('prof-email'),telefone:V('prof-telefone'),nascimento:V('prof-nascimento'),regime:V('prof-regime'),funcao:V('prof-funcao'),setor:V('prof-setor'),projetoPrincipal:V('prof-projeto'),admissao:V('prof-admissao'),demissao:V('prof-demissao'),ativo:document.getElementById('prof-ativo').checked,obs:V('prof-obs'),foto:fotoB64||(editId?(DB.profissionais.find(p=>p.id===editId)||{}).foto:''),criadoEm:editId?(DB.profissionais.find(p=>p.id===editId)||{}).criadoEm:new Date().toISOString()};
-  if(editId){const i=DB.profissionais.findIndex(p=>p.id===editId);if(i>=0)DB.profissionais[i]=obj}else DB.profissionais.push(obj);
+  const obj={id:editId||uid(),nome,email:V('prof-email'),telefone:V('prof-telefone'),nascimento:V('prof-nascimento'),sexo:V('prof-sexo'),regime:V('prof-regime'),funcao:V('prof-funcao'),setor:V('prof-setor'),projetoPrincipal:V('prof-projeto'),admissao:V('prof-admissao'),demissao:V('prof-demissao'),ativo:document.getElementById('prof-ativo').checked,obs:V('prof-obs'),foto:fotoB64||(editId?(DB.profissionais.find(p=>p.id===editId)||{}).foto:''),criadoEm:editId?(DB.profissionais.find(p=>p.id===editId)||{}).criadoEm:new Date().toISOString()};
+  if(editId){
+    const antigo = DB.profissionais.find(p=>p.id===editId) || {};
+    // Preserva histórico de inativação se já existir e o status não tiver sido alterado manualmente aqui
+    if (antigo.inativacao) obj.inativacao = antigo.inativacao;
+    const i=DB.profissionais.findIndex(p=>p.id===editId);if(i>=0)DB.profissionais[i]=obj
+  }else DB.profissionais.push(obj);
   salvarDB('profissionais');fecharModal('profissional');renderProfissionais();atualizarContadores();
 }
 function salvarCliente(){
@@ -735,12 +822,50 @@ function salvarVinculo(){
   salvarDB('vinculos');fecharModal('vinculo');renderVinculos();atualizarContadores();
 }
 
+// ── ATIVAR / INATIVAR (com motivo) ──
+function abrirModalInativar(id){
+  inativandoId=id;
+  document.getElementById('inat-data').value=new Date().toISOString().slice(0,10);
+  document.querySelector('input[name="inat-motivacao"][value="Empresa"]').checked=true;
+  setV('inat-obs','');
+  document.getElementById('modal-inativar').classList.add('open');
+}
+
+function confirmarInativacao(){
+  if(!inativandoId)return;
+  const data=V('inat-data');
+  if(!data){alert('Informe a data de inativação');return}
+  const motivacao=document.querySelector('input[name="inat-motivacao"]:checked')?.value||'Empresa';
+  const obs=V('inat-obs');
+  const i=DB.profissionais.findIndex(p=>p.id===inativandoId);
+  if(i>=0){
+    DB.profissionais[i].ativo=false;
+    DB.profissionais[i].inativacao={data,motivacao,obs,registradoEm:new Date().toISOString(),registradoPor:SESSAO_CADASTRO?.email||''};
+  }
+  salvarDB('profissionais');
+  fecharModal('inativar');
+  inativandoId=null;
+  renderProfissionais();atualizarContadores();
+}
+
+function reativarProfissional(id){
+  if(!confirm('Reativar este profissional?'))return;
+  const i=DB.profissionais.findIndex(p=>p.id===id);
+  if(i>=0){
+    DB.profissionais[i].ativo=true;
+    // Mantém o histórico de inativação anterior para referência, só marca como reativado
+    if (DB.profissionais[i].inativacao) DB.profissionais[i].inativacao.reativadoEm=new Date().toISOString();
+  }
+  salvarDB('profissionais');
+  renderProfissionais();atualizarContadores();
+}
+
 // ── EDITAR ──
 function editarProfissional(id){
   const p=DB.profissionais.find(x=>x.id===id);if(!p)return;
   editId=id;popSelectsProf();
   document.getElementById('modal-prof-title').textContent='Editar Profissional';
-  ['nome','email','telefone','nascimento','regime','funcao','setor','admissao','demissao','obs'].forEach(f=>setV('prof-'+f,p[f]||''));
+  ['nome','email','telefone','nascimento','sexo','regime','funcao','setor','admissao','demissao','obs'].forEach(f=>setV('prof-'+f,p[f]||''));
   document.getElementById('prof-projeto').value=p.projetoPrincipal||'';
   document.getElementById('prof-ativo').checked=p.ativo!==false;
   const fp=document.getElementById('foto-preview');fp.innerHTML=p.foto?`<img src="${p.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:'👤';
@@ -785,7 +910,7 @@ function popSelectsVinc(){
 }
 
 // ── LIMPAR ──
-function limparProf(){['prof-nome','prof-email','prof-telefone','prof-nascimento','prof-regime','prof-funcao','prof-setor','prof-projeto','prof-admissao','prof-demissao','prof-obs'].forEach(id=>setV(id,''));document.getElementById('prof-ativo').checked=true;document.getElementById('foto-preview').innerHTML='👤';fotoB64=''}
+function limparProf(){['prof-nome','prof-email','prof-telefone','prof-nascimento','prof-sexo','prof-regime','prof-funcao','prof-setor','prof-projeto','prof-admissao','prof-demissao','prof-obs'].forEach(id=>setV(id,''));document.getElementById('prof-ativo').checked=true;document.getElementById('foto-preview').innerHTML='👤';fotoB64=''}
 function limparCli(){['cli-nome','cli-cnpj','cli-segmento','cli-contato','cli-email','cli-telefone','cli-obs'].forEach(id=>setV(id,''));document.getElementById('cli-ativo').checked=true}
 function limparProj(){['proj-nome','proj-inicio','proj-fim','proj-valor','proj-desc'].forEach(id=>setV(id,''));document.getElementById('proj-status').value='ativo';document.getElementById('proj-tipo').value='alocacao'}
 function limparVinc(){['vinc-inicio','vinc-fim'].forEach(id=>setV(id,''));document.getElementById('vinc-ativo').checked=true}
