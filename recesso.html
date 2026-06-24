@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Recesso · Central Bravi</title>
+<script src="bravi-db.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -518,10 +519,11 @@ sep{display:block;height:1px;background:var(--border);margin:16px 0}
       <!-- ── PROFISSIONAIS (PC/GP view) ── -->
       <div id="pg-profissionais" class="page">
         <div class="ph"><h1>Profissionais</h1><p>Saldos e histórico de recesso</p></div>
+        <div class="stats-grid" id="prof-stats-conferencia" style="margin-bottom:16px"></div>
         <div class="filter-bar">
           <div class="field"><label>Buscar</label><input type="text" id="prof-search" placeholder="Nome ou projeto..." oninput="renderProfTable()"></div>
           <div class="field"><label>Projeto</label><select id="prof-proj-filter" onchange="renderProfTable()"><option value="">Todos</option></select></div>
-          <div class="field"><label>Status</label><select id="prof-status-filter" onchange="renderProfTable()"><option value="">Todos</option><option value="1">Ativos</option><option value="0">Inativos</option></select></div>
+          <div class="field"><label>Status</label><select id="prof-status-filter" onchange="renderProfTable()"><option value="1" selected>Ativos</option><option value="">Todos</option><option value="0">Inativos</option></select></div>
         </div>
         <div class="card">
           <div class="card-bd">
@@ -814,8 +816,9 @@ let DB = {
 // ══════════════════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', async () => {
   loadLocal();
-  // Tenta sincronizar pessoas do Drive em background
+  // Tenta sincronizar pessoas e solicitações do Drive em background
   carregarPessoas();
+  carregarSolicitacoes();
   await iniciarComSessaoDoHub();
 });
 
@@ -889,19 +892,96 @@ function loadLocal() {
   const c = ls(LS_PROF_CFG); if (c) DB.profCfg = c;
 }
 
-async function carregarPessoas() {
-  // Primeiro tenta cache local
-  const cache = ls(LS_PESSOAS);
-  if (cache && cache.length) DB.pessoas = cache;
+/**
+ * Adapta um registro de profissional no formato do Cadastro Geral
+ * (campos: nome, email, funcao, projetoPrincipal=ID, admissao, ativo, sexo)
+ * para o formato que a lógica de negócio do Recesso já espera internamente
+ * (campos: people=slug, role, projetoAtual=NOME, admissao, ativo, email).
+ *
+ * Isso existe porque o Cadastro Geral (cadastro.html) é a fonte única da
+ * verdade para todos os módulos — o Recesso não deve mais ler a planilha
+ * "Pessoas-2026" diretamente (isso causava dessincronia: gente já inativada
+ * no Cadastro continuava aparecendo como ativa/elegível no Recesso).
+ */
+function _adaptarProfissionalDoCadastro(p, projetosPorId) {
+  const email = (p.email || '').toLowerCase().trim();
+  const people = email ? email.replace('@bravi.com.br', '') : null;
+  if (!people) return null; // sem e-mail não há como vincular ao login
 
-  // Tenta buscar do Drive
+  const projeto = p.projetoPrincipal ? (projetosPorId[p.projetoPrincipal] || null) : null;
+
+  return {
+    people,
+    email,
+    nome: p.nome || nomeF(people),
+    role: p.funcao || '',
+    setor: p.setor || '',
+    level: p.level || '',
+    projetoAtual: projeto ? projeto.nome : null,
+    admissao: p.admissao || null,
+    ativo: p.ativo !== false,
+    sexo: p.sexo || '',
+  };
+}
+
+/**
+ * Busca profissionais do Cadastro Geral (BraviDB — mesma fonte que
+ * cadastro.html usa), que é a fonte única da verdade para todos os módulos.
+ * Sincroniza com o Drive primeiro para garantir dados atualizados, depois
+ * lê a tabela local 'profissionais' e a adapta para o formato do Recesso.
+ */
+async function carregarPessoas() {
+  // Cache local imediato (resposta rápida enquanto sincroniza em background)
+  const cacheAdaptado = ls(LS_PESSOAS);
+  if (cacheAdaptado && cacheAdaptado.length) DB.pessoas = cacheAdaptado;
+
   try {
-    const r = await fetch(`${API_URL}?action=pessoas-drive&ano=2026`).then(x=>x.json());
-    if (r.ok && r.dados && r.dados.length) {
-      DB.pessoas = r.dados;
+    // Garante que BraviDB tem a API configurada (mesma usada pelo Recesso)
+    if (!BraviDB.temAPI()) BraviDB.configurarAPI(API_URL);
+
+    // Sincroniza do Drive — traz a tabela 'profissionais' salva pelo cadastro.html
+    await BraviDB.sincronizar();
+
+    const profissionaisCadastro = BraviDB.ler('profissionais');
+    const projetosCadastro = BraviDB.ler('projetos');
+    const projetosPorId = {};
+    projetosCadastro.forEach(pr => { projetosPorId[pr.id] = pr; });
+
+    const adaptados = profissionaisCadastro
+      .map(p => _adaptarProfissionalDoCadastro(p, projetosPorId))
+      .filter(Boolean);
+
+    if (adaptados.length) {
+      DB.pessoas = adaptados;
       lsSet(LS_PESSOAS, DB.pessoas);
     }
-  } catch(e) {}
+  } catch(e) {
+    console.warn('Falha ao sincronizar com o Cadastro Geral, usando cache local.', e);
+  }
+}
+
+/**
+ * Busca as solicitações de recesso do Drive — fonte da verdade compartilhada
+ * entre todos os usuários/navegadores. Corrige o bug onde uma solicitação
+ * criada em um computador não aparecia para o People Care em outro, já que
+ * antes DB.solicitacoes só vinha do localStorage local de cada navegador.
+ */
+async function carregarSolicitacoes() {
+  try {
+    const r = await fetch(`${API_URL}?action=recesso-drive`).then(x=>x.json());
+    if (r.ok && Array.isArray(r.dados)) {
+      DB.solicitacoes = r.dados;
+      lsSet(LS_RECESSO, DB.solicitacoes);
+      // Re-renderiza a página atual, caso o usuário já esteja vendo uma tela
+      // que depende de solicitações (Dashboard, Aprovações, Meu Recesso, etc.)
+      // antes da resposta do Drive ter chegado.
+      if (STATE.currentUser) nav(STATE.currentPage);
+      return true;
+    }
+  } catch(e) {
+    console.warn('Falha ao buscar solicitações do Drive, usando cache local.', e);
+  }
+  return false;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1123,14 +1203,14 @@ function nav(pg) {
   document.getElementById('topbar-title').textContent = titleMap[pg]||'';
 
   // Renders por página
-  if (pg==='pg-dashboard')      renderDashboard();
-  if (pg==='pg-meu-recesso')    renderMeuRecesso();
+  if (pg==='pg-dashboard')      { renderDashboard(); carregarSolicitacoes(); }
+  if (pg==='pg-meu-recesso')    { renderMeuRecesso(); carregarSolicitacoes(); }
   if (pg==='pg-solicitar')      initSolicitar();
-  if (pg==='pg-aprovacoes')     renderAprovacoes();
+  if (pg==='pg-aprovacoes')     { renderAprovacoes(); carregarSolicitacoes(); }
   if (pg==='pg-profissionais')  renderProfTable();
   if (pg==='pg-projetos-gp')    renderProjetosGP();
   if (pg==='pg-regras')         loadRegras();
-  if (pg==='pg-calendario')     renderCalendar();
+  if (pg==='pg-calendario')     { renderCalendar(); carregarSolicitacoes(); }
   if (pg==='pg-usuarios')       carregarUsuarios();
 }
 
@@ -1816,6 +1896,19 @@ function renderProfTable() {
   const search = (document.getElementById('prof-search')?.value||'').toLowerCase();
   const projF  = document.getElementById('prof-proj-filter')?.value||'';
   const statF  = document.getElementById('prof-status-filter')?.value||'';
+
+  // Card de conferência: quantos profissionais o Recesso está vendo como
+  // ativos/inativos, vindos do Cadastro Geral (fonte única da verdade).
+  // Serve para detectar rapidamente qualquer dessincronia entre os módulos.
+  const totalAtivos = DB.pessoas.filter(p => p.ativo).length;
+  const totalInativos = DB.pessoas.filter(p => !p.ativo).length;
+  const statsEl = document.getElementById('prof-stats-conferencia');
+  if (statsEl) {
+    statsEl.innerHTML = `
+      ${statCard('green','✅',totalAtivos,'Profissionais ativos (Cadastro Geral)')}
+      ${statCard('yellow','⛔',totalInativos,'Inativos (Cadastro Geral)')}
+    `;
+  }
 
   let pessoas = DB.pessoas;
   if (u.role === 'gp') pessoas = pessoas.filter(p => gpDoProjeto(p.projetoAtual) === u.people);
