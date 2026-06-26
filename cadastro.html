@@ -32,6 +32,7 @@
 .radio-row{display:flex;gap:18px;align-items:center;margin-top:6px}
 .radio-opt{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-secondary);cursor:pointer}
 .radio-opt input{accent-color:var(--bravi-purple);cursor:pointer}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -67,6 +68,7 @@
     <button class="nav-item" onclick="showSection('vinculos',this)"><i class="ti ti-link"></i> Prof. ↔ Projetos <span class="nav-cnt" id="cnt-vinc">0</span></button>
     <div class="nav-group">Ferramentas</div>
     <button class="nav-item" onclick="showSection('importar',this)"><i class="ti ti-upload"></i> Importar dados</button>
+    <button class="nav-item" onclick="showSection('pendencias',this)"><i class="ti ti-clock-exclamation"></i> Novidades do Drive <span class="nav-cnt" id="cnt-pend">0</span></button>
   </div>
   <div class="sidebar-footer">
     <a href="index.html" class="back-link"><i class="ti ti-arrow-left"></i> Voltar ao Hub</a>
@@ -197,6 +199,21 @@
           <div><div style="color:var(--info);font-weight:600;font-family:var(--font-display);margin-bottom:4px;font-size:11px">PROJETOS</div>nome, cliente, status, tipo, inicio, valor</div>
         </div>
       </div>
+    </div>
+
+    <!-- NOVIDADES DO DRIVE (pendências de aprovação) -->
+    <div class="section-panel" id="panel-pendencias">
+      <div style="margin-bottom:20px">
+        <div style="font-family:var(--font-display);font-size:18px;font-weight:800;color:var(--text-primary);margin-bottom:4px">Novidades do Drive — Planilha Pessoas</div>
+        <div style="font-size:13px;color:var(--text-muted)">
+          Profissionais novos detectados na planilha "Pessoas-2026" que ainda não existem no Cadastro Geral.
+          O sistema é a fonte da verdade: nada é inserido automaticamente — revise e aprove cada um abaixo.
+        </div>
+      </div>
+      <div style="margin-bottom:14px">
+        <button class="btn btn-secondary btn-sm" onclick="sincronizarEBuscarPendencias()" id="btn-sync-pendencias"><i class="ti ti-refresh"></i> Verificar novidades agora</button>
+      </div>
+      <div id="pendencias-lista"></div>
     </div>
 
   </div>
@@ -508,7 +525,7 @@ function init(){
   renderTudo();atualizarContadores();
 }
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
-function salvarDB(k){ BraviDB.salvar(k, DB[k]); }
+function salvarDB(k){ return BraviDB.salvar(k, DB[k]); }
 function V(id){const e=document.getElementById(id);return e?e.value.trim():''}
 function setV(id,v){const e=document.getElementById(id);if(e)e.value=v}
 
@@ -522,7 +539,7 @@ function toggleQA(id){
 }
 function fecharQA(id){document.getElementById(id)?.classList.remove('open')}
 
-function salvarQA(chave,selectId){
+async function salvarQA(chave,selectId){
   const inputId='qa-'+chave+'-input';
   const nome=document.getElementById(inputId)?.value.trim();
   if(!nome){alert('Informe um nome');return}
@@ -532,7 +549,7 @@ function salvarQA(chave,selectId){
   if(chave==='projetos'){
     // projeto simples — status ativo, tipo alocação
     DB.projetos.push({id:novoId,nome,status:'ativo',tipo:'alocacao',criadoEm:new Date().toISOString()});
-    salvarDB('projetos');
+    await salvarDB('projetos');
     // repopula select de projetos
     const sel=document.getElementById(selectId);
     const opt=document.createElement('option');
@@ -540,7 +557,7 @@ function salvarQA(chave,selectId){
     sel.appendChild(opt);sel.value=novoId;
   } else {
     DB[chave].push({id:novoId,nome});
-    salvarDB(chave);
+    await salvarDB(chave);
     // repopula select
     const sel=document.getElementById(selectId);
     const opt=document.createElement('option');
@@ -560,9 +577,10 @@ function showSection(sec,el){
   document.getElementById('panel-'+sec)?.classList.add('active');
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   el?.classList.add('active');
-  const t={profissionais:'Profissionais',clientes:'Clientes',projetos:'Projetos',setores:'Setores',funcoes:'Funções',vinculos:'Vínculos Prof. ↔ Projetos',importar:'Importar dados'};
+  const t={profissionais:'Profissionais',clientes:'Clientes',projetos:'Projetos',setores:'Setores',funcoes:'Funções',vinculos:'Vínculos Prof. ↔ Projetos',importar:'Importar dados',pendencias:'Novidades do Drive'};
   document.getElementById('topbar-title').textContent=t[sec]||sec;
-  document.getElementById('btn-novo').style.display=sec==='importar'?'none':'';
+  document.getElementById('btn-novo').style.display=(sec==='importar'||sec==='pendencias')?'none':'';
+  if (sec==='pendencias') sincronizarEBuscarPendencias();
   renderSecao(sec);
   document.getElementById('search-input').value='';
 }
@@ -788,7 +806,7 @@ function abrirModal(){
 function fecharModal(id){document.getElementById('modal-'+id).classList.remove('open');editId=null}
 
 // ── SALVAR ──
-function salvarProfissional(){
+async function salvarProfissional(){
   const nome=V('prof-nome');if(!nome){alert('Nome é obrigatório');return}
   const obj={id:editId||uid(),nome,email:V('prof-email'),telefone:V('prof-telefone'),nascimento:V('prof-nascimento'),sexo:V('prof-sexo'),regime:V('prof-regime'),funcao:V('prof-funcao'),setor:V('prof-setor'),projetoPrincipal:V('prof-projeto'),admissao:V('prof-admissao'),demissao:V('prof-demissao'),ativo:document.getElementById('prof-ativo').checked,obs:V('prof-obs'),foto:fotoB64||(editId?(DB.profissionais.find(p=>p.id===editId)||{}).foto:''),criadoEm:editId?(DB.profissionais.find(p=>p.id===editId)||{}).criadoEm:new Date().toISOString()};
   if(editId){
@@ -797,29 +815,44 @@ function salvarProfissional(){
     if (antigo.inativacao) obj.inativacao = antigo.inativacao;
     const i=DB.profissionais.findIndex(p=>p.id===editId);if(i>=0)DB.profissionais[i]=obj
   }else DB.profissionais.push(obj);
-  salvarDB('profissionais');fecharModal('profissional');renderProfissionais();atualizarContadores();
+
+  // Espera o Drive confirmar antes de fechar — evita que o usuário navegue
+  // para outro módulo (que poderia sincronizar e ler uma versão antiga,
+  // revertendo esta alteração) antes da gravação real ter terminado.
+  const btnSalvar = document.querySelector('#modal-profissional .btn-primary');
+  const txtOriginal = btnSalvar?.innerHTML;
+  if (btnSalvar) { btnSalvar.disabled = true; btnSalvar.innerHTML = '<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> Salvando...'; }
+
+  const resultado = await salvarDB('profissionais');
+
+  if (btnSalvar) { btnSalvar.disabled = false; btnSalvar.innerHTML = txtOriginal; }
+  if (resultado && resultado.ok === false) {
+    alert('⚠️ Não foi possível confirmar a gravação no Drive (' + (resultado.erro||'erro desconhecido') + '). A alteração foi salva localmente, mas pode ser sobrescrita por outro dispositivo até a próxima sincronização. Tente novamente.');
+  }
+
+  fecharModal('profissional');renderProfissionais();atualizarContadores();
 }
-function salvarCliente(){
+async function salvarCliente(){
   const nome=V('cli-nome');if(!nome){alert('Nome é obrigatório');return}
   const obj={id:editId||uid(),nome,cnpj:V('cli-cnpj'),segmento:V('cli-segmento'),contato:V('cli-contato'),email:V('cli-email'),telefone:V('cli-telefone'),obs:V('cli-obs'),ativo:document.getElementById('cli-ativo').checked,criadoEm:new Date().toISOString()};
   if(editId){const i=DB.clientes.findIndex(c=>c.id===editId);if(i>=0)DB.clientes[i]=obj}else DB.clientes.push(obj);
-  salvarDB('clientes');fecharModal('cliente');renderClientes();atualizarContadores();
+  await salvarDB('clientes');fecharModal('cliente');renderClientes();atualizarContadores();
 }
-function salvarProjeto(){
+async function salvarProjeto(){
   const nome=V('proj-nome');if(!nome){alert('Nome é obrigatório');return}
   const obj={id:editId||uid(),nome,clienteId:V('proj-cliente'),status:V('proj-status'),tipo:V('proj-tipo'),inicio:V('proj-inicio'),fim:V('proj-fim'),valor:parseFloat(V('proj-valor'))||0,gp:V('proj-gp'),desc:V('proj-desc'),criadoEm:new Date().toISOString()};
   if(editId){const i=DB.projetos.findIndex(p=>p.id===editId);if(i>=0)DB.projetos[i]=obj}else DB.projetos.push(obj);
-  salvarDB('projetos');fecharModal('projeto');renderProjetos();atualizarContadores();
+  await salvarDB('projetos');fecharModal('projeto');renderProjetos();atualizarContadores();
 }
-function salvarSimples(){
+async function salvarSimples(){
   const nome=V('simples-nome');if(!nome){alert('Nome é obrigatório');return}
   DB[simplCtx].push({id:uid(),nome,desc:V('simples-desc')});
-  salvarDB(simplCtx);fecharModal('simples');renderSecao(simplCtx);atualizarContadores();
+  await salvarDB(simplCtx);fecharModal('simples');renderSecao(simplCtx);atualizarContadores();
 }
-function salvarVinculo(){
+async function salvarVinculo(){
   const pId=V('vinc-prof'),prId=V('vinc-proj');if(!pId||!prId){alert('Profissional e Projeto são obrigatórios');return}
   DB.vinculos.push({id:uid(),profId:pId,projetoId:prId,funcao:V('vinc-func'),inicio:V('vinc-inicio'),fim:V('vinc-fim'),ativo:document.getElementById('vinc-ativo').checked});
-  salvarDB('vinculos');fecharModal('vinculo');renderVinculos();atualizarContadores();
+  await salvarDB('vinculos');fecharModal('vinculo');renderVinculos();atualizarContadores();
 }
 
 // ── ATIVAR / INATIVAR (com motivo) ──
@@ -831,7 +864,7 @@ function abrirModalInativar(id){
   document.getElementById('modal-inativar').classList.add('open');
 }
 
-function confirmarInativacao(){
+async function confirmarInativacao(){
   if(!inativandoId)return;
   const data=V('inat-data');
   if(!data){alert('Informe a data de inativação');return}
@@ -842,13 +875,24 @@ function confirmarInativacao(){
     DB.profissionais[i].ativo=false;
     DB.profissionais[i].inativacao={data,motivacao,obs,registradoEm:new Date().toISOString(),registradoPor:SESSAO_CADASTRO?.email||''};
   }
-  salvarDB('profissionais');
+
+  const btnConfirmar = document.querySelector('#modal-inativar .btn-primary');
+  const txtOriginal = btnConfirmar?.innerHTML;
+  if (btnConfirmar) { btnConfirmar.disabled = true; btnConfirmar.innerHTML = '<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> Salvando...'; }
+
+  const resultado = await salvarDB('profissionais');
+
+  if (btnConfirmar) { btnConfirmar.disabled = false; btnConfirmar.innerHTML = txtOriginal; }
+  if (resultado && resultado.ok === false) {
+    alert('⚠️ Não foi possível confirmar a gravação no Drive (' + (resultado.erro||'erro desconhecido') + '). Aguarde um instante e tente novamente antes de navegar para outro módulo.');
+  }
+
   fecharModal('inativar');
   inativandoId=null;
   renderProfissionais();atualizarContadores();
 }
 
-function reativarProfissional(id){
+async function reativarProfissional(id){
   if(!confirm('Reativar este profissional?'))return;
   const i=DB.profissionais.findIndex(p=>p.id===id);
   if(i>=0){
@@ -856,7 +900,12 @@ function reativarProfissional(id){
     // Mantém o histórico de inativação anterior para referência, só marca como reativado
     if (DB.profissionais[i].inativacao) DB.profissionais[i].inativacao.reativadoEm=new Date().toISOString();
   }
-  salvarDB('profissionais');
+
+  const resultado = await salvarDB('profissionais');
+  if (resultado && resultado.ok === false) {
+    alert('⚠️ Não foi possível confirmar a gravação no Drive (' + (resultado.erro||'erro desconhecido') + '). Tente novamente.');
+  }
+
   renderProfissionais();atualizarContadores();
 }
 
@@ -887,7 +936,7 @@ function editarProjeto(id){
 }
 
 // ── EXCLUIR ──
-function excluir(k,id){if(!confirm('Confirmar exclusão?'))return;DB[k]=DB[k].filter(x=>x.id!==id);salvarDB(k);renderSecao(secao);atualizarContadores()}
+async function excluir(k,id){if(!confirm('Confirmar exclusão?'))return;DB[k]=DB[k].filter(x=>x.id!==id);await salvarDB(k);renderSecao(secao);atualizarContadores()}
 
 // ── FILTROS ──
 function setFilter(s,v,el){filtros[s]=v;el.closest('.filter-tabs').querySelectorAll('.filter-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderSecao(s)}
@@ -921,7 +970,7 @@ function previewFoto(input){const f=input.files[0];if(!f)return;const r=new File
 // ── IMPORT / EXPORT ──
 function importarCSV(input,tipo){
   const f=input.files[0];if(!f)return;
-  const r=new FileReader();r.onload=e=>{
+  const r=new FileReader();r.onload=async e=>{
     const linhas=e.target.result.split('\n').map(l=>l.trim()).filter(l=>l);
     if(linhas.length<2){alert('Arquivo vazio');return}
     const headers=linhas[0].split(',').map(h=>h.trim().toLowerCase().replace(/[^a-z_]/g,''));
@@ -933,7 +982,7 @@ function importarCSV(input,tipo){
       if(!obj.nome)continue;
       DB[tipo].push(obj);n++;
     }
-    salvarDB(tipo);renderSecao(tipo);atualizarContadores();
+    await salvarDB(tipo);renderSecao(tipo);atualizarContadores();
     alert(`✅ ${n} registros importados!`);
   };r.readAsText(f);
 }
@@ -945,6 +994,109 @@ function exportarJSON(){
 // ── FECHAR COM ESC / BACKDROP ──
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelectorAll('.modal-backdrop.open').forEach(m=>m.classList.remove('open'));document.querySelectorAll('.qa-box').forEach(b=>b.classList.remove('open'))}});
 document.querySelectorAll('.modal-backdrop').forEach(b=>b.addEventListener('click',e=>{if(e.target===b)b.classList.remove('open')}));
+
+// ── NOVIDADES DO DRIVE (pendências de aprovação) ──
+// O Cadastro Geral é a fonte da verdade — profissionais novos detectados
+// na planilha "Pessoas-2026" não entram automaticamente. Ficam pendentes
+// até um Admin/Gestão revisar e aprovar (ou rejeitar) manualmente aqui.
+// Dispara a sincronização real com a planilha "Pessoas-2026" (que agora
+// nunca sobrescreve `ativo` de quem já existe, e só cria pendências para
+// quem é novo) e, em seguida, recarrega a lista de pendências na tela.
+async function sincronizarEBuscarPendencias(){
+  const btn = document.getElementById('btn-sync-pendencias');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> Sincronizando...'; }
+  const apiUrl = BraviDB.getApiUrl();
+  if (apiUrl) {
+    try {
+      const r = await fetch(apiUrl + '?action=sync-pessoas-drive&_=' + Date.now());
+      await r.json(); // resultado não é crítico aqui, só dispara o efeito no backend
+    } catch(e) { console.warn('Falha ao sincronizar com a planilha Pessoas-2026:', e); }
+  }
+  if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-refresh"></i> Verificar novidades agora'; }
+  buscarPendenciasPessoas();
+}
+
+async function buscarPendenciasPessoas(){
+  const el = document.getElementById('pendencias-lista');
+  if (!el) return;
+  el.innerHTML = `<div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-title">Verificando...</div></div>`;
+  const apiUrl = BraviDB.getApiUrl();
+  if (!apiUrl) { el.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">API não configurada</div></div>`; return; }
+  try {
+    const r = await fetch(apiUrl + '?action=pendencias-pessoas&_=' + Date.now());
+    const j = await r.json();
+    if (!j.ok) { el.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">${j.erro||'Erro ao buscar pendências'}</div></div>`; return; }
+    renderPendencias(j.dados||[]);
+  } catch(e) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Falha ao conectar com o servidor</div></div>`;
+  }
+}
+
+function renderPendencias(lista){
+  const el = document.getElementById('pendencias-lista');
+  const cntEl = document.getElementById('cnt-pend');
+  if (cntEl) cntEl.textContent = lista.length;
+  if (!lista.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">Nenhuma novidade pendente</div><div class="empty-desc">Todos os profissionais da planilha já estão refletidos no Cadastro Geral.</div></div>`;
+    return;
+  }
+  el.innerHTML = `<table><thead><tr><th>Nome</th><th>E-mail</th><th>Função</th><th>Admissão</th><th>Status na planilha</th><th>Detectado em</th><th></th></tr></thead><tbody>${lista.map(p=>`
+    <tr>
+      <td class="td-primary">${p.nome}</td>
+      <td class="td-muted">${p.email||'—'}</td>
+      <td class="td-muted">${p.funcao||'—'}</td>
+      <td class="td-muted">${p.admissao?new Date(p.admissao+'T12:00:00').toLocaleDateString('pt-BR'):'—'}</td>
+      <td><span class="badge ${p.ativoNaPlanilha?'badge-green':'badge-red'}"><span class="badge-dot"></span>${p.ativoNaPlanilha?'Ativo':'Inativo'}</span></td>
+      <td class="td-muted">${new Date(p.detectadoEm).toLocaleDateString('pt-BR')}</td>
+      <td><div class="row-actions">
+        <button class="btn btn-primary btn-sm" onclick="aprovarPendencia('${p.id}')"><i class="ti ti-check"></i> Aprovar</button>
+        <button class="icon-btn danger" onclick="rejeitarPendencia('${p.id}')" title="Rejeitar"><i class="ti ti-x"></i></button>
+      </div></td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+async function aprovarPendencia(id){
+  if (!confirm('Aprovar este profissional? Ele será adicionado ao Cadastro Geral.')) return;
+  const apiUrl = BraviDB.getApiUrl();
+  if (!apiUrl) return;
+  try {
+    const r = await fetch(apiUrl, {
+      method:'POST',
+      body: JSON.stringify({ action:'aprovar-pendencia-pessoa', id, aprovadoPorEmail: (SESSAO_CADASTRO?.email||'') }),
+      headers: { 'Content-Type':'text/plain;charset=utf-8' }
+    });
+    const j = await r.json();
+    if (!j.ok) { alert('Erro: ' + (j.erro||'falha ao aprovar')); return; }
+    await BraviDB.sincronizar();
+    init_recarregarApósAprovação();
+    buscarPendenciasPessoas();
+  } catch(e) { alert('Falha ao conectar com o servidor.'); }
+}
+
+async function rejeitarPendencia(id){
+  const motivo = prompt('Motivo da rejeição (opcional):','');
+  if (motivo===null) return; // cancelou
+  const apiUrl = BraviDB.getApiUrl();
+  if (!apiUrl) return;
+  try {
+    const r = await fetch(apiUrl, {
+      method:'POST',
+      body: JSON.stringify({ action:'rejeitar-pendencia-pessoa', id, rejeitadoPorEmail:(SESSAO_CADASTRO?.email||''), motivo }),
+      headers: { 'Content-Type':'text/plain;charset=utf-8' }
+    });
+    const j = await r.json();
+    if (!j.ok) { alert('Erro: ' + (j.erro||'falha ao rejeitar')); return; }
+    buscarPendenciasPessoas();
+  } catch(e) { alert('Falha ao conectar com o servidor.'); }
+}
+
+// Recarrega os dados locais (mesma tabela 'profissionais' do BraviDB) após
+// uma pendência ser aprovada no backend, para refletir na tela sem reload.
+function init_recarregarApósAprovação(){
+  DB.profissionais = BraviDB.ler('profissionais');
+  renderProfissionais();
+  atualizarContadores();
+}
 
 init();
 </script>
