@@ -805,6 +805,7 @@ let STATE = {
 
 let DB = {
   pessoas: [],       // da planilha
+  projetosCadastro: [], // tabela 'projetos' do Cadastro Geral (fonte completa, 482+ projetos)
   solicitacoes: [],  // [{id,profEmail,profPeople,inicio,fim,dias,dataSol,justificativa,alinhado,aprovGP,aprovPC,motivoRecusa,statusRecesso}]
   regras: { meses:12, dias:10, add1:1, add2:2, antecedencia:30, minimo:1, anivJanela:7 },
   projGP: {},        // {projetoAtual: people}
@@ -954,6 +955,15 @@ async function carregarPessoas() {
     const projetosCadastro = BraviDB.ler('projetos');
     const projetosPorId = {};
     projetosCadastro.forEach(pr => { projetosPorId[pr.id] = pr; });
+
+    // Guarda a lista completa de projetos do Cadastro Geral (não só os que
+    // já têm alguém vinculado como projetoAtual) — usada em "Projetos & GPs"
+    // para que o GP possa ser configurado em QUALQUER projeto existente,
+    // mesmo sem nenhum profissional apontando para ele ainda.
+    DB.projetosCadastro = projetosCadastro
+      .filter(pr => pr && pr.nome)
+      .map(pr => ({ id: pr.id, nome: pr.nome, status: pr.status || 'ativo' }))
+      .sort((a,b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 
     const adaptados = profissionaisCadastro
       .map(p => _adaptarProfissionalDoCadastro(p, projetosPorId))
@@ -2195,8 +2205,14 @@ function salvarCfgProf(people) {
 // PROJETOS & GPs
 // ══════════════════════════════════════════════════════════════
 function renderProjetosGP() {
-  // Popula selects
-  const projetos = [...new Set(DB.pessoas.map(p=>p.projetoAtual).filter(Boolean))].sort();
+  // Popula selects — usa a lista COMPLETA de projetos do Cadastro Geral
+  // (DB.projetosCadastro), não só os que já têm algum profissional apontando
+  // para eles. Isso permite configurar o GP de qualquer projeto existente.
+  // Fallback: se por algum motivo essa lista ainda não carregou, usa a
+  // derivação antiga a partir de quem já tem projetoAtual preenchido.
+  const projetos = (DB.projetosCadastro && DB.projetosCadastro.length)
+    ? DB.projetosCadastro.map(p => p.nome)
+    : [...new Set(DB.pessoas.map(p=>p.projetoAtual).filter(Boolean))].sort();
   const gps = DB.pessoas.filter(p=>ROLES_GP.includes(p.role) && p.ativo).sort((a,b)=>nomeF(a.people).localeCompare(nomeF(b.people),'pt-BR'));
 
   const spj = document.getElementById('pgp-projeto');
