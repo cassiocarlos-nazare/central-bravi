@@ -779,7 +779,7 @@ function renderMensal() {
     : `Conferência Mensal — ${MESES[mes-1]} ${ano}`;
   const duMes=diasUteisMes(ano,mes);
   document.getElementById('mensalSub').textContent=`${duMes} dias úteis · Meta: ${fmtH(duMes*8)} por profissional`;
-  const pessoas=pessoasFiltradas.filter(p=>p.ativo);
+  const pessoas=pessoasFiltradas.filter(p=>p.ativo).sort((a,b)=>nomeF(a.people).localeCompare(nomeF(b.people),'pt-BR'));
   const wrap=document.getElementById('tabMensalWrap');
   if (!pessoas.length) { wrap.innerHTML='<div class="empty">Nenhum profissional no filtro</div>'; return; }
   const porUser={};
@@ -953,7 +953,7 @@ function renderTabConferencia(wrapId, ini, fim, metaHoras) {
     if(!porUserDia[h.user]) porUserDia[h.user]={};
     porUserDia[h.user][h.data]=(porUserDia[h.user][h.data]||0)+(h.horas||0);
   });
-  const pessoas=pessoasFiltradas.filter(p=>p.ativo);
+  const pessoas=pessoasFiltradas.filter(p=>p.ativo).sort((a,b)=>nomeF(a.people).localeCompare(nomeF(b.people),'pt-BR'));
   if (!pessoas.length) { wrap.innerHTML='<div class="empty">Nenhum profissional no filtro</div>'; return; }
   const prevPessoa=diasUteis.length*8;
   const thDias=todosDias.map(d=>{
@@ -1350,7 +1350,7 @@ function abrirRelatorio(tipo) {
 
   // Horas do período filtradas (já respeita projConfig via horasFiltradas)
   const horasPer = horasFiltradas.filter(h => h.data >= ini && h.data <= fim);
-  const pessoas  = pessoasFiltradas.filter(p => p.ativo);
+  const pessoas  = pessoasFiltradas.filter(p => p.ativo).sort((a,b)=>nomeF(a.people).localeCompare(nomeF(b.people),'pt-BR'));
 
   _relDados = { horasPer, pessoas, ini, fim, titulo, subtitulo };
 

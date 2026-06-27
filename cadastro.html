@@ -653,6 +653,7 @@ function renderProfissionais(q=''){
     if(q){const qL=q.toLowerCase();return(p.nome||'').toLowerCase().includes(qL)||(p.email||'').toLowerCase().includes(qL)||(p.funcao||'').toLowerCase().includes(qL)}
     return true;
   });
+  d=d.slice().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','pt-BR'));
   const el=document.getElementById('table-profissionais');
   if(!d.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">👤</div><div class="empty-title">Nenhum profissional encontrado</div><div class="empty-desc">Clique em "Novo" ou importe um CSV</div><button class="btn btn-primary btn-sm" onclick="abrirModal()"><i class="ti ti-plus"></i> Cadastrar</button></div>`;return}
   el.innerHTML=`<table><thead><tr><th>Nome</th><th>Função</th><th>Setor</th><th>Projeto</th><th>Admissão</th><th>Tempo</th><th>Status</th><th></th></tr></thead><tbody>${d.map(p=>{
@@ -950,10 +951,10 @@ function popSelectsProf(){
 }
 function popSelectsProj(){
   document.getElementById('proj-cliente').innerHTML='<option value="">Interno (sem cliente)</option>'+DB.clientes.filter(c=>c.ativo!==false).map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
-  document.getElementById('proj-gp').innerHTML='<option value="">Selecionar...</option>'+DB.profissionais.filter(p=>p.ativo!==false).map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
+  document.getElementById('proj-gp').innerHTML='<option value="">Selecionar...</option>'+DB.profissionais.filter(p=>p.ativo!==false).slice().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','pt-BR')).map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
 }
 function popSelectsVinc(){
-  document.getElementById('vinc-prof').innerHTML='<option value="">Selecionar...</option>'+DB.profissionais.filter(p=>p.ativo!==false).map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
+  document.getElementById('vinc-prof').innerHTML='<option value="">Selecionar...</option>'+DB.profissionais.filter(p=>p.ativo!==false).slice().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','pt-BR')).map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
   document.getElementById('vinc-proj').innerHTML='<option value="">Selecionar...</option>'+DB.projetos.filter(p=>p.status==='ativo').map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
   document.getElementById('vinc-func').innerHTML='<option value="">Selecionar...</option>'+DB.funcoes.map(f=>`<option value="${f.nome}">${f.nome}</option>`).join('');
 }
