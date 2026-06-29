@@ -956,12 +956,14 @@ async function carregarPessoas() {
     const projetosPorId = {};
     projetosCadastro.forEach(pr => { projetosPorId[pr.id] = pr; });
 
-    // Guarda a lista completa de projetos do Cadastro Geral (não só os que
-    // já têm alguém vinculado como projetoAtual) — usada em "Projetos & GPs"
-    // para que o GP possa ser configurado em QUALQUER projeto existente,
-    // mesmo sem nenhum profissional apontando para ele ainda.
+    // Guarda a lista de projetos ATIVOS do Cadastro Geral (não só os que já
+    // têm alguém vinculado como projetoAtual) — usada em "Projetos & GPs"
+    // para que o GP possa ser configurado em qualquer projeto ativo, mesmo
+    // sem nenhum profissional apontando para ele ainda. Mesma regra de
+    // governança dos profissionais: o Cadastro Geral é a fonte da verdade —
+    // um projeto arquivado lá não aparece mais aqui no Recesso.
     DB.projetosCadastro = projetosCadastro
-      .filter(pr => pr && pr.nome)
+      .filter(pr => pr && pr.nome && (pr.status || 'ativo') === 'ativo')
       .map(pr => ({ id: pr.id, nome: pr.nome, status: pr.status || 'ativo' }))
       .sort((a,b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 
@@ -1287,6 +1289,16 @@ function diasUteisEntre(ini, fim) {
   return n;
 }
 
+// Diferença em dias CORRIDOS (calendário) entre duas datas ISO — usada
+// especificamente para a regra de antecedência mínima de solicitação de
+// recesso, que conta dias corridos e não dias úteis (ex: hoje 27/06,
+// solicitar para 27/07 = exatos 30 dias corridos = antecedência OK).
+function diasCorridosEntre(ini, fim) {
+  const d = new Date(ini + 'T12:00:00');
+  const f = new Date(fim + 'T12:00:00');
+  return Math.round((f - d) / (1000*60*60*24));
+}
+
 function calcStatusRecesso(sol) {
   const now = isoDate(new Date());
   if (sol.aprovGP === 'Recusado' || sol.aprovPC === 'Recusado') return 'Recusado';
@@ -1449,8 +1461,8 @@ function renderMeuRecesso() {
     const anivMes = nasc.getMonth(); // 0-based
     const anivDia = nasc.getDate();
     const anivUsado = (DB.anivUsado[u.people] === hoje.getFullYear());
-    // Janela: mês anterior, mês do aniversário, mês posterior
-    const janelaIni = new Date(hoje.getFullYear(), anivMes - 1, 1);
+    // Janela: mês do aniversário + mês subsequente (ex: aniversário em maio → maio ou junho)
+    const janelaIni = new Date(hoje.getFullYear(), anivMes, 1);
     const janelaFim = new Date(hoje.getFullYear(), anivMes + 2, 0);
     const dentroJanela = hoje >= janelaIni && hoje <= janelaFim;
     const mesAniv = MESES[anivMes];
@@ -1463,7 +1475,7 @@ function renderMeuRecesso() {
       <div style="font-weight:600;margin-bottom:4px">${textoStatus}</div>
       <div style="font-size:12px;color:var(--text2);margin-bottom:8px">
         Aniversário: <strong>${String(anivDia).padStart(2,'0')}/${String(anivMes+1).padStart(2,'0')}</strong>
-        · Janela de uso: <strong>${MESES[anivMes > 0 ? anivMes-1 : 11]}</strong> → <strong>${MESES[(anivMes+1)%12]}</strong>
+        · Janela de uso: <strong>${mesAniv}</strong> → <strong>${MESES[(anivMes+1)%12]}</strong>
       </div>
       <div style="margin-bottom:10px">${badge(corStatus, '1 dia útil por ano')}</div>
       ${!anivUsado ? `<button class="btn btn-brand btn-sm" onclick="solicitarAniversario()" ${!dentroJanela ? "title='Fora do período de uso'" : ''}>
@@ -1548,13 +1560,13 @@ function calcSolDias() {
   const u = STATE.currentUser;
   const pessoa = DB.pessoas.find(p=>p.people===u.people);
   const info = pessoa ? calcRecessoInfo(pessoa) : null;
-  const antec = diasUteisEntre(isoDate(new Date()), ini);
+  const antec = diasCorridosEntre(isoDate(new Date()), ini);
   const ok = antec >= DB.regras.antecedencia;
   const saldoOk = !info || info.inelegivel || dias <= info.remaining;
   prev.style.display = 'block';
   prev.innerHTML = `<div style="display:flex;gap:8px;flex-wrap:wrap">
     ${badge('blue','📅 '+dias+' dias úteis')}
-    ${ok ? badge('green','✓ Antecedência OK') : badge('red','⚠ Antecedência insuficiente (min. '+DB.regras.antecedencia+' dias)')}
+    ${ok ? badge('green','✓ Antecedência OK') : badge('yellow','⚠ Antecedência menor que '+DB.regras.antecedencia+' dias corridos')}
     ${info && !info.inelegivel ? (saldoOk ? badge('green','✓ Saldo suficiente') : badge('red','⚠ Saldo insuficiente ('+info.remaining+' dias)')) : ''}
   </div>`;
 }
@@ -1576,10 +1588,11 @@ function submitSolicitar(e) {
   if (info && info.inelegivel) { toast('Você ainda não é elegível para recesso.','error'); return; }
   if (info && dias > info.remaining) { toast('Dias solicitados excedem seu saldo disponível.','error'); return; }
 
-  const antec = diasUteisEntre(isoDate(new Date()), ini);
-  if (antec < DB.regras.antecedencia && !alin) {
-    if (!confirm(`A antecedência mínima é de ${DB.regras.antecedencia} dias. Deseja enviar mesmo assim?`)) return;
-  }
+  // Antecedência mínima é contada em dias CORRIDOS (não dias úteis) e é
+  // apenas um alerta — nunca bloqueia o envio da solicitação. O motivo
+  // fica registrado na própria solicitação para o aprovador ver o aviso.
+  const antec = diasCorridosEntre(isoDate(new Date()), ini);
+  const antecedenciaOk = antec >= DB.regras.antecedencia;
 
   // GP do projeto
   const gp = pessoa ? gpDoProjeto(pessoa.projetoAtual) : null;
@@ -1592,6 +1605,7 @@ function submitSolicitar(e) {
     dataSol: isoDate(new Date()),
     justificativa: just,
     alinhado: alin,
+    antecedenciaOk: antecedenciaOk, // alerta visual na aprovação — nunca bloqueia o envio
     aprovGP: gp ? 'Aguardando' : 'N/A', // sem GP cadastrado, pula etapa
     aprovPC: 'Aguardando',
     gpPeople: gp || null,
@@ -1625,11 +1639,12 @@ function solicitarAniversario() {
   if (anivUsado) { toast('Day off de aniversário já utilizado este ano.','error'); return; }
 
   // Calcula o próximo dia útil disponível dentro da janela
-  const janelaIni = new Date(hoje.getFullYear(), anivMes - 1, 1);
+  // Janela: mês do aniversário + mês subsequente (ex: aniversário em maio → maio ou junho)
+  const janelaIni = new Date(hoje.getFullYear(), anivMes, 1);
   const janelaFim = new Date(hoje.getFullYear(), anivMes + 2, 0);
   if (hoje < janelaIni || hoje > janelaFim) {
     const mesAniv = MESES[anivMes];
-    toast(`Day off disponível apenas em: ${MESES[anivMes > 0 ? anivMes-1 : 11]}, ${mesAniv} ou ${MESES[(anivMes+1)%12]}.`,'error');
+    toast(`Day off disponível apenas em: ${mesAniv} ou ${MESES[(anivMes+1)%12]}.`,'error');
     return;
   }
 
@@ -1724,7 +1739,7 @@ function abrirRevisar(id) {
   const p = DB.pessoas.find(x=>x.people===sol.profPeople);
   const nm = p ? nomeF(p.people) : sol.profPeople;
   const info = p ? calcRecessoInfo(p) : null;
-  const antec = diasUteisEntre(isoDate(new Date()), sol.inicio);
+  const antec = diasCorridosEntre(isoDate(new Date()), sol.inicio);
 
   document.getElementById('rev-info').innerHTML = `
     <div class="info-item"><label>Profissional</label><span>${nm}</span></div>
@@ -1737,8 +1752,8 @@ function abrirRevisar(id) {
 
   // Validações
   const vals = [];
-  if (antec >= DB.regras.antecedencia) vals.push({ok:true, txt:`Antecedência de ${antec} dias (mínimo ${DB.regras.antecedencia})`});
-  else vals.push({ok:false, txt:`Antecedência insuficiente: ${antec} dias (mínimo ${DB.regras.antecedencia})`});
+  if (antec >= DB.regras.antecedencia) vals.push({ok:true, txt:`Antecedência de ${antec} dias corridos (mínimo ${DB.regras.antecedencia})`});
+  else vals.push({ok:false, txt:`Antecedência menor que o recomendado: ${antec} dias corridos (mínimo ${DB.regras.antecedencia}) — alerta, não impede a aprovação`});
   if (sol.dias >= DB.regras.minimo) vals.push({ok:true, txt:`${sol.dias} dias (mínimo ${DB.regras.minimo})`});
   else vals.push({ok:false, txt:`Menos que o mínimo de ${DB.regras.minimo} dias`});
   if (info && !info.inelegivel) {
@@ -2065,7 +2080,8 @@ function abrirHistProf(people) {
     const anivMes = nasc.getMonth();
     const anivDia = nasc.getDate();
     const anivUsado = (DB.anivUsado[people] === hoje.getFullYear());
-    const janelaIni = new Date(hoje.getFullYear(), anivMes - 1, 1);
+    // Janela: mês do aniversário + mês subsequente (ex: aniversário em maio → maio ou junho)
+    const janelaIni = new Date(hoje.getFullYear(), anivMes, 1);
     const janelaFim = new Date(hoje.getFullYear(), anivMes + 2, 0);
     const dentroJanela = hoje >= janelaIni && hoje <= janelaFim;
     const mesAniv = MESES[anivMes];
@@ -2082,7 +2098,7 @@ function abrirHistProf(people) {
             <div style="font-weight:600;margin-bottom:2px">${textoStatus}</div>
             <div style="font-size:12px;color:var(--text2)">
               Nascimento: <strong>${fmt(nascStr)}</strong>
-              · Janela de uso: <strong>${MESES[anivMes > 0 ? anivMes-1 : 11]}</strong> → <strong>${MESES[(anivMes+1)%12]}</strong>
+              · Janela de uso: <strong>${mesAniv}</strong> → <strong>${MESES[(anivMes+1)%12]}</strong>
             </div>
           </div>
           ${badge(corStatus, anivUsado ? 'Já utilizado' : 'Aberto')}
