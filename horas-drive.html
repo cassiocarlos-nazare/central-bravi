@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Horas · Drive — Central Bravi</title>
+<script src="bravi-db.js"></script>
 <script src="bravi-auth.js"></script>
 <style>
 :root {
@@ -517,6 +518,52 @@ function preencherFiltroMes() {
 }
 
 // ══════════════════════════════════════════════════════
+// CADASTRO GERAL — fonte única da verdade para profissionais
+// ══════════════════════════════════════════════════════
+// Mesma regra de governança aplicada no recesso.html: este módulo não lê
+// mais a planilha "Pessoas-YYYY" diretamente (?action=pessoas-drive) — isso
+// causava profissionais já inativados no Cadastro Geral continuarem
+// aparecendo como ativos aqui, porque as duas fontes ficavam dessincronizadas.
+// Agora lemos da tabela 'profissionais' do BraviDB (mesma fonte que
+// cadastro.html usa), e adaptamos para o formato que este módulo já espera
+// internamente (campos: people=slug, role, level, ativo, email).
+function _adaptarProfissionalParaHoras(p) {
+  const email = (p.email || '').toLowerCase().trim();
+  // Mesma defesa contra registros corrompidos/lixo do recesso.html
+  const emailValido = email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  if (!emailValido || !p.nome) return null;
+  const people = email.replace('@bravi.com.br', '');
+  if (!people || people.includes(' ') || people.includes('@')) return null;
+
+  return {
+    people,
+    email,
+    nome: p.nome,
+    role: p.funcao || '',
+    level: p.level || '', // Cadastro Geral não tem level hoje — fica vazio
+    setor: p.setor || '',
+    ativo: p.ativo !== false,
+  };
+}
+
+async function carregarPessoasDoCadastro() {
+  try {
+    if (!BraviDB.temAPI()) BraviDB.configurarAPI(API_URL);
+    await BraviDB.sincronizar();
+    const profissionaisCadastro = BraviDB.ler('profissionais');
+    const adaptados = profissionaisCadastro.map(_adaptarProfissionalParaHoras).filter(Boolean);
+    if (adaptados.length) {
+      DB.pessoas = adaptados;
+      salvarLS(LS_PESSOAS, DB.pessoas);
+      return true;
+    }
+  } catch(e) {
+    console.warn('Falha ao carregar profissionais do Cadastro Geral.', e);
+  }
+  return false;
+}
+
+// ══════════════════════════════════════════════════════
 // CARGA
 // ══════════════════════════════════════════════════════
 async function carregarTudo() {
@@ -526,14 +573,13 @@ async function carregarTudo() {
   const ano = parseInt(document.getElementById('filtroAno').value);
   DB.mesAtual = mes; DB.anoAtual = ano;
   try {
-    const [rH, rP] = await Promise.all([
+    const [rH, pessoasOk] = await Promise.all([
       fetch(`${API_URL}?action=horas-drive&mes=${mes}&ano=${ano}&modo=mes`).then(r=>r.json()),
-      fetch(`${API_URL}?action=pessoas-drive&ano=${ano}`).then(r=>r.json())
+      carregarPessoasDoCadastro()
     ]);
     if (rH.ok) { DB.horas   = rH.dados||[]; salvarLS(LS_HORAS,   DB.horas); }
     else        DB.horas   = carregarLS(LS_HORAS)||[];
-    if (rP.ok) { DB.pessoas = rP.dados||[]; salvarLS(LS_PESSOAS, DB.pessoas); }
-    else        DB.pessoas = carregarLS(LS_PESSOAS)||[];
+    if (!pessoasOk) DB.pessoas = carregarLS(LS_PESSOAS)||[];
     popularFiltros(); aplicarFiltros();
     toast(`✓ ${DB.horas.length} lançamentos carregados`);
   } catch(e) {
